@@ -1,0 +1,26 @@
+# binarios compilados
+evilginx-dashboard
+evilginx-dashboard.exe
+*.exe
+dist/
+
+# claves y secretos — NUNCA subir
+*.pem
+*.key
+*.p12
+id_rsa*
+
+# datos de Evilginx / loot
+data.db
+*.db
+*.db.snapshot
+
+# ficheros de persistencia del panel (token de Telegram, URLs, notas)
+.evilginx-dashboard-*.json
+*settings*.json
+*urls*.json
+*vstate*.json
+
+# sistema
+.DS_Store
+/tmp/

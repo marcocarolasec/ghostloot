@@ -1,0 +1,19 @@
+[Unit]
+Description=Evilginx Loot Dashboard
+After=network.target
+
+[Service]
+Type=simple
+# Ajusta la ruta si lo instalas en otro sitio
+ExecStart=/opt/evilginx-dashboard/evilginx-dashboard -addr 127.0.0.1:8090
+WorkingDirectory=/opt/evilginx-dashboard
+Restart=on-failure
+RestartSec=3
+# necesita root para leer /root/.evilginx/data.db
+User=root
+# hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
