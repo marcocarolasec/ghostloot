@@ -1,131 +1,139 @@
-# Evilginx Loot Dashboard
+<div align="center">
 
-Panel web de solo lectura para operar campañas de Evilginx: visualiza el loot
-deduplicado por víctima, exporta cookies listas para pass-the-cookie, vigila la
-salud de tu infra y te avisa por Telegram. Un binario Go autocontenido que lee
-`data.db` (buntdb) **sobre una copia**, sin tocar el fichero vivo ni el lock de
-Evilginx.
+```
+   ▄████  ██░ ██  ▒█████    ██████ ▄▄▄█████▓ ██▓     ▒█████   ▒█████  ▄▄▄█████▓
+  ██▒ ▀█▒▓██░ ██▒▒██▒  ██▒▒██    ▒ ▓  ██▒ ▓▒▓██▒    ▒██▒  ██▒▒██▒  ██▒▓  ██▒ ▓▒
+ ▒██░▄▄▄░▒██▀▀██░▒██░  ██▒░ ▓██▄   ▒ ▓██░ ▒░▒██░    ▒██░  ██▒▒██░  ██▒▒ ▓██░ ▒░
+ ░▓█  ██▓░▓█ ░██ ▒██   ██░  ▒   ██▒░ ▓██▓ ░ ▒██░    ▒██   ██░▒██   ██░░ ▓██▓ ░
+ ░▒▓███▀▒░▓█▒░██▓░ ████▓▒░▒██████▒▒  ▒██▒ ░ ░██████▒░ ████▓▒░░ ████▓▒░  ▒██▒ ░
+```
 
-> Solo para engagements autorizados. Contiene credenciales y sesiones robadas:
-> trátalo como material sensible.
+# GhostLoot
 
-## Características
+**Real-time loot & ops dashboard for [Evilginx](https://github.com/kgretzky/evilginx2).**
+Victim-deduplicated loot, one-click pass-the-cookie export, infra health monitoring and Telegram alerts — in a single Go binary.
 
-**Loot**
-- Vista **Víctimas**: una fila por persona (colapsa duplicados), con sus
-  phishlets, nº de intentos, estado de sesión y cookies de la mejor captura.
-- Vista **Todas las sesiones**: listado crudo con buscador, filtros y orden.
-- Detección de **sesión válida**: token real reutilizable (ESTSAUTH /
-  ESTSAUTHPERSISTENT / SignInStateCookie org; MSPAuth / RPSSecAuth /
-  __Host-MSAAUTH personal). Descarta basura (`Disabled`, `estsfd`).
-- **Copiar cookies** por víctima (formato Cookie-Editor / StorageAce) y
-  **export masivo** en zip (un JSON por víctima + INDEX).
-- **Export CSV** enmascarado (sin secretos) para el informe.
-- **Estado por víctima**: marcar como *usada* y notas, persistente.
-- Aviso **multi-IP** (misma cuenta desde varias IPs → la cookie puede rebotar
-  por conditional access).
+![Go](https://img.shields.io/badge/Go-1.21%2B-00ADD8?logo=go&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Platform](https://img.shields.io/badge/platform-linux-333)
+![Single binary](https://img.shields.io/badge/deploy-single%20binary-blueviolet)
+![Status](https://img.shields.io/badge/status-active-success)
 
-**Infra**
-- **Monitor de dominios**: detecta takedown/suspensión (caída de conexión/DNS) y,
-  opcional, flaggeo en Google Safe Browsing. Tira de estado en el panel.
-- **Mis URLs**: guarda tus lures a mano, con estado activa/caída y filtro "solo
-  activas".
-- **Rendimiento por lure**: visitas, válidas y % de conversión por landing URL.
-- **Timeline** de capturas válidas (14 días).
-- **/api/health**: Evilginx corriendo, última captura, tamaño de DB, versión.
+<sub>A <b>RedGhostOps</b> tool · authorized security assessments only</sub>
 
-**Alertas Telegram** (configurables desde el panel > Ajustes)
-- Aviso de nueva víctima con sesión válida y de dominio caído/recuperado/flaggeado.
-- Modo **alertas mínimas**: sin usuario ni IP (OPSEC).
+</div>
 
-## Instalación rápida (systemd, recomendado)
+![GhostLoot dashboard](docs/screenshot.png)
 
-En el servidor, junto al binario y `evilginx-dashboard.service`:
+---
+
+> ⚠️ **For authorized security assessments only.** GhostLoot is a read-only viewer
+> for data that Evilginx has already captured during a legitimate engagement.
+> Using it against systems or people without explicit written permission is
+> illegal. It does not include or distribute Evilginx or any phishlets.
+
+## Why
+
+Evilginx's console gives you a flat `sessions` list. At 200 hits — between bots and
+duplicates — you can't see what matters: **who actually got caught and which loot
+is replayable**. GhostLoot reads the `data.db` (buntdb) **on a copy** — never
+touching the live file or Evilginx's lock — and turns it into an operable panel.
+
+## Features
+
+🎯 **Loot by victim** — collapses duplicates into one row per person, with their
+phishlets, attempts and best capture. Distinguishes a **valid session** (real
+token: ESTSAUTH / ESTSAUTHPERSISTENT / SignInStateCookie, MSPAuth / RPSSecAuth /
+__Host-MSAAUTH) from junk (`Disabled`, `estsfd`).
+
+🍪 **One-click pass-the-cookie** — copy a victim's cookies (Cookie-Editor /
+StorageAce format) or **bulk export** as a zip (one JSON per victim + index).
+
+📊 **Report-ready** — masked CSV export, capture timeline, and per-lure
+performance (visits → valid → conversion %).
+
+🛰️ **Infra monitoring** — detects takedown/suspension of your domains; optional
+Google Safe Browsing flag check (off by default, with an OPSEC warning).
+
+🔗 **My URLs** — save your lures with live up/down status and an "active only" filter.
+
+🔔 **Telegram alerts** — new valid victim and domain down/recovered, with a
+minimal (no-PII) mode. Configurable from the panel, no restart.
+
+🩺 **Health** — is Evilginx running?, last capture, DB size, version.
+
+🏷️ **Per-victim state** — mark as *used* and add notes.
+
+🛡️ **Hardened** — read-only, CSRF protection, security headers, fail-closed off
+localhost, bound to `127.0.0.1` by default.
+
+## Quickstart
 
 ```bash
+# build (or grab the binary from Releases)
+make build-linux
+
+# on the server: install as a service (auto-start, auto-restart)
 sudo ./install.sh
+
+# from your machine: tunnel + browser
+ssh -i <key> -L 8090:127.0.0.1:8090 <user>@<host>
+#  → http://localhost:8090
 ```
 
-Arranca solo al reiniciar y se relanza si cae. Escucha en `127.0.0.1:8090`.
+Manual run: `sudo ./evilginx-dashboard -addr 127.0.0.1:8090`
 
-Desde tu equipo, túnel SSH y navegador:
+## Security & OPSEC
 
-```bash
-ssh -i <clave> -o ServerAliveInterval=30 -L 8090:127.0.0.1:8090 <user>@<host>
-# http://localhost:8090
-```
+- Built for `127.0.0.1` + SSH tunnel. **Do not expose it to the internet.**
+- Off localhost without `-user/-pass` it **refuses to start** (`-insecure` to force).
+- CSRF protection, security headers and server timeouts enabled.
+- State files are `0600`. Encrypt the server disk and wipe loot when the
+  engagement ends: `sudo rm -f /root/.evilginx-dashboard-*.json`
+- **Safe Browsing** sends your URLs to Google: off by default. Never submit your
+  URLs to third-party scanners (urlscan, VirusTotal) — that's how infra burns.
 
-### Arranque manual (sin systemd)
-
-```bash
-chmod +x evilginx-dashboard
-sudo ./evilginx-dashboard -addr 127.0.0.1:8090
-```
-
-Para dejarlo en segundo plano: `sudo setsid ./evilginx-dashboard -addr 127.0.0.1:8090 >/tmp/dash.log 2>&1 </dev/null &`
-
-## Modelo de seguridad
-
-- Diseñado para `127.0.0.1` + túnel SSH. **No lo expongas a internet.**
-- Si intentas escuchar fuera de localhost sin `-user/-pass`, **se niega a
-  arrancar** (usa `-insecure` para forzarlo, bajo tu responsabilidad).
-- Protección CSRF (mismo-origen) en los endpoints que cambian estado.
-- Cabeceras de seguridad y timeouts activados.
-- Ficheros de estado con permisos `0600`. Cifra el disco del server y limpia el
-  loot al cerrar el engagement.
-
-Ver `AUDIT.md` para la auditoría completa.
+Full write-up in [`AUDIT.md`](AUDIT.md).
 
 ## Telegram
 
-1. Crea un bot con `@BotFather` (`/newbot`) → token.
-2. `chat_id`: escribe a tu bot y abre
-   `https://api.telegram.org/bot<TOKEN>/getUpdates`, o usa `@userinfobot`.
-3. Panel > **Ajustes**: activa, pega token y chat, Guardar, y "Enviar test".
+1. Create a bot with `@BotFather` (`/newbot`) → token.
+2. Get your `chat_id`: message your bot and open
+   `https://api.telegram.org/bot<TOKEN>/getUpdates` (or use `@userinfobot`).
+3. Panel → **Settings** → enable, paste token & chat, Save, "Send test".
 
-## Opciones (CLI)
+## Options (CLI)
 
 ```
--addr          escucha (por defecto 127.0.0.1:8080)
--db            ruta al data.db (por defecto /root/.evilginx/data.db)
--user -pass    basic auth (obligatorio si escuchas fuera de localhost)
--insecure      permitir fuera de localhost sin auth (NO recomendado)
--tg-token      token del bot (seed; luego se edita en Ajustes) o env TG_TOKEN
--tg-chat       chat_id (seed) o env TG_CHAT
--tg-interval   frecuencia de alertas de sesiones (15s)
--mon           dominios a monitorear, coma-separados (vacío = auto)
--mon-auto      derivar dominios de los landing URLs (true)
--mon-interval  frecuencia de chequeo de dominios (5m)
--sb-key        API key de Google Safe Browsing (o env SB_KEY) — ver aviso OPSEC
--urls-file / -settings-file / -vstate-file   ficheros de persistencia
+-addr          listen address (default 127.0.0.1:8080)
+-db            path to data.db (default /root/.evilginx/data.db)
+-user -pass    basic auth (required off localhost)
+-insecure      allow off-localhost without auth (NOT recommended)
+-tg-token/-tg-chat   Telegram seed (then edited in Settings)
+-tg-interval   session-alert poll interval (15s)
+-mon / -mon-auto / -mon-interval   domain monitor
+-sb-key        Google Safe Browsing (see OPSEC note)
+-urls-file / -settings-file / -vstate-file   persistence
 ```
 
-## OPSEC — Safe Browsing
+## How it works
 
-`-sb-key` usa la Lookup API de Google, que **envía tus URLs completas a Google**
-atadas a tu API key. Es exposición de infra: desactivado por defecto, con aviso.
-Nunca metas tus URLs en scanners de terceros (urlscan, VirusTotal, previews):
-eso las publica y es como se quema la infra.
+Evilginx stores each session as JSON in a buntdb (`~/.evilginx/data.db`).
+GhostLoot copies that file, parses it, caches by mtime (only reloads when it
+changes) and serves a read-only panel + API. `index.html` is embedded via
+`go:embed` — a single self-contained binary, no runtime dependencies.
 
-## Compilar
+## Build
 
 ```bash
-make build         # host actual
-make build-linux   # Linux amd64 (servidor típico)
+make build         # current host
+make build-linux   # Linux amd64 (typical server)
 ```
 
-Requiere Go 1.21+. `index.html` va embebido (go:embed): binario autocontenido.
-Dependencia: github.com/tidwall/buntdb.
+Go 1.21+. Dependency: `github.com/tidwall/buntdb`.
 
-## Aviso legal
+## License
 
-Herramienta para **pruebas de seguridad autorizadas** (red team, simulaciones de
-phishing) únicamente. Usarla contra sistemas o personas sin permiso explícito por
-escrito es ilegal. Los autores no se responsabilizan del mal uso. No se incluye
-ni distribuye Evilginx ni ningún phishlet.
+MIT — see [`LICENSE`](LICENSE).
 
-## Créditos
-
-Trabaja sobre la base de datos (buntdb) de [Evilginx](https://github.com/kgretzky/evilginx2).
-Formato de cookies compatible con Cookie-Editor / StorageAce.
-
+<div align="center"><sub>Built to operate fast and clean. RedGhostOps.</sub></div>
