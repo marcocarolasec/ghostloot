@@ -1,38 +1,38 @@
-# Auditoría — Evilginx Loot Dashboard v1.0.0
+# Security Audit — GhostLoot v1.0.0
 
-Revisión completa de seguridad, robustez y producto. Se listan hallazgos,
-severidad, y estado (corregido / aceptado / pendiente).
+Full review of security, robustness and product. Findings, severity and status
+(fixed / accepted / pending).
 
-## Seguridad
+## Security
 
-| # | Hallazgo | Sev | Estado |
-|---|----------|-----|--------|
-| S1 | CSRF: los endpoints que cambian estado (`/api/settings`, `/api/urls`, `/api/vstate`, `/api/test-telegram`) no validaban origen. Una web maliciosa abierta en el mismo navegador podía, p.ej., cambiar el token de Telegram al del atacante y desviar las alertas. | Alta | **Corregido**: guard de mismo-origen (`Origin` debe coincidir con `Host` en POST/DELETE/PUT). |
-| S2 | Fail-open: escuchar fuera de localhost sin auth solo mostraba un aviso pero servía el loot igual. | Alta | **Corregido**: se niega a arrancar fuera de localhost sin `-user/-pass`, salvo `-insecure` explícito. |
-| S3 | Sin cabeceras de seguridad. | Media | **Corregido**: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store`. |
-| S4 | Sin timeouts en el servidor (Slowloris). | Baja | **Corregido**: `ReadHeaderTimeout`/`ReadTimeout`/`IdleTimeout` (WriteTimeout off aposta para descargas grandes). |
-| S5 | Ficheros con secretos (settings/urls/vstate) en disco. | Info | **Aceptado**: se escriben con permisos `0600`; el token de Telegram va en claro (necesario para usarlo). Cifra el disco del server. |
-| S6 | Safe Browsing filtra tus URLs a Google. | Media | **Mitigado**: desactivado por defecto; banner de aviso al activarlo; visible en el pie del panel. |
-| S7 | El panel sirve credenciales y cookies de sesión. | Por diseño | **Aceptado**: pensado para `127.0.0.1` + túnel SSH. No exponer a internet. |
+| # | Finding | Sev | Status |
+|---|---------|-----|--------|
+| S1 | CSRF: state-changing endpoints (`/api/settings`, `/api/urls`, `/api/vstate`, `/api/test-telegram`) didn't validate origin. A malicious page open in the same browser could, e.g., change the Telegram token to the attacker's and hijack alerts. | High | **Fixed**: same-origin guard (`Origin` must match `Host` on POST/DELETE/PUT). |
+| S2 | Fail-open: listening off localhost without auth only printed a warning but still served loot. | High | **Fixed**: refuses to start off localhost without `-user/-pass`, unless `-insecure` is explicit. |
+| S3 | No security headers. | Medium | **Fixed**: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `Cache-Control: no-store`. |
+| S4 | No server timeouts (Slowloris). | Low | **Fixed**: `ReadHeaderTimeout`/`ReadTimeout`/`IdleTimeout` (WriteTimeout intentionally off for large downloads). |
+| S5 | State files with secrets on disk. | Info | **Accepted**: written `0600`; the Telegram token is stored in clear (required to use it). Encrypt the server disk. |
+| S6 | Safe Browsing leaks your URLs to Google. | Medium | **Mitigated**: off by default; warning banner when enabled; shown in the footer. |
+| S7 | The panel serves credentials and session cookies. | By design | **Accepted**: intended for `127.0.0.1` + SSH tunnel. Do not expose to the internet. |
 
-## Robustez
+## Robustness
 
-| # | Hallazgo | Estado |
-|---|----------|--------|
-| R1 | Si Evilginx estaba escribiendo `data.db` cuando se copiaba, la recarga podía fallar y devolver 500. | **Corregido**: ante fallo de recarga se sirve la última copia buena en cache. |
-| R2 | El monitor de dominios seguía redirecciones: el root de un host de phishing redirige al sitio real, midiendo Microsoft en vez de tu host. | **Corregido**: no se siguen redirecciones; un 3xx cuenta como "alcanzable". |
-| R3 | Copia+parseo completo de `data.db` en cada petición. | **Corregido** (previo): cache por mtime; solo recarga cuando cambia. |
-| R4 | Concurrencia sobre estado compartido. | **OK**: todo protegido con mutex. |
+| # | Finding | Status |
+|---|---------|--------|
+| R1 | If Evilginx was writing `data.db` while it was being copied, a reload could fail and return 500. | **Fixed**: on reload failure it serves the last good cached snapshot. |
+| R2 | The domain monitor followed redirects: a phishing host root redirects to the real site, so it measured Microsoft instead of your host. | **Fixed**: redirects are not followed; a 3xx counts as "reachable". |
+| R3 | Full copy+parse of `data.db` on every request. | **Fixed**: mtime cache; only reloads when it changes. |
+| R4 | Concurrency over shared state. | **OK**: all mutex-guarded. |
 
-## Producto
+## Product
 
-- **Añadido** `/api/health`: Evilginx corriendo (scan de `/proc`), antigüedad de la última captura, tamaño de la DB, nº de sesiones/víctimas válidas, versión. Visible en el pie del panel y en el punto de estado.
-- **Añadido** empaquetado: servicio `systemd` (arranque automático + relanzado), `install.sh`, `Makefile`.
-- Export masivo de loot (zip), export CSV para informe, estado por víctima (usada/notas), rendimiento por lure, timeline, aviso multi-IP (posible conditional access).
+- **Added** `/api/health`: is Evilginx running (scans `/proc`), last-capture age, DB size, session/valid-victim counts, version. Shown in the footer and the status dot.
+- **Added** packaging: `systemd` service (auto-start + auto-restart), `install.sh`, `Makefile`.
+- **Added** bulk loot export (zip), masked CSV export, per-victim state (used/notes), per-lure performance, capture timeline, multi-IP warning (possible conditional access), and an EN/ES language toggle.
 
-## Riesgos residuales / pendiente
+## Residual risks / pending
 
-- **Dead-man's switch**: el monitor corre en la misma máquina; no puede avisar si el host entero cae. Requiere un vigilante externo (no incluido).
-- **GeoIP**: no incluido (su librería necesita una dependencia que el entorno de build bloquea); se puede añadir compilando en local con una base MaxMind **local** (sin llamar a terceros).
-- **Intervalos** (alertas/monitor) se configuran por flag; cambiarlos requiere reiniciar.
-- **Autenticación**: basic auth por flag. Para uso en equipo detrás de proxy, poner TLS + auth en el proxy.
+- **Dead-man's switch**: the monitor runs on the same host; it cannot alert if the host itself goes down. Requires an external watcher (not included).
+- **GeoIP**: not included (its library needs a dependency the build environment blocks); can be added by building locally with a **local** MaxMind database (no third-party calls).
+- **Intervals** (alerts/monitor) are set via flags; changing them requires a restart.
+- **Authentication**: basic auth via flag. For team use behind a proxy, put TLS + auth at the proxy.
