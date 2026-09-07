@@ -26,7 +26,7 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-const version = "1.6.0"
+const version = "1.6.1"
 
 // ---- Evilginx data model (matches kgretzky/evilginx2 database.Session) ----
 
@@ -1550,7 +1550,7 @@ func basicAuth(next http.HandlerFunc, user, pass string) http.HandlerFunc {
 
 func main() {
 	dbPath := flag.String("db", "/root/.evilginx/data.db", "ruta al data.db de Evilginx")
-	addr := flag.String("addr", "127.0.0.1:8080", "direccion de escucha (mantener en localhost + tunel SSH)")
+	addr := flag.String("addr", "127.0.0.1:8090", "direccion de escucha (mantener en localhost + tunel SSH)")
 	user := flag.String("user", "", "usuario basic auth")
 	pass := flag.String("pass", "", "password basic auth")
 	tgToken := flag.String("tg-token", os.Getenv("TG_TOKEN"), "token del bot de Telegram (o env TG_TOKEN)")

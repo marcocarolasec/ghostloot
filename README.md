@@ -69,20 +69,31 @@ localhost, bound to `127.0.0.1` by default.
 
 ## Quickstart
 
+**On the Evilginx server**
+
 ```bash
-# build (or grab the binary from Releases)
-make build-linux
-
-# on the server: panel as a service + helper
-sudo ./install.sh
-
-# on your laptop, once:
-#   GHOSTLOOT_HOST=user@host GHOSTLOOT_KEY=/path/key
-#   install ghostloot.sh on your PATH as `ghostloot`
-ghostloot
-#  → starts whatever is down (panel, Evilginx, tunnel) and opens the inbox
-#  ghostloot console  → Evilginx REPL
+make build-linux          # or: go build -o evilginx-dashboard .
+sudo ./install.sh         # detects data.db, Evilginx, a free 127.0.0.1 port
 ```
+
+**On your laptop** (once)
+
+```bash
+./install-local.sh
+ghostloot init user@your-server /path/to/ssh-key
+```
+
+**Every day**
+
+```bash
+ghostloot                 # tunnel + panel + Evilginx if down, opens the inbox
+ghostloot status
+ghostloot console         # Evilginx REPL
+```
+
+Config lives in `/etc/ghostloot.conf` (server) and `~/.ghostloot/config` (laptop).
+Nothing is hardcoded to a particular VPS. The panel always binds loopback;
+if 8090 is taken, install picks 8091–8094.
 
 Manual run: `sudo ./evilginx-dashboard -addr 127.0.0.1:8090`
 
@@ -108,7 +119,7 @@ Full write-up in [`AUDIT.md`](AUDIT.md).
 ## Options (CLI)
 
 ```
--addr          listen address (default 127.0.0.1:8080)
+-addr          listen address (default 127.0.0.1:8090)
 -db            path to data.db (default /root/.evilginx/data.db)
 -user -pass    basic auth (required off localhost)
 -insecure      allow off-localhost without auth (NOT recommended)
