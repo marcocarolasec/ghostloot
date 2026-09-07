@@ -13,16 +13,61 @@ CLIENT_CONF="${GHOSTLOOT_CLIENT_CONF:-$HOME/.ghostloot/config}"
 CTL="${GHOSTLOOT_CTL:-$HOME/.ssh/ghostloot.ctl}"
 
 usage() {
-  cat <<'EOF'
-ghostloot              start whatever is down, open the panel
-ghostloot status
-ghostloot console      attach to the Evilginx tmux session
-ghostloot init user@host /path/to/key [port]
-ghostloot help
+  if [[ ${LANG:-} == es* ]]; then
+    cat <<'EOF'
+GhostLoot — bandeja de loot para Evilginx (solo autorizados)
 
-Server (once):  sudo ./install.sh
-Laptop (once):  ./install-local.sh && ghostloot init user@host /path/to/key
+Instalar una vez
+  servidor   make build-linux && sudo ./install.sh
+  portátil   ./install-local.sh
+             ghostloot init user@servidor /ruta/a/la/clave
+
+Cada día
+  ghostloot              arranca lo que falte y abre la bandeja
+  ghostloot status       túnel / panel / evilginx
+  ghostloot down         para el panel y cierra el túnel
+  ghostloot console      REPL de Evilginx (tmux)
+  ghostloot help         esta hoja
+
+En el panel  (? para teclas)
+  1 bandeja   2 capturas   3 lures   4 ajustes
+  j k  mover     c  copiar cookies     b  briefing
+  u  hecha       e  rebotó             /  buscar
+
+Notas
+  El panel solo escucha en 127.0.0.1. No lo publiques.
+  down no para Evilginx: el phishlet sigue. Para el REPL, console.
+  Config:  ~/.ghostloot/config  (portátil)
+           /etc/ghostloot.conf  (servidor)
 EOF
+  else
+    cat <<'EOF'
+GhostLoot — Evilginx loot inbox (authorized assessments only)
+
+Install once
+  server    make build-linux && sudo ./install.sh
+  laptop    ./install-local.sh
+            ghostloot init user@server /path/to/ssh-key
+
+Every day
+  ghostloot              start whatever is down, open the inbox
+  ghostloot status       tunnel / panel / evilginx
+  ghostloot down         stop the panel and close the tunnel
+  ghostloot console      Evilginx REPL (tmux)
+  ghostloot help         this sheet
+
+In the panel  (? for keys)
+  1 inbox   2 captures   3 lures   4 settings
+  j k  move      c  copy cookies      b  replay brief
+  u  done        e  bounced           /  search
+
+Notes
+  The panel binds 127.0.0.1 only. Do not expose it.
+  down does not stop Evilginx — the phishlet keeps running.
+  Config:  ~/.ghostloot/config  (laptop)
+           /etc/ghostloot.conf  (server)
+EOF
+  fi
 }
 
 need_cmd() { command -v "$1" >/dev/null 2>&1 || { echo "need $1 in PATH" >&2; exit 1; }; }
@@ -141,6 +186,29 @@ host_restart_panel() {
   host_status
 }
 
+stop_panel() {
+  if [[ -f /etc/systemd/system/ghostloot.service ]]; then
+    sudo systemctl stop ghostloot 2>/dev/null || true
+  fi
+  if command -v tmux >/dev/null 2>&1 && sudo tmux has-session -t ghostloot 2>/dev/null; then
+    sudo tmux kill-session -t ghostloot 2>/dev/null || true
+  fi
+}
+
+host_down() {
+  load_host
+  stop_panel
+  local i
+  for i in $(seq 1 20); do
+    if ! panel_http; then break; fi
+    sleep 0.15
+  done
+  host_status
+  if evilginx_up; then
+    echo "evilginx left running (the phishlet). console to attach, leave it."
+  fi
+}
+
 host_console() {
   load_host
   if ! tmux has-session -t "$tmux_session" 2>/dev/null; then
@@ -176,22 +244,50 @@ load_client() {
     echo "SSH key not found: $key" >&2
     exit 1
   fi
-  ssh_base=(ssh -i "$key" -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPath="$CTL" -o ControlPersist=8h -o ServerAliveInterval=30 -o ServerAliveCountMax=3)
+  ssh_opts=(-i "$key" -o IdentitiesOnly=yes -o ControlMaster=auto -o ControlPath="$CTL" -o ControlPersist=8h -o ServerAliveInterval=30 -o ServerAliveCountMax=3)
 }
 
 alive() { curl -sf -o /dev/null --max-time 2 "$url"; }
 
-mux_ok() { ssh -O check -o ControlPath="$CTL" "$host" >/dev/null 2>&1; }
+mux_ok() { ssh -O check -o ControlPath="$CTL" -o ControlMaster=auto "$host" >/dev/null 2>&1; }
 
-port_holder() { lsof -nP -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | awk 'NR>1{print $1,$2; exit}'; }
+port_holder() { lsof -nP -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | awk 'NR>1{print $1,$2; exit}' || true; }
+
+ensure_ssh() {
+  mkdir -p "$HOME/.ssh"
+  chmod 700 "$HOME/.ssh"
+  mux_ok && return 0
+  ssh -fN "${ssh_opts[@]}" "$host"
+}
+
+close_tunnel() {
+  if mux_ok; then
+    ssh -O exit -o ControlPath="$CTL" "$host" >/dev/null 2>&1 || true
+  fi
+  rm -f "$CTL"
+}
+
+# Only the leftover ssh -L on this panel port (same host/key). Never pkill ssh.
+free_local_port() {
+  local pid cmd
+  pid=$(lsof -nP -iTCP:"$port" -sTCP:LISTEN -t 2>/dev/null | awk 'NR==1{print}' || true)
+  [[ -n ${pid:-} ]] || return 0
+  cmd=$(ps -p "$pid" -o command= 2>/dev/null || true)
+  case "$cmd" in
+    ssh*"$port"*|ssh*" -L "*)
+      if [[ $cmd == *"$host"* || $cmd == *"$key"* ]]; then
+        kill "$pid" 2>/dev/null || true
+      fi
+      ;;
+  esac
+}
 
 ensure_tunnel() {
   mkdir -p "$HOME/.ssh"
   chmod 700 "$HOME/.ssh"
   if alive; then return 0; fi
   if mux_ok; then
-    ssh -O exit -o ControlPath="$CTL" "$host" >/dev/null 2>&1 || true
-    rm -f "$CTL"
+    close_tunnel
   fi
   if alive; then return 0; fi
   local who
@@ -201,11 +297,11 @@ ensure_tunnel() {
     echo "Set port= in $CLIENT_CONF or GHOSTLOOT_PORT. I will not kill it." >&2
     exit 1
   fi
-  ssh -fN "${ssh_base[@]}" -o ExitOnForwardFailure=yes -L "${port}:127.0.0.1:${port}" "$host"
+  ssh -fN "${ssh_opts[@]}" -o ExitOnForwardFailure=yes -L "${port}:127.0.0.1:${port}" "$host"
 }
 
 remote() {
-  "${ssh_base[@]}" "$host" "export PATH=/usr/local/bin:/usr/sbin:/usr/bin:/bin; if command -v ghostloot >/dev/null; then ghostloot $*; else echo 'GhostLoot is not installed on the server. Run: sudo ./install.sh' >&2; exit 1; fi"
+  ssh "${ssh_opts[@]}" "$host" "export PATH=/usr/local/bin:/usr/sbin:/usr/bin:/bin; if command -v ghostloot >/dev/null; then ghostloot $*; else echo 'GhostLoot is not installed on the server. Run: sudo ./install.sh' >&2; exit 1; fi"
 }
 
 wait_local() {
@@ -235,16 +331,27 @@ client_up() {
 
 client_status() {
   load_client
-  ensure_tunnel
+  ensure_ssh
   echo "tunnel    $(if alive; then echo "up   $url"; else echo "down $url"; fi)"
   remote status
+}
+
+client_down() {
+  load_client
+  ensure_ssh
+  remote down || true
+  close_tunnel
+  free_local_port
+  echo "tunnel    down   $url"
+  echo "panel     stopped"
+  echo "evilginx  left running"
 }
 
 client_console() {
   load_client
   ensure_tunnel
   remote up >/dev/null
-  exec "${ssh_base[@]}" -t "$host" 'export PATH=/usr/local/bin:$PATH; exec ghostloot console'
+  exec ssh "${ssh_opts[@]}" -t "$host" 'export PATH=/usr/local/bin:$PATH; exec ghostloot console'
 }
 
 client_restart_panel() {
@@ -294,19 +401,23 @@ case "$cmd" in
     case "$(mode)" in
       host)
         case "$cmd" in
-          up|"") host_up ;;
+          up|start|"") host_up ;;
+          down|stop) host_down ;;
           status) host_status ;;
           console) host_console ;;
           restart-panel) host_restart_panel ;;
+          help|-h|--help) usage ;;
           *) usage >&2; exit 2 ;;
         esac
         ;;
       client)
         case "$cmd" in
-          up|"") client_up ;;
+          up|start|"") client_up ;;
+          down|stop) client_down ;;
           status) client_status ;;
           console) client_console ;;
           restart-panel) client_restart_panel ;;
+          help|-h|--help) usage ;;
           *) usage >&2; exit 2 ;;
         esac
         ;;

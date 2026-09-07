@@ -18,7 +18,9 @@ esac
 
 if [[ -f $HOME/.ghostloot/config ]]; then
   echo "config ok  $HOME/.ghostloot/config"
-  echo "next:      ghostloot"
+  echo "next:      ghostloot          # open"
+  echo "           ghostloot down     # stop panel + tunnel"
+  echo "           ghostloot help     # cheatsheet"
 else
   echo "next:      ghostloot init user@your-server /path/to/ssh-key"
 fi

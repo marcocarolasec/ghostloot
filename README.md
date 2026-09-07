@@ -69,31 +69,38 @@ localhost, bound to `127.0.0.1` by default.
 
 ## Quickstart
 
-**On the Evilginx server**
+Two machines. One command a day after that.
+
+**1. Server** (the box that already runs Evilginx)
 
 ```bash
-make build-linux          # or: go build -o evilginx-dashboard .
-sudo ./install.sh         # detects data.db, Evilginx, a free 127.0.0.1 port
+git clone https://github.com/marcocarolasec/ghostloot.git && cd ghostloot
+make build-linux
+sudo ./install.sh
 ```
 
-**On your laptop** (once)
+`install.sh` finds `data.db`, finds Evilginx if it is in a usual path, and
+binds the panel to **127.0.0.1** on 8090 (or 8091–8094 if 8090 is taken).
+It never publishes the panel.
+
+**2. Laptop** (once)
 
 ```bash
 ./install-local.sh
 ghostloot init user@your-server /path/to/ssh-key
 ```
 
-**Every day**
+**3. Every day**
 
 ```bash
-ghostloot                 # tunnel + panel + Evilginx if down, opens the inbox
-ghostloot status
-ghostloot console         # Evilginx REPL
+ghostloot              # start whatever is down, open the inbox
+ghostloot down         # stop the panel, close the tunnel (Evilginx stays up)
+ghostloot help         # cheatsheet
 ```
 
-Config lives in `/etc/ghostloot.conf` (server) and `~/.ghostloot/config` (laptop).
-Nothing is hardcoded to a particular VPS. The panel always binds loopback;
-if 8090 is taken, install picks 8091–8094.
+Printable copy: [`CHEATSHEET.md`](CHEATSHEET.md). Config is
+`/etc/ghostloot.conf` on the server and `~/.ghostloot/config` on the laptop —
+nothing is hardcoded to a particular VPS.
 
 Manual run: `sudo ./evilginx-dashboard -addr 127.0.0.1:8090`
 

@@ -142,8 +142,10 @@ echo
 echo "From your laptop:"
 echo "  ./install-local.sh"
 echo "  ghostloot init user@$(hostname -f 2>/dev/null || hostname) /path/to/ssh-key ${port}"
-echo "  ghostloot"
+echo "  ghostloot            # open the inbox"
+echo "  ghostloot down       # stop panel + tunnel (Evilginx stays up)"
+echo "  ghostloot help       # cheatsheet"
 echo
 echo "logs     journalctl -u ghostloot -f"
-echo "stop     systemctl stop ghostloot"
+echo "stop     systemctl stop ghostloot   # or: ghostloot down  (from the laptop)"
 echo "update   copy a new binary to $DEST/ghostloot && systemctl restart ghostloot"
