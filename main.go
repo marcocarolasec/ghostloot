@@ -26,7 +26,7 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-const version = "1.5.2"
+const version = "1.5.3"
 
 // ---- Evilginx data model (matches kgretzky/evilginx2 database.Session) ----
 
@@ -282,11 +282,11 @@ func (s Session) replayPlan() replayPlan {
 	p := replayPlan{UASummary: uaSummary(s.UserAgent)}
 	switch loot.Kind {
 	case "entra":
-		p.Label = "Microsoft Entra"
+		p.Label = "Entra ID"
 		p.ImportOn = "https://login.microsoftonline.com"
 		p.ThenOpen = "https://www.office.com"
 	case "msa":
-		p.Label = "Microsoft MSA"
+		p.Label = "Microsoft account"
 		p.ImportOn = "https://login.live.com"
 		p.ThenOpen = "https://account.microsoft.com"
 		p.Avoid = "https://outlook.live.com (no SSO from MSAUTHP)"

