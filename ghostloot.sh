@@ -34,6 +34,14 @@ En el panel  (? para teclas)
   j k  mover     c  copiar cookies     b  briefing
   u  hecha       e  rebotó             /  buscar
 
+Lure nuevo (REPL de Evilginx)
+  ghostloot console
+  phishlets
+  lures create <phishlet>
+  lures
+  lures get-url <id>
+  Salir: Ctrl-b, luego d   (no Ctrl-c: eso mata Evilginx)
+
 Notas
   El panel solo escucha en 127.0.0.1. No lo publiques.
   down no para Evilginx: el phishlet sigue. Para el REPL, console.
@@ -60,6 +68,14 @@ In the panel  (? for keys)
   1 inbox   2 captures   3 lures   4 settings
   j k  move      c  copy cookies      b  replay brief
   u  done        e  bounced           /  search
+
+New lure (Evilginx REPL)
+  ghostloot console
+  phishlets
+  lures create <phishlet>
+  lures
+  lures get-url <id>
+  Leave: Ctrl-b then d   (not Ctrl-c — that kills Evilginx)
 
 Notes
   The panel binds 127.0.0.1 only. Do not expose it.
