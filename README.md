@@ -39,16 +39,14 @@ touching the live file or Evilginx's lock — and turns it into an operable pane
 
 ## Features
 
-🎯 **Loot by victim** — collapses duplicates into one row per person, with their
-phishlets, attempts and best capture. Distinguishes a **replayable session**
-(Entra: `ESTSAUTH` / `ESTSAUTHPERSISTENT`; personal MSA: `__Host-MSAAUTHP` /
-`__Host-MSAAUTH` / `MSPAuth` / `RPSSecAuth`) from junk (`Disabled`, `estsfd`,
-the passwordless stub `__Host-MSAAUTH=11`).
+🎯 **Inbox for the campaign** — replayable accounts first, workflow
+(inbox → copied → replayed → bounced → done). Live refresh on. Distinguishes
+Entra (`ESTSAUTH` / `ESTSAUTHPERSISTENT`) from personal MSA (`__Host-MSAAUTHP`)
+and junk (`Disabled`, `estsfd`, `__Host-MSAAUTH=11`).
 
-🍪 **One-click pass-the-cookie** — copy a victim's cookies (Cookie-Editor /
-StorageAce format, `__Host-` cookies exported host-only) or **bulk export** as a
-zip (one JSON per victim + index). `c` copies the selected row; `/` searches;
-`j/k` moves.
+🍪 **Manual replay brief** — country/ASN, captured User-Agent, suggested
+Accept-Language, and the origin to import on (Entra vs MSA). `c` copies
+Cookie-Editor JSON, `h` the Cookie header, `b` the replay brief, `u` marks done.
 
 📊 **Report-ready** — masked CSV export, capture timeline, and per-lure
 performance (visits → valid → conversion %).
