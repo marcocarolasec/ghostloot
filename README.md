@@ -73,13 +73,15 @@ localhost, bound to `127.0.0.1` by default.
 # build (or grab the binary from Releases)
 make build-linux
 
-# on the server: install as a service (auto-start, auto-restart)
+# on the server: panel as a service + helper
 sudo ./install.sh
 
-# from your machine: tunnel + browser
-# (or: GHOSTLOOT_HOST=user@host GHOSTLOOT_KEY=/path/key ./ghostloot-tunnel.sh)
-ssh -i <key> -L 8090:127.0.0.1:8090 <user>@<host>
-#  → http://localhost:8090
+# on your laptop, once:
+#   GHOSTLOOT_HOST=user@host GHOSTLOOT_KEY=/path/key
+#   install ghostloot.sh on your PATH as `ghostloot`
+ghostloot
+#  → starts whatever is down (panel, Evilginx, tunnel) and opens the inbox
+#  ghostloot console  → Evilginx REPL
 ```
 
 Manual run: `sudo ./evilginx-dashboard -addr 127.0.0.1:8090`

