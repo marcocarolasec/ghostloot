@@ -24,7 +24,7 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-const version = "1.1.0"
+const version = "1.2.0"
 
 // ---- Evilginx data model (matches kgretzky/evilginx2 database.Session) ----
 
