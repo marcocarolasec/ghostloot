@@ -40,13 +40,13 @@ touching the live file or Evilginx's lock — and turns it into an operable pane
 ## Features
 
 🎯 **Inbox for the campaign** — replayable accounts first, workflow
-(inbox → copied → replayed → bounced → done). Live refresh on. Distinguishes
-Entra (`ESTSAUTH` / `ESTSAUTHPERSISTENT`) from personal MSA (`__Host-MSAAUTHP`)
-and junk (`Disabled`, `estsfd`, `__Host-MSAAUTH=11`).
+(open → bounced with cause → done). Captures newer than 15 minutes are
+highlighted. Distinguishes Entra (`ESTSAUTH` / `ESTSAUTHPERSISTENT`) from
+personal MSA (`__Host-MSAAUTHP`) and junk (`Disabled`, `estsfd`, `__Host-MSAAUTH=11`).
 
-🍪 **Manual replay brief** — country/ASN, captured User-Agent, suggested
-Accept-Language, and the origin to import on (Entra vs MSA). `c` copies
-Cookie-Editor JSON, `h` the Cookie header, `b` the replay brief, `u` marks done.
+🍪 **Manual replay checklist** — VPN/exit, Copy UA, import host, then-open,
+one Copy cookies. Accept-Language and the Cookie header sit behind More.
+`c` copies Cookie-Editor JSON, `h` the Cookie header, `b` the replay brief, `u` marks done.
 
 📊 **Report-ready** — masked CSV export, capture timeline, and per-lure
 performance (visits → valid → conversion %).
@@ -54,10 +54,11 @@ performance (visits → valid → conversion %).
 🛰️ **Infra monitoring** — detects takedown/suspension of your domains; optional
 Google Safe Browsing flag check (off by default, with an OPSEC warning).
 
-🔗 **My URLs** — save your lures with live up/down status and an "active only" filter.
+🔗 **Lures** — landing URLs plus the ones you save, with service, visits → loot,
+copy, and up/down. Period counts live as a strip on that tab.
 
-🔔 **Telegram alerts** — new valid victim and domain down/recovered, with a
-minimal (no-PII) mode. Configurable from the panel, no restart.
+🔔 **Telegram alerts** — new valid victim and domain down/recovered, with age
+and a stable `#id`. Minimal (no-PII) mode. Configurable from the panel, no restart.
 
 🩺 **Health** — is Evilginx running?, last capture, DB size, version.
 
@@ -76,6 +77,7 @@ make build-linux
 sudo ./install.sh
 
 # from your machine: tunnel + browser
+# (or: GHOSTLOOT_HOST=user@host GHOSTLOOT_KEY=/path/key ./ghostloot-tunnel.sh)
 ssh -i <key> -L 8090:127.0.0.1:8090 <user>@<host>
 #  → http://localhost:8090
 ```

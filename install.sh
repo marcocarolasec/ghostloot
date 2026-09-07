@@ -25,6 +25,7 @@ echo
 echo "Escucha en 127.0.0.1:8090 (solo local). Para verlo desde tu equipo:"
 echo "  ssh -i <clave> -L 8090:127.0.0.1:8090 <user>@<host>"
 echo "  y abre http://localhost:8090"
+echo "  (si cierras el panel: ./ghostloot-tunnel.sh — no mata un túnel existente)"
 echo
 echo "Logs:    journalctl -u evilginx-dashboard -f"
 echo "Parar:   systemctl stop evilginx-dashboard"

