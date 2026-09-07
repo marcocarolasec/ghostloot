@@ -1,6 +1,6 @@
 module evilginx-dashboard
 
-go 1.24.7
+go 1.22
 
 require github.com/tidwall/buntdb v1.3.2
 

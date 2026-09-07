@@ -1,6 +1,6 @@
 BINARY=evilginx-dashboard
 
-.PHONY: build run clean vet
+.PHONY: build run clean vet test
 
 build:
 	CGO_ENABLED=0 go build -ldflags="-s -w" -o $(BINARY) .
@@ -11,6 +11,9 @@ build-linux:
 
 run: build
 	./$(BINARY) -addr 127.0.0.1:8090
+
+test:
+	go test ./...
 
 vet:
 	go vet ./...

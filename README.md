@@ -23,8 +23,6 @@ Victim-deduplicated loot, one-click pass-the-cookie export, infra health monitor
 
 </div>
 
-![GhostLoot dashboard](docs/screenshot.png)
-
 ---
 
 > ⚠️ **For authorized security assessments only.** GhostLoot is a read-only viewer
@@ -42,12 +40,15 @@ touching the live file or Evilginx's lock — and turns it into an operable pane
 ## Features
 
 🎯 **Loot by victim** — collapses duplicates into one row per person, with their
-phishlets, attempts and best capture. Distinguishes a **valid session** (real
-token: ESTSAUTH / ESTSAUTHPERSISTENT / SignInStateCookie, MSPAuth / RPSSecAuth /
-__Host-MSAAUTH) from junk (`Disabled`, `estsfd`).
+phishlets, attempts and best capture. Distinguishes a **replayable session**
+(Entra: `ESTSAUTH` / `ESTSAUTHPERSISTENT`; personal MSA: `__Host-MSAAUTHP` /
+`__Host-MSAAUTH` / `MSPAuth` / `RPSSecAuth`) from junk (`Disabled`, `estsfd`,
+the passwordless stub `__Host-MSAAUTH=11`).
 
 🍪 **One-click pass-the-cookie** — copy a victim's cookies (Cookie-Editor /
-StorageAce format) or **bulk export** as a zip (one JSON per victim + index).
+StorageAce format, `__Host-` cookies exported host-only) or **bulk export** as a
+zip (one JSON per victim + index). `c` copies the selected row; `/` searches;
+`j/k` moves.
 
 📊 **Report-ready** — masked CSV export, capture timeline, and per-lure
 performance (visits → valid → conversion %).
@@ -130,7 +131,7 @@ make build         # current host
 make build-linux   # Linux amd64 (typical server)
 ```
 
-Go 1.21+. Dependency: `github.com/tidwall/buntdb`.
+Go 1.22+. Dependency: `github.com/tidwall/buntdb`.
 
 ## License
 
