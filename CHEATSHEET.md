@@ -45,7 +45,8 @@ The inbox cannot create lures. Attach to Evilginx:
 ghostloot console
 ```
 
-You are in the Evilginx prompt (`:`). Tab completes.
+Works as `ubuntu` or `root` (it finds the other user's tmux). You are in
+the Evilginx prompt (`:`). Tab completes.
 
 ```
 phishlets                          # must be enabled, hostname already set

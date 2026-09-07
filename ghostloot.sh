@@ -147,14 +147,45 @@ start_panel() {
   fi
 }
 
+# Evilginx often lives in another user's tmux (e.g. ubuntu) while you are root.
+# Each user has their own server under /tmp/tmux-<uid>/.
+find_tmux_sock() {
+  local name="$1" sock
+  if command -v tmux >/dev/null 2>&1 && tmux has-session -t "$name" 2>/dev/null; then
+    echo ""
+    return 0
+  fi
+  for sock in /tmp/tmux-*/default; do
+    [[ -S $sock ]] || continue
+    if tmux -S "$sock" has-session -t "$name" 2>/dev/null; then
+      echo "$sock"
+      return 0
+    fi
+  done
+  return 1
+}
+
+tmux_do() {
+  local sock
+  if sock=$(find_tmux_sock "$tmux_session"); then
+    if [[ -n $sock ]]; then
+      tmux -S "$sock" "$@"
+    else
+      tmux "$@"
+    fi
+  else
+    return 1
+  fi
+}
+
 start_evilginx() {
   if evilginx_up; then return 0; fi
   if [[ -z "$evilginx_cmd" ]]; then
     return 0
   fi
   need_cmd tmux
-  if tmux has-session -t "$tmux_session" 2>/dev/null; then
-    tmux send-keys -t "$tmux_session" "$evilginx_cmd" C-m
+  if tmux_do has-session -t "$tmux_session" 2>/dev/null; then
+    tmux_do send-keys -t "$tmux_session" "$evilginx_cmd" C-m
   else
     tmux new-session -d -s "$tmux_session" -n main "$evilginx_cmd"
   fi
@@ -227,11 +258,30 @@ host_down() {
 
 host_console() {
   load_host
-  if ! tmux has-session -t "$tmux_session" 2>/dev/null; then
-    echo "no tmux session '$tmux_session'. Start Evilginx or set tmux_session in $HOST_CONF." >&2
-    exit 1
+  need_cmd tmux
+  local sock user
+  # Root has a different tmux server than ubuntu. Prefer the owner of the session.
+  if [[ $(id -u) -eq 0 ]]; then
+    for user in "${SUDO_USER:-}" ubuntu; do
+      [[ -n $user && $user != root ]] || continue
+      id "$user" >/dev/null 2>&1 || continue
+      if sudo -n -u "$user" tmux has-session -t "$tmux_session" 2>/dev/null; then
+        exec sudo -u "$user" tmux attach -t "$tmux_session"
+      fi
+    done
   fi
-  exec tmux attach -t "$tmux_session"
+  if tmux has-session -t "$tmux_session" 2>/dev/null; then
+    exec tmux attach -t "$tmux_session"
+  fi
+  if sock=$(find_tmux_sock "$tmux_session") && [[ -n $sock ]]; then
+    exec tmux -S "$sock" attach -t "$tmux_session"
+  fi
+  echo "no tmux session '$tmux_session'." >&2
+  echo "Looked at this user and /tmp/tmux-*/default. Set tmux_session in $HOST_CONF if you named it something else." >&2
+  if evilginx_up; then
+    echo "Evilginx is running, but not in that tmux session." >&2
+  fi
+  exit 1
 }
 
 # ---- client (your laptop) ----
