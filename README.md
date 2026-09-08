@@ -25,6 +25,9 @@ Victim-deduplicated loot, one-click pass-the-cookie export, infra health monitor
 
 ---
 
+<img width="1512" height="854" alt="image" src="https://github.com/user-attachments/assets/9b608b12-edb7-4b9d-bec2-ed4431052703" />
+
+
 > ⚠️ **For authorized security assessments only.** GhostLoot is a read-only viewer
 > for data that Evilginx has already captured during a legitimate engagement.
 > Using it against systems or people without explicit written permission is
