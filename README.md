@@ -25,7 +25,7 @@ Victim-deduplicated loot, one-click pass-the-cookie export, infra health monitor
 
 ---
 
-<img width="1512" height="854" alt="image" src="https://github.com/user-attachments/assets/9b608b12-edb7-4b9d-bec2-ed4431052703" />
+<img width="1512" height="858" alt="image" src="https://github.com/user-attachments/assets/cbb00f94-0e43-423c-a777-5313a76a5dad" />
 
 
 > ⚠️ **For authorized security assessments only.** GhostLoot is a read-only viewer
